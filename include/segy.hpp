@@ -104,6 +104,13 @@ public:
     /// \return Transformed string.
     ///
     static std::string ebcdic_to_ascii(std::string &ebcdic);
+    ///
+    /// \fn ascii_to_ebcdic
+    /// \brief Transform ascii string to ebcdic string.
+    /// \param ascii String to transform.
+    /// \return Transformed string.
+    ///
+    static std::string ascii_to_ebcdic(std::string &ascii);
 protected:
     std::string const &file_name();
     binary_header const &bin_hdr();
