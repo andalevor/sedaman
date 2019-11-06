@@ -12,7 +12,8 @@ public:
     sexception(std::string const &file_name, int line_num,
                std::string const &message);
     sexception(std::string &&file_name, int line_num, std::string &&message);
-    virtual ~sexception();
+    const char* what() const noexcept override;
+    virtual ~sexception() override;
 
 private:
     class impl;

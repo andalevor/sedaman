@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.1)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 14)
 
-include_directories(include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB SOURCES "src/*.cpp")
 
 add_library(${PROJ_NAME} SHARED ${SOURCES})

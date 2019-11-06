@@ -10,10 +10,16 @@
 #ifndef SEDAMAN_SEGY_HPP
 #define SEDAMAN_SEGY_HPP
 
+#include <cfloat>
+#include <climits>
 #include <cstdint>
 #include <experimental/propagate_const>
 #include <memory>
 #include <string>
+
+static_assert(CHAR_BIT == 8, "CHAR_BIT != 8\n");
+static_assert(FLT_RADIX == 2, "FLT_RADIX != 2\n");
+static_assert(DBL_MANT_DIG == 53, "DBL_MAN_DIG != 53\n");
 
 ///
 /// \namespace sedaman
@@ -98,12 +104,18 @@ public:
          std::string &&text_hdr = std::string());
     virtual ~segy();
     ///
+    /// \fn text_hdr
+    /// \brief segy text header getter
+    /// \return text header
+    ///
+    std::string const &text_hdr();
+    ///
     /// \fn ebcdic_to_ascii
     /// \brief Transform ebcdic string to ascii string.
     /// \param ebcdic String to transform.
     /// \return Transformed string.
     ///
-    static std::string ebcdic_to_ascii(std::string &ebcdic);
+    static std::string ebcdic_to_ascii(const std::string &ebcdic);
     static std::string ebcdic_to_ascii(std::string &&ebcdic);
     ///
     /// \fn ascii_to_ebcdic
@@ -111,20 +123,22 @@ public:
     /// \param ascii String to transform.
     /// \return Transformed string.
     ///
-    static std::string ascii_to_ebcdic(std::string &ascii);
+    static std::string ascii_to_ebcdic(const std::string &ascii);
     static std::string ascii_to_ebcdic(std::string &&ascii);
     ///
     /// \var default_text_header
     /// \brief Default SEGY text header from standard.
     ///
     static const char *default_text_header;
+    ///
+    /// \var TEXT_HEADER_LEN
+    /// \brief SEGY text header length in bytes
+    ///
+    static constexpr int TEXT_HEADER_LEN = 3200;
 protected:
     std::string const &file_name();
     binary_header const &bin_hdr();
-    void set_bin_hdr(binary_header const &b_h);
     void set_bin_hdr(binary_header &&b_h);
-    std::string const &text_hdr();
-    void set_text_hdr(std::string const &t_h);
     void set_text_hdr(std::string &&t_h);
 private:
     class impl;

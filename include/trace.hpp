@@ -63,6 +63,6 @@ private:
     class impl;
     std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
 };
-}
+} // namespace sedaman
 
 #endif // SEDAMAN_TRACE_HPP

@@ -3,3 +3,7 @@ enable_testing()
 add_executable(ascii_ebcdic_conversion ascii_ebcdic_conversion.cpp)
 add_test(ascii_ebcdic_conversion_test ascii_ebcdic_conversion)
 target_link_libraries(ascii_ebcdic_conversion sedaman)
+
+add_executable(print_text_header print_text_header.cpp)
+add_test(print_text_header_test print_text_header ${PROJECT_SOURCE_DIR}/samples/sample_ibm.sgy)
+target_link_libraries(print_text_header sedaman)

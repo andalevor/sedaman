@@ -18,12 +18,14 @@ public:
     /// \param file_name Name of SEGY file.
     /// \param bin_hdr (optional)SEGY binary header.
     /// \param text_hdr (optional)SEGY text header.
+    /// \throws std::ifstream::failure In case of file operations falure
     ///
     isegy(std::string const &file_name);
     ///
     /// \param file_name Name of SEGY file.
     /// \param bin_hdr (optional)SEGY binary header.
     /// \param text_hdr (optional)SEGY text header.
+    /// \throws std::ifstream::failure In case of file operations falure
     ///
     isegy(std::string &&file_name);
     virtual ~isegy();
