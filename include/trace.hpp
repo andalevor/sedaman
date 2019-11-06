@@ -26,14 +26,38 @@ namespace sedaman {
 ///
 class trace {
 public:
-    trace(const trace &t);
-    trace(trace &&t) noexcept;
-    trace(const std::valarray<int32_t> &h, const std::valarray<double> &s);
-    trace(std::valarray<int32_t> &&h, std::valarray<double> &&s);
+    ///
+    /// \param trc Trace to copy data from
+    ///
+    trace(const trace &trc);
+    ///
+    /// \param trc Trace to move data from
+    ///
+    trace(trace &&trc) noexcept;
+    ///
+    /// \param hdr Header values
+    /// \param smpl Samples values
+    ///
+    trace(const std::valarray<int32_t> &hdr, const std::valarray<double> &smpl);
+    ///
+    /// \param hdr Header values
+    /// \param smpl Samples values
+    ///
+    trace(std::valarray<int32_t> &&hdr, std::valarray<double> &&smpl);
     ~trace();
-    trace &operator=(const trace &o);
-    trace &operator=(trace &&o);
+    trace &operator=(const trace &other);
+    trace &operator=(trace &&other);
+    ///
+    /// \fn header
+    /// \brief Trace header getter
+    /// \return Header values
+    ///
     std::valarray<int32_t> const &header();
+    ///
+    /// \fn samples
+    /// \brief Trace samples getter
+    /// \return Samples values
+    ///
     std::valarray<double> const &samples();
 private:
     class impl;
