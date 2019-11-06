@@ -1,11 +1,5 @@
 enable_testing()
 
-add_executable(trace_move trace_move.cpp)
-add_test(trace_move_test trace_move)
-target_link_libraries(trace_move sedaman)
-
-add_executable(trace_copy trace_copy.cpp)
-add_test(trace_copy_test trace_copy)
-target_link_libraries(trace_copy sedaman)
-
-
+add_executable(ascii_ebcdic_conversion ascii_ebcdic_conversion.cpp)
+add_test(ascii_ebcdic_conversion_test ascii_ebcdic_conversion)
+target_link_libraries(ascii_ebcdic_conversion sedaman)

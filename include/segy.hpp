@@ -11,8 +11,8 @@
 #define SEDAMAN_SEGY_HPP
 
 #include <cstdint>
-#include <memory>
 #include <experimental/propagate_const>
+#include <memory>
 #include <string>
 
 ///
@@ -104,6 +104,7 @@ public:
     /// \return Transformed string.
     ///
     static std::string ebcdic_to_ascii(std::string &ebcdic);
+    static std::string ebcdic_to_ascii(std::string &&ebcdic);
     ///
     /// \fn ascii_to_ebcdic
     /// \brief Transform ascii string to ebcdic string.
@@ -111,6 +112,12 @@ public:
     /// \return Transformed string.
     ///
     static std::string ascii_to_ebcdic(std::string &ascii);
+    static std::string ascii_to_ebcdic(std::string &&ascii);
+    ///
+    /// \var default_text_header
+    /// \brief Default SEGY text header from standard.
+    ///
+    static const char *default_text_header;
 protected:
     std::string const &file_name();
     binary_header const &bin_hdr();
