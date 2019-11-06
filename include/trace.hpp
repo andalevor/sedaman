@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <experimental/propagate_const>
 #include <memory>
-#include <vector>
+#include <valarray>
 
 ///
 /// \namespace sedaman
@@ -28,13 +28,13 @@ class trace {
 public:
     trace(const trace &t);
     trace(trace &&t) noexcept;
-    trace(const std::vector<int32_t> &h, const std::vector<double> &s);
-    trace(std::vector<int32_t> &&h, std::vector<double> &&s);
+    trace(const std::valarray<int32_t> &h, const std::valarray<double> &s);
+    trace(std::valarray<int32_t> &&h, std::valarray<double> &&s);
     ~trace();
     trace &operator=(const trace &o);
     trace &operator=(trace &&o);
-    std::vector<int32_t> const &header();
-    std::vector<double> const &samples();
+    std::valarray<int32_t> const &header();
+    std::valarray<double> const &samples();
 private:
     class impl;
     std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
