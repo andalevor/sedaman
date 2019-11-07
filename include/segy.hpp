@@ -104,12 +104,6 @@ public:
          std::string &&text_hdr = std::string());
     virtual ~segy();
     ///
-    /// \fn text_hdr
-    /// \brief segy text header getter
-    /// \return text header
-    ///
-    std::string const &text_hdr();
-    ///
     /// \fn ebcdic_to_ascii
     /// \brief Transform ebcdic string to ascii string.
     /// \param ebcdic String to transform.
@@ -135,9 +129,15 @@ public:
     /// \brief SEGY text header length in bytes
     ///
     static constexpr int TEXT_HEADER_LEN = 3200;
+    ///
+    /// \var BIN_HEADER_LEN
+    /// \brief SEGY binary header length in bytes
+    ///
+    static constexpr int BIN_HEADER_LEN = 400;
 protected:
     std::string const &file_name();
-    binary_header const &bin_hdr();
+    std::string &text_hdr();
+    binary_header &bin_hdr();
     void set_bin_hdr(binary_header &&b_h);
     void set_text_hdr(std::string &&t_h);
 private:
@@ -146,4 +146,4 @@ private:
 };
 } // namespace sedaman
 
-#endif // __SEDAMAN_SEGY_HPP__
+#endif // SEDAMAN_SEGY_HPP

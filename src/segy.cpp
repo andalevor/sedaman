@@ -144,8 +144,8 @@ segy::segy(string &&file_name, binary_header &&bin_hdr,
 segy::~segy() = default;
 
 string const &segy::file_name() {return pimpl->d_file_name;}
-segy::binary_header const &segy::bin_hdr() {return pimpl->d_bin_hdr;}
+segy::binary_header &segy::bin_hdr() {return pimpl->d_bin_hdr;}
 void segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
-string const &segy::text_hdr() {return pimpl->d_text_header;}
+string &segy::text_hdr() {return pimpl->d_text_header;}
 void segy::set_text_hdr(string &&t_h) {pimpl->d_text_header = t_h;}
 } // namespace sedaman

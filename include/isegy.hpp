@@ -9,9 +9,19 @@
 
 #ifndef SEDAMAN_ISEGY_HPP
 #define SEDAMAN_ISEGY_HPP
+
 #include "segy.hpp"
 
+///
+/// \namespace sedaman
+/// \brief General namespace for sedaman library.
+///
 namespace sedaman {
+///
+/// \class isegy
+/// \brief Class for SEGY reading.
+/// Defines methods to read information from SEGY files.
+///
 class isegy : public segy {
 public:
     ///
@@ -28,11 +38,17 @@ public:
     /// \throws std::ifstream::failure In case of file operations falure
     ///
     isegy(std::string &&file_name);
+    ///
+    /// \fn text_hdr
+    /// \brief segy text header getter
+    /// \return text header
+    ///
+    std::string const &text_header();
     virtual ~isegy();
 private:
     class impl;
     std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
 };
-}
+} // namespace sedaman
 
 #endif // SEDAMAN_ISEGY_HPP
