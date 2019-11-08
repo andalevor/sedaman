@@ -3,6 +3,7 @@
 using std::make_unique;
 using std::move;
 using std::string;
+using std::valarray;
 
 namespace sedaman {
 static uint8_t constexpr e2a[256] = {
@@ -41,6 +42,54 @@ static uint8_t constexpr a2e[256] = {
     0xac,0x69,0xed,0xee,0xeb,0xef,0xec,0xbf,0x80,0xfd,0xfe,0xfb,0xfc,0xad,0xae,0x59,
     0x44,0x45,0x42,0x46,0x43,0x47,0x9c,0x48,0x54,0x51,0x52,0x53,0x58,0x55,0x56,0x57,
     0x8c,0x49,0xcd,0xce,0xcb,0xcf,0xcc,0xe1,0x70,0xdd,0xde,0xdb,0xdc,0x8d,0x8e,0xdf
+};
+
+const valarray<string> segy::binary_header::names =
+{
+    "Job identification number",
+    "Line number",
+    "Reel number",
+    "Number of data traces per ensemble",
+    "Number of auxiliary traces per ensemble",
+    "Sample interval",
+    "Sample interval of original field recording.",
+    "Number of samples per data trace",
+    "Number of samples per data trace of original field recording",
+    "Data sample format code",
+    "Ensemble fold",
+    "Trace sorting code",
+    "Vertical sum code",
+    "Sweep frequency at start (Hz)",
+    "Sweep frequency at end (Hz)",
+    "Sweep length (ms)",
+    "Sweep type code",
+    "Trace number of sweep channel",
+    "Sweep trace taper length in ms at start if tapered",
+    "Sweep trace taper length in ms at end",
+    "Taper type",
+    "Correlated data traces",
+    "Binary gain recovered",
+    "Amplitude recovery method",
+    "Measure system",
+    "Impulse signal polarity",
+    "Vibratory polarity code",
+    "Extended number of data traces per ensemble",
+    "Extended number of auxiliary traces per ensemble",
+    "Extended number of samples per data trace",
+    "Extended sample interval",
+    "Extended sample interval of original field recording",
+    "Extended number of samples per data trace in original recording",
+    "Extended ensemble fold",
+    "Integer constant used to detect the byte ordering",
+    "Major SEG-Y Format Revision Number",
+    "Minor SEG-Y Format Revision Number",
+    "Fixed length trace flag",
+    "Number of Extended Textual File Header records",
+    "Maximum number of additional trace headers",
+    "Time basis code",
+    "Number of traces in this file",
+    "Byte offset of first traces relative to start of file",
+    "Number of data trailer stanza records"
 };
 
 string segy::ebcdic_to_ascii(const string &ebcdic)
