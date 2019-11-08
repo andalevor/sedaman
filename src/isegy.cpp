@@ -33,7 +33,9 @@ private:
     //functions for samples reading
     double dbl_from_ibm_float(const isegy &segy, const char **buf);
     double dbl_from_IEEE_float(const isegy &segy, const char **buf);
+    double dbl_from_IEEE_float_not_native(const isegy &segy, const char **buf);
     double dbl_from_IEEE_double(const isegy &segy, const char **buf);
+    double dbl_from_IEEE_double_not_native(const isegy &segy, const char **buf);
     double dbl_from_int64(const isegy &segy, const char **buf);
     double dbl_from_int32(const isegy &segy, const char **buf);
     double dbl_from_int24(const isegy &segy, const char **buf);
@@ -146,6 +148,52 @@ void isegy::impl::assign_raw_readers(isegy &segy)
     default:
         throw sexception(__FILE__, __LINE__, "unsupported endianness");
     }
+}
+
+double isegy::impl::dbl_from_IEEE_float(const isegy &segy, const char **buf)
+{
+    uint32_t tmp;
+    float result;
+
+    tmp = segy.pimpl->read_32(buf);
+    memcpy(&result, &tmp, sizeof(result));
+    return static_cast<double>(result);
+}
+
+double isegy::impl::dbl_from_IEEE_float_not_native(const isegy &segy,
+                                                   const char **buf)
+{
+    uint32_t tmp, fraction;
+    int sign, exp;
+
+    tmp = segy.pimpl->read_32(buf);
+    sign = tmp >> 31 ? -1 : 1;
+    exp = (tmp & 0x7fffffff) >> 23;
+    fraction = tmp & 0x7fffff;
+    return sign * pow(2, exp - 127) * (1 + fraction / pow(2, 23));
+}
+
+double isegy::impl::dbl_from_IEEE_double(const isegy &segy, const char **buf)
+{
+    uint64_t tmp;
+    double result;
+
+    tmp = segy.pimpl->read_64(buf);
+    memcpy(&result, &tmp, sizeof(result));
+    return result;
+}
+
+double isegy::impl::dbl_from_IEEE_double_not_native(const isegy &segy,
+                                                    const char **buf)
+{
+    uint64_t fraction, tmp;
+    int sign, exp;
+
+    tmp = segy.pimpl->read_64(buf);
+    sign = tmp >> 63 ? -1 : 1;
+    exp = (tmp & 0x7fffffffffffffff) >> 52;
+    fraction = tmp & 0x000fffffffffffff;
+    return sign * pow(2, exp - 1023) * (1 + fraction / pow(2, 52));
 }
 
 double isegy::impl::dbl_from_uint64(const isegy &segy, const char **buf)
