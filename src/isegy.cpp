@@ -24,6 +24,7 @@ public:
 private:
     void fill_bin_header(isegy &segy, const char *buf);
     void assign_raw_readers(isegy &segy);
+    void assign_sample_reader(isegy &segy);
     function<uint8_t(const char **)> read_8;
     function<uint16_t(const char **)> read_16;
     function<uint16_t(const char **)> read_24;
@@ -59,6 +60,7 @@ void isegy::impl::open_isegy(isegy &segy)
     char bin_buf[segy::BIN_HEADER_LEN];
     file.read(bin_buf, segy::BIN_HEADER_LEN);
     fill_bin_header(segy, bin_buf);
+    assign_sample_reader(segy);
 }
 
 void isegy::impl::fill_bin_header(isegy &segy, const char *buf)
@@ -148,6 +150,79 @@ void isegy::impl::assign_raw_readers(isegy &segy)
     default:
         throw sexception(__FILE__, __LINE__, "unsupported endianness");
     }
+}
+
+void isegy::impl::assign_sample_reader(isegy &segy)
+{
+    switch (segy.bin_hdr().format_code) {
+    case 1:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_ibm_float(segy, buf);};
+        break;
+    case 2:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_int32(segy, buf);};
+        break;
+    case 3:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_int16(segy, buf);};
+        break;
+    case 5:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_IEEE_float(segy, buf);};
+        break;
+    case 6:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_IEEE_double(segy, buf);};
+        break;
+    case 7:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_int24(segy, buf);};
+        break;
+    case 8:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_int8(segy, buf);};
+        break;
+    case 9:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_int64(segy, buf);};
+        break;
+    case 10:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_uint32(segy, buf);};
+        break;
+    case 11:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_uint16(segy, buf);};
+        break;
+    case 12:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_uint64(segy, buf);};
+        break;
+    case 15:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_uint24(segy, buf);};
+        break;
+    case 16:
+        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+        {return dbl_from_uint8(segy, buf);};
+        break;
+    default:
+        throw(sexception(__FILE__, __LINE__, "unsupported format"));
+    }
+}
+
+double isegy::impl::dbl_from_ibm_float(const isegy &segy, const char **buf)
+{
+    uint32_t ibm, fraction;
+    int sign, exp;
+
+    ibm = segy.pimpl->read_32(buf);
+    sign = ibm >> 31 ? -1 : 1;
+    exp = ibm >> 24 & 0x7f;
+    fraction = ibm & 0x00ffffff;
+
+    return fraction / pow(2, 24) * pow(16, exp - 64) * sign;
 }
 
 double isegy::impl::dbl_from_IEEE_float(const isegy &segy, const char **buf)
