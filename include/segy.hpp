@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include <valarray>
+#include <vector>
 
 ///
 /// \namespace sedaman
@@ -153,7 +154,7 @@ public:
     static constexpr int BIN_HEADER_LEN = 400;
 protected:
     std::string const &file_name();
-    std::string &text_hdr();
+    std::vector<std::string> &text_hdrs();
     binary_header &bin_hdr();
     void set_bin_hdr(binary_header &&b_h);
     void set_text_hdr(std::string &&t_h);

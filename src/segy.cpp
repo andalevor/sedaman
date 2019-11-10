@@ -4,6 +4,7 @@ using std::make_unique;
 using std::move;
 using std::string;
 using std::valarray;
+using std::vector;
 
 namespace sedaman {
 static uint8_t constexpr e2a[256] = {
@@ -170,14 +171,14 @@ class segy::impl {
 public:
     impl(string const &file_name, binary_header const &bin_hdr,
          string const &text_hdr)
-        : d_file_name(file_name), d_text_header(text_hdr),
+        : d_file_name(file_name), d_text_headers{text_hdr},
           d_bin_hdr(bin_hdr) {}
     impl(string &&file_name, binary_header &&bin_hdr, string &&text_hdr)
-        : d_file_name(move(file_name)), d_text_header(move(text_hdr)),
+        : d_file_name(move(file_name)), d_text_headers{move(text_hdr)},
           d_bin_hdr(move(bin_hdr)) {}
 
     string d_file_name;
-    string d_text_header;
+    vector<string> d_text_headers;
     binary_header d_bin_hdr;
 };
 
@@ -195,6 +196,5 @@ segy::~segy() = default;
 string const &segy::file_name() {return pimpl->d_file_name;}
 segy::binary_header &segy::bin_hdr() {return pimpl->d_bin_hdr;}
 void segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
-string &segy::text_hdr() {return pimpl->d_text_header;}
-void segy::set_text_hdr(string &&t_h) {pimpl->d_text_header = t_h;}
+vector<string> &segy::text_hdrs() {return pimpl->d_text_headers;}
 } // namespace sedaman

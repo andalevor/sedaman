@@ -27,6 +27,7 @@ private:
     void fill_bin_header(isegy &segy, const char *buf);
     void assign_raw_readers(isegy &segy);
     void assign_sample_reader(isegy &segy);
+    void read_ext_text_headers(isegy &segy, ifstream &file);
     function<uint8_t(const char **)> read_8;
     function<uint16_t(const char **)> read_16;
     function<uint16_t(const char **)> read_24;
@@ -58,11 +59,12 @@ void isegy::impl::open_isegy(isegy &segy)
     file.open(segy.file_name(), ifstream::binary);
     char text_buf[segy::TEXT_HEADER_LEN];
     file.read(text_buf, segy::TEXT_HEADER_LEN);
-    segy.set_text_hdr(string(text_buf, segy::TEXT_HEADER_LEN));
+    segy.text_hdrs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
     char bin_buf[segy::BIN_HEADER_LEN];
     file.read(bin_buf, segy::BIN_HEADER_LEN);
     fill_bin_header(segy, bin_buf);
     assign_sample_reader(segy);
+    read_ext_text_headers(segy, file);
 }
 
 void isegy::impl::fill_bin_header(isegy &segy, const char *buf)
@@ -222,6 +224,29 @@ void isegy::impl::assign_sample_reader(isegy &segy)
     }
 }
 
+void isegy::impl::read_ext_text_headers(isegy &segy, ifstream &file)
+{
+    int num = segy.bin_hdr().ext_text_headers_num;
+    if (!num)
+        return;
+    char buf[segy::TEXT_HEADER_LEN];
+    if (num == -1) {
+        string end_stanza = "((SEG: EndText))";
+        file.read(buf, segy::TEXT_HEADER_LEN);
+        while (1) {
+            file.read(buf, segy::TEXT_HEADER_LEN);
+            segy.text_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
+            if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
+                return;
+        }
+    } else {
+        for (int i = segy.bin_hdr().ext_text_headers_num; i; --i) {
+            file.read(buf, segy::TEXT_HEADER_LEN);
+            segy.text_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
+        }
+    }
+}
+
 double isegy::impl::dbl_from_ibm_float(const isegy &segy, const char **buf)
 {
     uint32_t ibm, fraction;
@@ -336,7 +361,7 @@ double isegy::impl::dbl_from_int8(const isegy &segy, const char **buf)
 
 std::string const &isegy::text_header()
 {
-    return segy::text_hdr();
+    return segy::text_hdrs()[0];
 }
 
 isegy::isegy(string const &file_name)
