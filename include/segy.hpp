@@ -10,17 +10,11 @@
 #ifndef SEDAMAN_SEGY_HPP
 #define SEDAMAN_SEGY_HPP
 
-#include <cfloat>
-#include <climits>
 #include <cstdint>
 #include <experimental/propagate_const>
 #include <memory>
 #include <string>
 #include <valarray>
-
-static_assert(CHAR_BIT == 8, "CHAR_BIT != 8\n");
-static_assert(FLT_RADIX == 2, "FLT_RADIX != 2\n");
-static_assert(DBL_MANT_DIG == 53, "DBL_MAN_DIG != 53\n");
 
 ///
 /// \namespace sedaman
@@ -108,7 +102,6 @@ public:
         /// \brief Textual desription of binary header members.
         ///
         static const std::valarray<std::string> names;
-        ;
     };
     ///
     /// \param file_name Name of SEGY file.

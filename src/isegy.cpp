@@ -1,3 +1,5 @@
+#include <cfloat>
+#include <climits>
 #include <functional>
 #include <fstream>
 #include "isegy.hpp"
@@ -168,12 +170,20 @@ void isegy::impl::assign_sample_reader(isegy &segy)
         {return dbl_from_int16(segy, buf);};
         break;
     case 5:
-        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
-        {return dbl_from_IEEE_float(segy, buf);};
+        if (FLT_RADIX == 2 && DBL_MANT_DIG == 53)
+            segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+            {return dbl_from_IEEE_float(segy, buf);};
+        else
+            segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+            {return dbl_from_IEEE_float_not_native(segy, buf);};
         break;
     case 6:
-        segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
-        {return dbl_from_IEEE_double(segy, buf);};
+        if (FLT_RADIX == 2 && DBL_MANT_DIG == 53)
+            segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+            {return dbl_from_IEEE_double(segy, buf);};
+        else
+            segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
+            {return dbl_from_IEEE_double_not_native(segy, buf);};
         break;
     case 7:
         segy.pimpl->read_sample = [this] (isegy &segy, const char **buf)
