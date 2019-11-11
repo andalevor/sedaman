@@ -10,7 +10,9 @@ using std::function;
 using std::ifstream;
 using std::make_unique;
 using std::move;
+using std::streampos;
 using std::string;
+using std::vector;
 
 namespace sedaman {
 class isegy::impl {
@@ -23,6 +25,9 @@ public:
     double samp_int_orig;
     int32_t samp_per_tr_orig;
     int32_t ens_fold;
+    streampos first_trace_pos;
+    streampos curr_pos;
+    streampos end_of_data;
 private:
     void fill_bin_header(isegy &segy, const char *buf);
     void assign_raw_readers(isegy &segy);
@@ -65,6 +70,24 @@ void isegy::impl::open_isegy(isegy &segy)
     fill_bin_header(segy, bin_buf);
     assign_sample_reader(segy);
     read_ext_text_headers(segy, file);
+    if (segy.bin_hdr().byte_off_of_first_tr) {
+        first_trace_pos = static_cast<long>(segy.bin_hdr().byte_off_of_first_tr);
+    } else {
+        first_trace_pos = file.tellg();
+        if (first_trace_pos == -1)
+            throw(sexception(__FILE__, __LINE__, "unable to get first byte after headers"));
+    }
+    if (segy.bin_hdr().num_of_trailer_stanza == -1) {
+        if (!segy.bin_hdr().num_of_tr_in_file)
+            throw(sexception(__FILE__, __LINE__, "unable to determine end of trace data"));
+    } else if (segy.bin_hdr().num_of_trailer_stanza) {
+        file.seekg(segy.bin_hdr().num_of_trailer_stanza * segy::TEXT_HEADER_LEN,
+                   std::ios_base::end);
+        for (int32_t i = segy.bin_hdr().num_of_trailer_stanza; i; --i) {
+            file.read(text_buf, segy::TEXT_HEADER_LEN);
+            segy.trail_stnzs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
+        }
+    }
 }
 
 void isegy::impl::fill_bin_header(isegy &segy, const char *buf)
@@ -359,9 +382,9 @@ double isegy::impl::dbl_from_int8(const isegy &segy, const char **buf)
     return static_cast<double>(static_cast<int8_t>(segy.pimpl->read_8(buf)));
 }
 
-std::string const &isegy::text_header()
+vector<string> const &isegy::text_headers()
 {
-    return segy::text_hdrs()[0];
+    return segy::text_hdrs();
 }
 
 isegy::isegy(string const &file_name)

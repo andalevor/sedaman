@@ -43,7 +43,7 @@ public:
     /// \brief segy text header getter
     /// \return text header
     ///
-    std::string const &text_header();
+    std::vector<std::string> const &text_headers();
     virtual ~isegy();
 private:
     class impl;

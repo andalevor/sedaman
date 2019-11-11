@@ -155,6 +155,7 @@ public:
 protected:
     std::string const &file_name();
     std::vector<std::string> &text_hdrs();
+    std::vector<std::string> &trail_stnzs();
     binary_header &bin_hdr();
     void set_bin_hdr(binary_header &&b_h);
     void set_text_hdr(std::string &&t_h);

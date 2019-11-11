@@ -179,6 +179,7 @@ public:
 
     string d_file_name;
     vector<string> d_text_headers;
+    vector<string> d_trailer_stanzas;
     binary_header d_bin_hdr;
 };
 
@@ -197,4 +198,5 @@ string const &segy::file_name() {return pimpl->d_file_name;}
 segy::binary_header &segy::bin_hdr() {return pimpl->d_bin_hdr;}
 void segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
 vector<string> &segy::text_hdrs() {return pimpl->d_text_headers;}
+vector<string> &segy::trail_stnzs() {return pimpl->d_trailer_stanzas;}
 } // namespace sedaman
