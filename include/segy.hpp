@@ -106,20 +106,14 @@ public:
     };
     ///
     /// \param file_name Name of SEGY file.
-    /// \param bin_hdr (optional)SEGY binary header.
-    /// \param text_hdr (optional)SEGY text header.
     ///
-    segy(std::string const &file_name,
-         binary_header const &bin_hdr = binary_header(),
-         std::string const &text_hdr = std::string());
+    segy(std::string const &file_name);
     ///
     /// \param file_name Name of SEGY file.
     /// \param bin_hdr (optional)SEGY binary header.
     /// \param text_hdr (optional)SEGY text header.
     ///
-    segy(std::string &&file_name,
-         binary_header &&bin_hdr = binary_header(),
-         std::string &&text_hdr = std::string());
+    segy(std::string &&file_name);
     virtual ~segy();
     ///
     /// \fn ebcdic_to_ascii
@@ -154,11 +148,11 @@ public:
     static constexpr int BIN_HEADER_LEN = 400;
 protected:
     std::string const &file_name();
-    std::vector<std::string> &text_hdrs();
+    std::vector<std::string> &txt_hdrs();
     std::vector<std::string> &trail_stnzs();
     binary_header &bin_hdr();
+    void set_bin_hdr(const binary_header &b_h);
     void set_bin_hdr(binary_header &&b_h);
-    void set_text_hdr(std::string &&t_h);
 private:
     class impl;
     std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;

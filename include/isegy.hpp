@@ -39,11 +39,17 @@ public:
     ///
     isegy(std::string &&file_name);
     ///
-    /// \fn text_hdr
-    /// \brief segy text header getter
-    /// \return text header
+    /// \fn text_header
+    /// \brief segy text headers getter
+    /// \return vector with text headers
     ///
     std::vector<std::string> const &text_headers();
+    ///
+    /// \fn trailer_stanzas
+    /// \brief segy trailer stanzas getter
+    /// \return vector with text headers
+    ///
+    std::vector<std::string> const &trailer_stanzas();
     virtual ~isegy();
 private:
     class impl;

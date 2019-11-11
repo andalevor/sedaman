@@ -64,7 +64,7 @@ void isegy::impl::open_isegy(isegy &segy)
     file.open(segy.file_name(), ifstream::binary);
     char text_buf[segy::TEXT_HEADER_LEN];
     file.read(text_buf, segy::TEXT_HEADER_LEN);
-    segy.text_hdrs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
+    segy.txt_hdrs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
     char bin_buf[segy::BIN_HEADER_LEN];
     file.read(bin_buf, segy::BIN_HEADER_LEN);
     fill_bin_header(segy, bin_buf);
@@ -80,6 +80,7 @@ void isegy::impl::open_isegy(isegy &segy)
     if (segy.bin_hdr().num_of_trailer_stanza == -1) {
         if (!segy.bin_hdr().num_of_tr_in_file)
             throw(sexception(__FILE__, __LINE__, "unable to determine end of trace data"));
+        // TODO: search for the byte offset of first stanza
     } else if (segy.bin_hdr().num_of_trailer_stanza) {
         file.seekg(segy.bin_hdr().num_of_trailer_stanza * segy::TEXT_HEADER_LEN,
                    std::ios_base::end);
@@ -258,14 +259,14 @@ void isegy::impl::read_ext_text_headers(isegy &segy, ifstream &file)
         file.read(buf, segy::TEXT_HEADER_LEN);
         while (1) {
             file.read(buf, segy::TEXT_HEADER_LEN);
-            segy.text_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
+            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
             if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
                 return;
         }
     } else {
         for (int i = segy.bin_hdr().ext_text_headers_num; i; --i) {
             file.read(buf, segy::TEXT_HEADER_LEN);
-            segy.text_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
+            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
         }
     }
 }
@@ -384,7 +385,12 @@ double isegy::impl::dbl_from_int8(const isegy &segy, const char **buf)
 
 vector<string> const &isegy::text_headers()
 {
-    return segy::text_hdrs();
+    return txt_hdrs();
+}
+
+vector<string> const &isegy::trailer_stanzas()
+{
+    return trail_stnzs();
 }
 
 isegy::isegy(string const &file_name)
