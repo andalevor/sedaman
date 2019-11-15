@@ -393,6 +393,11 @@ vector<string> const &isegy::trailer_stanzas()
     return trail_stnzs();
 }
 
+segy::binary_header const &isegy::binary_header()
+{
+    return bin_hdr();
+}
+
 isegy::isegy(string const &file_name)
     : segy(file_name), pimpl(make_unique<impl>())
 {

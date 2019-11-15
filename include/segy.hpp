@@ -86,23 +86,23 @@ public:
         /// \brief Constants to use with names.
         /// \see names
         ///
-        enum {JOB_ID, LINE_NUM, REEL_NUM, TR_PER_ENS, AUX_PER_ENS, SAMP_INT,
-              SAMP_INT_ORIG, SAMP_PER_TR, SAMP_PER_TR_ORIG, FORMAT_CODE,
-              ENS_FOLD, SORT_CODE, VERT_SUM_CODE, SW_FREQ_AT_START,
-              SW_FREQ_AT_END, SW_LENGTH, SW_TYPE_CODE, SW_CH_TR_NUM,
-              TAPER_AT_START, TAPER_AT_END, TAPER_TYPE, CORR_TRACES,
-              BIN_GAIN_RECOV, AMP_RECOV_METH, MEASURE_SYSTEM, IMPULSE_SIG_POL,
-              VIB_POL_CODE, EXT_TR_PER_ENS, EXT_AUX_PER_ENS, EXT_SAMP_PER_TR,
-              EXT_SAMP_INT, EXT_SAMP_INT_ORIG, EXT_SAMP_PER_TR_ORIG,
-              EXT_ENS_FOLD, ENDIANNESS, SEGY_REV_MAJOR_VER, SEGY_REV_MINOR_VER,
-              FIXED_TR_LENGTH, EXT_TEXT_HEADERS_NUM, MAX_NUM_ADD_TR_HEADERS,
-              TIME_BASIS_CODE, NUM_OF_TR_IN_FILE, BYTE_OFF_OF_FIRST_TR,
-              NUM_OF_TRAILER_STANZA};
-        ///
-        /// \var names
-        /// \brief Textual desription of binary header members.
-        ///
-        static const std::valarray<std::string> names;
+        enum class name {
+            JOB_ID, LINE_NUM, REEL_NUM, TR_PER_ENS, AUX_PER_ENS, SAMP_INT,
+            SAMP_INT_ORIG, SAMP_PER_TR, SAMP_PER_TR_ORIG, FORMAT_CODE,
+            ENS_FOLD, SORT_CODE, VERT_SUM_CODE, SW_FREQ_AT_START,
+            SW_FREQ_AT_END, SW_LENGTH, SW_TYPE_CODE, SW_CH_TR_NUM,
+            TAPER_AT_START, TAPER_AT_END, TAPER_TYPE, CORR_TRACES,
+            BIN_GAIN_RECOV, AMP_RECOV_METH, MEASURE_SYSTEM, IMPULSE_SIG_POL,
+            VIB_POL_CODE, EXT_TR_PER_ENS, EXT_AUX_PER_ENS, EXT_SAMP_PER_TR,
+            EXT_SAMP_INT, EXT_SAMP_INT_ORIG, EXT_SAMP_PER_TR_ORIG,
+            EXT_ENS_FOLD, ENDIANNESS, SEGY_REV_MAJOR_VER, SEGY_REV_MINOR_VER,
+            FIXED_TR_LENGTH, EXT_TEXT_HEADERS_NUM, MAX_NUM_ADD_TR_HEADERS,
+            TIME_BASIS_CODE, NUM_OF_TR_IN_FILE, BYTE_OFF_OF_FIRST_TR,
+            NUM_OF_TRAILER_STANZA
+        };
+        static std::string const &name_as_string(name n);
+    private:
+        static std::valarray<std::string> const strings;
     };
     ///
     /// \param file_name Name of SEGY file.

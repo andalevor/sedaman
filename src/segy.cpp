@@ -45,7 +45,7 @@ static uint8_t constexpr a2e[256] = {
     0x8c,0x49,0xcd,0xce,0xcb,0xcf,0xcc,0xe1,0x70,0xdd,0xde,0xdb,0xdc,0x8d,0x8e,0xdf
 };
 
-const valarray<string> segy::binary_header::names =
+const valarray<string> segy::binary_header::strings =
 {
     "Job identification number",
     "Line number",
@@ -123,6 +123,11 @@ string segy::ascii_to_ebcdic(const string &ascii)
 string segy::ascii_to_ebcdic(string &&ascii)
 {
     return ascii_to_ebcdic(ascii);
+}
+
+string const &segy::binary_header::name_as_string(name n)
+{
+    return strings[static_cast<decltype (strings.size())>(n)];
 }
 
 const char *segy::default_text_header =

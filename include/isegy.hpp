@@ -50,6 +50,12 @@ public:
     /// \return vector with text headers
     ///
     std::vector<std::string> const &trailer_stanzas();
+    ///
+    /// \fn binary_header
+    /// \brief segy binary header getter
+    /// \return binary header
+    ///
+    binary_header const &binary_header();
     virtual ~isegy();
 private:
     class impl;

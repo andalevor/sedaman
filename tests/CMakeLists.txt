@@ -7,3 +7,7 @@ target_link_libraries(ascii_ebcdic_conversion sedaman)
 add_executable(print_text_header print_text_header.cpp)
 add_test(print_text_header_test print_text_header ${PROJECT_SOURCE_DIR}/samples/sample_ibm.sgy)
 target_link_libraries(print_text_header sedaman)
+
+add_executable(print_bin_header print_bin_header.cpp)
+add_test(print_bin_header_test print_bin_header ${PROJECT_SOURCE_DIR}/samples/sample_ibm.sgy)
+target_link_libraries(print_bin_header sedaman)
