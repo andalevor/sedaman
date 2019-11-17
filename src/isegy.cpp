@@ -33,6 +33,7 @@ private:
     void assign_raw_readers(isegy &segy);
     void assign_sample_reader(isegy &segy);
     void read_ext_text_headers(isegy &segy, ifstream &file);
+    void assign_bytes_per_sample(isegy &segy);
     function<uint8_t(const char **)> read_8;
     function<uint16_t(const char **)> read_16;
     function<uint16_t(const char **)> read_24;
@@ -69,6 +70,7 @@ void isegy::impl::open_isegy(isegy &segy)
     file.read(bin_buf, segy::BIN_HEADER_LEN);
     fill_bin_header(segy, bin_buf);
     assign_sample_reader(segy);
+    assign_bytes_per_sample(segy);
     read_ext_text_headers(segy, file);
     if (segy.bin_hdr().byte_off_of_first_tr) {
         first_trace_pos = static_cast<long>(segy.bin_hdr().byte_off_of_first_tr);
@@ -89,6 +91,8 @@ void isegy::impl::open_isegy(isegy &segy)
             segy.trail_stnzs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
         }
     }
+    segy.buffer().reserve(static_cast<decltype (segy.buffer().size())>(
+                              samp_per_tr * segy.bytes_per_sample()));
 }
 
 void isegy::impl::fill_bin_header(isegy &segy, const char *buf)
@@ -269,6 +273,35 @@ void isegy::impl::read_ext_text_headers(isegy &segy, ifstream &file)
             segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
         }
     }
+}
+
+void isegy::impl::assign_bytes_per_sample(isegy &segy)
+{
+    switch (segy.bin_hdr().format_code) {
+    case 1:
+    case 2:
+    case 4:
+    case 5:
+    case 10:
+        segy.set_bytes_per_sample(4);
+        break;
+    case 3:
+    case 11:
+        segy.set_bytes_per_sample(2);
+        break;
+    case 6:
+    case 9:
+    case 12:
+        segy.set_bytes_per_sample(8);
+        break;
+    case 7:
+    case 15:
+        segy.set_bytes_per_sample(3);
+        break;
+    case 8:
+    case 16:
+        segy.set_bytes_per_sample(1);
+    };
 }
 
 double isegy::impl::dbl_from_ibm_float(const isegy &segy, const char **buf)

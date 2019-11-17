@@ -101,8 +101,6 @@ public:
             NUM_OF_TRAILER_STANZA
         };
         static std::string const &name_as_string(name n);
-    private:
-        static std::valarray<std::string> const strings;
     };
     ///
     /// \param file_name Name of SEGY file.
@@ -153,6 +151,9 @@ protected:
     binary_header &bin_hdr();
     void set_bin_hdr(const binary_header &b_h);
     void set_bin_hdr(binary_header &&b_h);
+    std::vector<char> &buffer();
+    int bytes_per_sample();
+    void set_bytes_per_sample(int n);
 private:
     class impl;
     std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;

@@ -7,6 +7,37 @@ using std::valarray;
 using std::vector;
 
 namespace sedaman {
+class segy::impl {
+public:
+    impl(string const &file_name) : d_file_name(file_name) {}
+    impl(string &&file_name) : d_file_name(move(file_name)) {}
+
+    static std::valarray<std::string> const strings;
+
+    string d_file_name;
+    vector<string> d_text_headers;
+    vector<string> d_trailer_stanzas;
+    binary_header d_bin_hdr;
+    vector<char> buf;
+    int bytes_per_sample;
+};
+
+segy::segy(string const &file_name) : pimpl(make_unique<impl>(file_name)) {}
+
+segy::segy(string &&file_name) : pimpl(make_unique<impl>(move(file_name))) {}
+
+segy::~segy() = default;
+
+string const &segy::file_name() {return pimpl->d_file_name;}
+segy::binary_header &segy::bin_hdr() {return pimpl->d_bin_hdr;}
+void segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
+void segy::set_bin_hdr(const binary_header &b_h) {pimpl->d_bin_hdr = b_h;}
+vector<string> &segy::txt_hdrs() {return pimpl->d_text_headers;}
+vector<string> &segy::trail_stnzs() {return pimpl->d_trailer_stanzas;}
+vector<char> &segy::buffer() {return  pimpl->buf;}
+int segy::bytes_per_sample() {return pimpl->bytes_per_sample;}
+void segy::set_bytes_per_sample(int n) {pimpl->bytes_per_sample = n;}
+
 static uint8_t constexpr e2a[256] = {
     0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,
     0x10,0x11,0x12,0x13,0x9D,0x85,0x08,0x87,0x18,0x19,0x92,0x8F,0x1C,0x1D,0x1E,0x1F,
@@ -45,7 +76,7 @@ static uint8_t constexpr a2e[256] = {
     0x8c,0x49,0xcd,0xce,0xcb,0xcf,0xcc,0xe1,0x70,0xdd,0xde,0xdb,0xdc,0x8d,0x8e,0xdf
 };
 
-const valarray<string> segy::binary_header::strings =
+const valarray<string> segy::impl::strings =
 {
     "Job identification number",
     "Line number",
@@ -127,7 +158,7 @@ string segy::ascii_to_ebcdic(string &&ascii)
 
 string const &segy::binary_header::name_as_string(name n)
 {
-    return strings[static_cast<decltype (strings.size())>(n)];
+    return impl::strings[static_cast<decltype (impl::strings.size())>(n)];
 }
 
 const char *segy::default_text_header =
@@ -171,28 +202,4 @@ const char *segy::default_text_header =
         "C38                                                                             "
         "C39 SEG-Y_REV2.0                                                                "
         "C40 END TEXTUAL HEADER                                                          ";
-
-class segy::impl {
-public:
-    impl(string const &file_name) : d_file_name(file_name) {}
-    impl(string &&file_name) : d_file_name(move(file_name)) {}
-
-    string d_file_name;
-    vector<string> d_text_headers;
-    vector<string> d_trailer_stanzas;
-    binary_header d_bin_hdr;
-};
-
-segy::segy(string const &file_name) : pimpl(make_unique<impl>(file_name)) {}
-
-segy::segy(string &&file_name) : pimpl(make_unique<impl>(move(file_name))) {}
-
-segy::~segy() = default;
-
-string const &segy::file_name() {return pimpl->d_file_name;}
-segy::binary_header &segy::bin_hdr() {return pimpl->d_bin_hdr;}
-void segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
-void segy::set_bin_hdr(const binary_header &b_h) {pimpl->d_bin_hdr = b_h;}
-vector<string> &segy::txt_hdrs() {return pimpl->d_text_headers;}
-vector<string> &segy::trail_stnzs() {return pimpl->d_trailer_stanzas;}
 } // namespace sedaman
