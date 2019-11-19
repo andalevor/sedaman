@@ -105,13 +105,13 @@ public:
     ///
     /// \param file_name Name of SEGY file.
     ///
-    segy(std::string const &file_name);
+    explicit segy(std::string const &file_name);
     ///
     /// \param file_name Name of SEGY file.
     /// \param bin_hdr (optional)SEGY binary header.
     /// \param text_hdr (optional)SEGY text header.
     ///
-    segy(std::string &&file_name);
+    explicit segy(std::string &&file_name) noexcept;
     virtual ~segy();
     ///
     /// \fn ebcdic_to_ascii
@@ -135,15 +135,20 @@ public:
     ///
     static const char *default_text_header;
     ///
-    /// \var TEXT_HEADER_LEN
+    /// \var TEXT_HEADER_SIZE
     /// \brief SEGY text header length in bytes
     ///
-    static constexpr int TEXT_HEADER_LEN = 3200;
+    static constexpr auto TEXT_HEADER_SIZE = 3200;
     ///
-    /// \var BIN_HEADER_LEN
+    /// \var BIN_HEADER_SIZE
     /// \brief SEGY binary header length in bytes
     ///
-    static constexpr int BIN_HEADER_LEN = 400;
+    static constexpr auto BIN_HEADER_SIZE = 400;
+    ///
+    /// \var TR_HEADER_SIZE
+    /// \brief SEGY trace header length in bytes
+    ///
+    static constexpr auto TR_HEADER_SIZE = 240;
 protected:
     std::string const &file_name();
     std::vector<std::string> &txt_hdrs();

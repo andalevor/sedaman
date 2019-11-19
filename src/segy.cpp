@@ -24,7 +24,7 @@ public:
 
 segy::segy(string const &file_name) : pimpl(make_unique<impl>(file_name)) {}
 
-segy::segy(string &&file_name) : pimpl(make_unique<impl>(move(file_name))) {}
+segy::segy(string &&file_name) noexcept : pimpl(make_unique<impl>(move(file_name))) {}
 
 segy::~segy() = default;
 

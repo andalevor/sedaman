@@ -18,7 +18,7 @@ public:
 trace::trace(const trace &t)
     : pimpl(make_unique<impl>(t.pimpl->d_header, t.pimpl->d_samples)) {}
 trace::trace(trace &&t) noexcept
-    : pimpl(move(t.pimpl)) {}
+    : pimpl(make_unique<impl>(move(t.pimpl->d_header), move(t.pimpl->d_samples))) {}
 trace::trace(const valarray<int32_t> &h, const valarray<double> &s)
     : pimpl(make_unique<impl>(h, s)) {}
 trace::trace(valarray<int32_t> &&h, valarray<double> &&s)
@@ -35,7 +35,7 @@ trace &trace::operator=(const trace &o)
     return *this;
 }
 
-trace &trace::operator=(trace &&o)
+trace &trace::operator=(trace &&o) noexcept
 {
     if (&o != this)
     {

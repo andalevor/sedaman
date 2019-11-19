@@ -17,7 +17,8 @@ using std::vector;
 namespace sedaman {
 class isegy::impl {
 public:
-    void open_isegy(isegy &segy);
+    impl(isegy &segy, string config_name);
+    string config_name;
     int32_t tr_per_ens;
     int32_t aux_per_ens;
     int32_t samp_per_tr;
@@ -28,18 +29,18 @@ public:
     streampos first_trace_pos;
     streampos curr_pos;
     streampos end_of_data;
-private:
-    void fill_bin_header(isegy &segy, const char *buf);
-    void assign_raw_readers(isegy &segy);
-    void assign_sample_reader(isegy &segy);
-    void read_ext_text_headers(isegy &segy, ifstream &file);
-    void assign_bytes_per_sample(isegy &segy);
     function<uint8_t(const char **)> read_8;
     function<uint16_t(const char **)> read_16;
     function<uint16_t(const char **)> read_24;
     function<uint32_t(const char **)> read_32;
     function<uint64_t(const char **)> read_64;
     function<double(isegy &segy, const char **)> read_sample;
+private:
+    void fill_bin_header(isegy &segy, const char *buf);
+    void assign_raw_readers(isegy &segy);
+    void assign_sample_reader(isegy &segy);
+    void read_ext_text_headers(isegy &segy, ifstream &file);
+    void assign_bytes_per_sample(isegy &segy);
     //functions for samples reading
     double dbl_from_ibm_float(const isegy &segy, const char **buf);
     double dbl_from_IEEE_float(const isegy &segy, const char **buf);
@@ -58,16 +59,29 @@ private:
     double dbl_from_uint8(const isegy &segy, const char **buf);
 };
 
-void isegy::impl::open_isegy(isegy &segy)
+//trace isegy::read_trace()
+//{
+//    ifstream file;
+//    file.exceptions(ifstream::failbit | ifstream::badbit);
+//    file.open(file_name(), ifstream::binary);
+//    char hdr_buf[segy::TR_HEADER_SIZE];
+//    file.seekg(pimpl->curr_pos);
+//    file.read(hdr_buf, segy::TR_HEADER_SIZE);
+//    const char *p = hdr_buf + 114;
+//    int samp_num = pimpl->read_16(&p);
+//}
+
+isegy::impl::impl(isegy &segy, string cfg_name)
 {
+    config_name = cfg_name;
     ifstream file;
     file.exceptions(ifstream::failbit | ifstream::badbit);
     file.open(segy.file_name(), ifstream::binary);
-    char text_buf[segy::TEXT_HEADER_LEN];
-    file.read(text_buf, segy::TEXT_HEADER_LEN);
-    segy.txt_hdrs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
-    char bin_buf[segy::BIN_HEADER_LEN];
-    file.read(bin_buf, segy::BIN_HEADER_LEN);
+    char text_buf[segy::TEXT_HEADER_SIZE];
+    file.read(text_buf, segy::TEXT_HEADER_SIZE);
+    segy.txt_hdrs().push_back(string(text_buf, segy::TEXT_HEADER_SIZE));
+    char bin_buf[segy::BIN_HEADER_SIZE];
+    file.read(bin_buf, segy::BIN_HEADER_SIZE);
     fill_bin_header(segy, bin_buf);
     assign_sample_reader(segy);
     assign_bytes_per_sample(segy);
@@ -79,16 +93,17 @@ void isegy::impl::open_isegy(isegy &segy)
         if (first_trace_pos == -1)
             throw(sexception(__FILE__, __LINE__, "unable to get first byte after headers"));
     }
+    curr_pos = first_trace_pos;
     if (segy.bin_hdr().num_of_trailer_stanza == -1) {
         if (!segy.bin_hdr().num_of_tr_in_file)
             throw(sexception(__FILE__, __LINE__, "unable to determine end of trace data"));
         // TODO: search for the byte offset of first stanza
     } else if (segy.bin_hdr().num_of_trailer_stanza) {
-        file.seekg(segy.bin_hdr().num_of_trailer_stanza * segy::TEXT_HEADER_LEN,
+        file.seekg(segy.bin_hdr().num_of_trailer_stanza * segy::TEXT_HEADER_SIZE,
                    std::ios_base::end);
         for (int32_t i = segy.bin_hdr().num_of_trailer_stanza; i; --i) {
-            file.read(text_buf, segy::TEXT_HEADER_LEN);
-            segy.trail_stnzs().push_back(string(text_buf, segy::TEXT_HEADER_LEN));
+            file.read(text_buf, segy::TEXT_HEADER_SIZE);
+            segy.trail_stnzs().push_back(string(text_buf, segy::TEXT_HEADER_SIZE));
         }
     }
     segy.buffer().reserve(static_cast<decltype (segy.buffer().size())>(
@@ -257,20 +272,20 @@ void isegy::impl::read_ext_text_headers(isegy &segy, ifstream &file)
     int num = segy.bin_hdr().ext_text_headers_num;
     if (!num)
         return;
-    char buf[segy::TEXT_HEADER_LEN];
+    char buf[segy::TEXT_HEADER_SIZE];
     if (num == -1) {
         string end_stanza = "((SEG: EndText))";
-        file.read(buf, segy::TEXT_HEADER_LEN);
+        file.read(buf, segy::TEXT_HEADER_SIZE);
         while (1) {
-            file.read(buf, segy::TEXT_HEADER_LEN);
-            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
+            file.read(buf, segy::TEXT_HEADER_SIZE);
+            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_SIZE));
             if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
                 return;
         }
     } else {
         for (int i = segy.bin_hdr().ext_text_headers_num; i; --i) {
-            file.read(buf, segy::TEXT_HEADER_LEN);
-            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_LEN));
+            file.read(buf, segy::TEXT_HEADER_SIZE);
+            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_SIZE));
         }
     }
 }
@@ -301,8 +316,11 @@ void isegy::impl::assign_bytes_per_sample(isegy &segy)
     case 8:
     case 16:
         segy.set_bytes_per_sample(1);
-    };
+        break;
+    }
 }
+
+
 
 double isegy::impl::dbl_from_ibm_float(const isegy &segy, const char **buf)
 {
@@ -431,17 +449,11 @@ segy::binary_header const &isegy::binary_header()
     return bin_hdr();
 }
 
-isegy::isegy(string const &file_name)
-    : segy(file_name), pimpl(make_unique<impl>())
-{
-    pimpl->open_isegy(*this);
-}
+isegy::isegy(string const &file_name, string const &config_name)
+    : segy(file_name), pimpl(make_unique<impl>(*this, config_name)) {}
 
-isegy::isegy(string &&file_name)
-    : segy(move(file_name)), pimpl(make_unique<impl>())
-{
-    pimpl->open_isegy(*this);
-}
+isegy::isegy(string &&file_name, std::string &&config_name) noexcept
+    : segy(move(file_name)), pimpl(make_unique<impl>(*this, move(config_name))) {}
 
 isegy::~isegy() = default;
 }

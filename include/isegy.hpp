@@ -11,6 +11,7 @@
 #define SEDAMAN_ISEGY_HPP
 
 #include "segy.hpp"
+#include "trace.hpp"
 
 ///
 /// \namespace sedaman
@@ -30,14 +31,14 @@ public:
     /// \param text_hdr (optional)SEGY text header.
     /// \throws std::ifstream::failure In case of file operations falure
     ///
-    isegy(std::string const &file_name);
+    isegy(std::string const &segy_name, std::string const &config_name = "");
     ///
     /// \param file_name Name of SEGY file.
     /// \param bin_hdr (optional)SEGY binary header.
     /// \param text_hdr (optional)SEGY text header.
     /// \throws std::ifstream::failure In case of file operations falure
     ///
-    isegy(std::string &&file_name);
+    isegy(std::string &&file_name, std::string &&config_name = "") noexcept;
     ///
     /// \fn text_header
     /// \brief segy text headers getter
@@ -56,6 +57,12 @@ public:
     /// \return binary header
     ///
     binary_header const &binary_header();
+    ///
+    /// \fn read_trace
+    /// \brief reads one trace from file
+    /// \return trace
+    ///
+    //trace read_trace();
     virtual ~isegy();
 private:
     class impl;

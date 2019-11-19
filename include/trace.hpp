@@ -46,7 +46,7 @@ public:
     trace(std::valarray<int32_t> &&hdr, std::valarray<double> &&smpl);
     ~trace();
     trace &operator=(const trace &other);
-    trace &operator=(trace &&other);
+    trace &operator=(trace &&other) noexcept;
     ///
     /// \fn header
     /// \brief Trace header getter
@@ -59,6 +59,9 @@ public:
     /// \return Samples values
     ///
     std::valarray<double> const &samples();
+    int32_t seq_num_in_line();
+    int32_t seq_num_in_segy();
+    int32_t ffid();
 private:
     class impl;
     std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;

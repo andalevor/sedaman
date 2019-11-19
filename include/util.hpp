@@ -1,6 +1,6 @@
 ///
 /// \file util.hpp
-/// \brief header file with isegy class declaration
+/// \brief header file with utility functions
 ///
 /// \author andalevor
 ///
@@ -17,6 +17,7 @@
 /// \brief General namespace for sedaman library.
 ///
 namespace sedaman {
+
 ///
 /// \fn read
 /// \brief reads desired type
@@ -32,6 +33,7 @@ T read(const char **buf)
     *buf += sizeof(T);
     return result;
 }
+
 ///
 /// \fn swap
 /// \brief swaps bytes
