@@ -1,5 +1,5 @@
 ///
-/// \file segy.hpp
+/// \file common.hpp
 /// \brief header file with segy class declaration
 ///
 /// \author andalevor
@@ -7,8 +7,8 @@
 /// \date   2019/06/07
 ///
 
-#ifndef SEDAMAN_SEGY_HPP
-#define SEDAMAN_SEGY_HPP
+#ifndef SEDAMAN_COMMON_SEGY_HPP
+#define SEDAMAN_COMMON_SEGY_HPP
 
 #include <cstdint>
 #include <experimental/propagate_const>
@@ -23,13 +23,13 @@
 ///
 namespace sedaman {
 ///
-/// \class segy
+/// \class common_segy
 /// \brief Class with common SEGY parts.
 /// Holds common data and members for isegy and osegy classes.
 /// \see isegy
 /// \see osegy
 ///
-class segy {
+class common_segy {
 public:
     ///
     /// \class bin_header
@@ -105,14 +105,14 @@ public:
     ///
     /// \param file_name Name of SEGY file.
     ///
-    explicit segy(std::string const &file_name);
+    explicit common_segy(std::string const &file_name);
     ///
     /// \param file_name Name of SEGY file.
     /// \param bin_hdr (optional)SEGY binary header.
     /// \param text_hdr (optional)SEGY text header.
     ///
-    explicit segy(std::string &&file_name) noexcept;
-    virtual ~segy();
+    explicit common_segy(std::string &&file_name) noexcept;
+    virtual ~common_segy();
     ///
     /// \fn ebcdic_to_ascii
     /// \brief Transform ebcdic string to ascii string.
@@ -165,4 +165,4 @@ private:
 };
 } // namespace sedaman
 
-#endif // SEDAMAN_SEGY_HPP
+#endif // SEDAMAN_COMMON_SEGY_HPP

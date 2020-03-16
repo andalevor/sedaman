@@ -77,11 +77,11 @@ isegy::impl::impl(isegy &segy, string cfg_name)
     ifstream file;
     file.exceptions(ifstream::failbit | ifstream::badbit);
     file.open(segy.file_name(), ifstream::binary);
-    char text_buf[segy::TEXT_HEADER_SIZE];
-    file.read(text_buf, segy::TEXT_HEADER_SIZE);
-    segy.txt_hdrs().push_back(string(text_buf, segy::TEXT_HEADER_SIZE));
-    char bin_buf[segy::BIN_HEADER_SIZE];
-    file.read(bin_buf, segy::BIN_HEADER_SIZE);
+    char text_buf[common_segy::TEXT_HEADER_SIZE];
+    file.read(text_buf, common_segy::TEXT_HEADER_SIZE);
+    segy.txt_hdrs().push_back(string(text_buf, common_segy::TEXT_HEADER_SIZE));
+    char bin_buf[common_segy::BIN_HEADER_SIZE];
+    file.read(bin_buf, common_segy::BIN_HEADER_SIZE);
     fill_bin_header(segy, bin_buf);
     assign_sample_reader(segy);
     assign_bytes_per_sample(segy);
@@ -99,11 +99,11 @@ isegy::impl::impl(isegy &segy, string cfg_name)
             throw(sexception(__FILE__, __LINE__, "unable to determine end of trace data"));
         // TODO: search for the byte offset of first stanza
     } else if (segy.bin_hdr().num_of_trailer_stanza) {
-        file.seekg(segy.bin_hdr().num_of_trailer_stanza * segy::TEXT_HEADER_SIZE,
+        file.seekg(segy.bin_hdr().num_of_trailer_stanza * common_segy::TEXT_HEADER_SIZE,
                    std::ios_base::end);
         for (int32_t i = segy.bin_hdr().num_of_trailer_stanza; i; --i) {
-            file.read(text_buf, segy::TEXT_HEADER_SIZE);
-            segy.trail_stnzs().push_back(string(text_buf, segy::TEXT_HEADER_SIZE));
+            file.read(text_buf, common_segy::TEXT_HEADER_SIZE);
+            segy.trail_stnzs().push_back(string(text_buf, common_segy::TEXT_HEADER_SIZE));
         }
     }
     segy.buffer().reserve(static_cast<decltype (segy.buffer().size())>(
@@ -272,20 +272,20 @@ void isegy::impl::read_ext_text_headers(isegy &segy, ifstream &file)
     int num = segy.bin_hdr().ext_text_headers_num;
     if (!num)
         return;
-    char buf[segy::TEXT_HEADER_SIZE];
+    char buf[common_segy::TEXT_HEADER_SIZE];
     if (num == -1) {
         string end_stanza = "((SEG: EndText))";
-        file.read(buf, segy::TEXT_HEADER_SIZE);
+        file.read(buf, common_segy::TEXT_HEADER_SIZE);
         while (1) {
-            file.read(buf, segy::TEXT_HEADER_SIZE);
-            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_SIZE));
+            file.read(buf, common_segy::TEXT_HEADER_SIZE);
+            segy.txt_hdrs().push_back(string(buf, common_segy::TEXT_HEADER_SIZE));
             if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
                 return;
         }
     } else {
         for (int i = segy.bin_hdr().ext_text_headers_num; i; --i) {
-            file.read(buf, segy::TEXT_HEADER_SIZE);
-            segy.txt_hdrs().push_back(string(buf, segy::TEXT_HEADER_SIZE));
+            file.read(buf, common_segy::TEXT_HEADER_SIZE);
+            segy.txt_hdrs().push_back(string(buf, common_segy::TEXT_HEADER_SIZE));
         }
     }
 }
@@ -444,16 +444,16 @@ vector<string> const &isegy::trailer_stanzas()
     return trail_stnzs();
 }
 
-segy::binary_header const &isegy::binary_header()
+common_segy::binary_header const &isegy::binary_header()
 {
     return bin_hdr();
 }
 
 isegy::isegy(string const &file_name, string const &config_name)
-    : segy(file_name), pimpl(make_unique<impl>(*this, config_name)) {}
+    : common_segy(file_name), pimpl(make_unique<impl>(*this, config_name)) {}
 
 isegy::isegy(string &&file_name, std::string &&config_name) noexcept
-    : segy(move(file_name)), pimpl(make_unique<impl>(*this, move(config_name))) {}
+    : common_segy(move(file_name)), pimpl(make_unique<impl>(*this, move(config_name))) {}
 
 isegy::~isegy() = default;
 }

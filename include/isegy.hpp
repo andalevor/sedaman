@@ -10,7 +10,7 @@
 #ifndef SEDAMAN_ISEGY_HPP
 #define SEDAMAN_ISEGY_HPP
 
-#include "segy.hpp"
+#include "common_segy.hpp"
 #include "trace.hpp"
 
 ///
@@ -23,7 +23,7 @@ namespace sedaman {
 /// \brief Class for SEGY reading.
 /// Defines methods to read information from SEGY files.
 ///
-class isegy : public segy {
+class isegy : public common_segy {
 public:
     ///
     /// \param file_name Name of SEGY file.

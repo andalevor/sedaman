@@ -3,7 +3,7 @@
 #include "isegy.hpp"
 
 using sedaman::isegy;
-using sedaman::segy;
+using sedaman::common_segy;
 using std::cout;
 using std::setw;
 using std::string;
@@ -20,8 +20,8 @@ int main(int argc, char *argv[])
         return 1;
     isegy segy(argv[1]);
     auto bin_hdr = segy.binary_header();
-    using name = segy::binary_header::name;
-    auto name_as_string = segy::binary_header::name_as_string;
+    using name = common_segy::binary_header::name;
+    auto name_as_string = common_segy::binary_header::name_as_string;
     print(bin_hdr.job_id, name_as_string(name::JOB_ID));
     print(bin_hdr.line_num, name_as_string(name::LINE_NUM));
     print(bin_hdr.reel_num, name_as_string(name::REEL_NUM));

@@ -1,4 +1,4 @@
-#include "segy.hpp"
+#include "common_segy.hpp"
 
 using std::make_unique;
 using std::move;
@@ -7,7 +7,7 @@ using std::valarray;
 using std::vector;
 
 namespace sedaman {
-class segy::impl {
+class common_segy::impl {
 public:
     impl(string const &file_name) : d_file_name(file_name) {}
     impl(string &&file_name) : d_file_name(move(file_name)) {}
@@ -22,21 +22,21 @@ public:
     int bytes_per_sample;
 };
 
-segy::segy(string const &file_name) : pimpl(make_unique<impl>(file_name)) {}
+common_segy::common_segy(string const &file_name) : pimpl(make_unique<impl>(file_name)) {}
 
-segy::segy(string &&file_name) noexcept : pimpl(make_unique<impl>(move(file_name))) {}
+common_segy::common_segy(string &&file_name) noexcept : pimpl(make_unique<impl>(move(file_name))) {}
 
-segy::~segy() = default;
+common_segy::~common_segy() = default;
 
-string const &segy::file_name() {return pimpl->d_file_name;}
-segy::binary_header &segy::bin_hdr() {return pimpl->d_bin_hdr;}
-void segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
-void segy::set_bin_hdr(const binary_header &b_h) {pimpl->d_bin_hdr = b_h;}
-vector<string> &segy::txt_hdrs() {return pimpl->d_text_headers;}
-vector<string> &segy::trail_stnzs() {return pimpl->d_trailer_stanzas;}
-vector<char> &segy::buffer() {return  pimpl->buf;}
-int segy::bytes_per_sample() {return pimpl->bytes_per_sample;}
-void segy::set_bytes_per_sample(int n) {pimpl->bytes_per_sample = n;}
+string const &common_segy::file_name() {return pimpl->d_file_name;}
+common_segy::binary_header &common_segy::bin_hdr() {return pimpl->d_bin_hdr;}
+void common_segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
+void common_segy::set_bin_hdr(const binary_header &b_h) {pimpl->d_bin_hdr = b_h;}
+vector<string> &common_segy::txt_hdrs() {return pimpl->d_text_headers;}
+vector<string> &common_segy::trail_stnzs() {return pimpl->d_trailer_stanzas;}
+vector<char> &common_segy::buffer() {return  pimpl->buf;}
+int common_segy::bytes_per_sample() {return pimpl->bytes_per_sample;}
+void common_segy::set_bytes_per_sample(int n) {pimpl->bytes_per_sample = n;}
 
 static uint8_t constexpr e2a[256] = {
     0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,
@@ -76,7 +76,7 @@ static uint8_t constexpr a2e[256] = {
     0x8c,0x49,0xcd,0xce,0xcb,0xcf,0xcc,0xe1,0x70,0xdd,0xde,0xdb,0xdc,0x8d,0x8e,0xdf
 };
 
-const valarray<string> segy::impl::strings =
+const valarray<string> common_segy::impl::strings =
 {
     "Job identification number",
     "Line number",
@@ -124,7 +124,7 @@ const valarray<string> segy::impl::strings =
     "Number of data trailer stanza records"
 };
 
-string segy::ebcdic_to_ascii(const string &ebcdic)
+string common_segy::ebcdic_to_ascii(const string &ebcdic)
 {
     string result;
     result.reserve((ebcdic.size()));
@@ -135,12 +135,12 @@ string segy::ebcdic_to_ascii(const string &ebcdic)
     return result;
 }
 
-string segy::ebcdic_to_ascii(string &&ebcdic)
+string common_segy::ebcdic_to_ascii(string &&ebcdic)
 {
     return ebcdic_to_ascii(ebcdic);
 }
 
-string segy::ascii_to_ebcdic(const string &ascii)
+string common_segy::ascii_to_ebcdic(const string &ascii)
 {
     string result;
     result.reserve((ascii.size()));
@@ -151,17 +151,17 @@ string segy::ascii_to_ebcdic(const string &ascii)
     return result;
 }
 
-string segy::ascii_to_ebcdic(string &&ascii)
+string common_segy::ascii_to_ebcdic(string &&ascii)
 {
     return ascii_to_ebcdic(ascii);
 }
 
-string const &segy::binary_header::name_as_string(name n)
+string const &common_segy::binary_header::name_as_string(name n)
 {
     return impl::strings[static_cast<decltype (impl::strings.size())>(n)];
 }
 
-const char *segy::default_text_header =
+const char *common_segy::default_text_header =
         "C 1 CLIENT                        COMPANY                       CREW NO         "
         "C 2 LINE            AREA                        MAP ID                          "
         "C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER                  "
