@@ -1,42 +1,29 @@
 #include "common_segy.hpp"
 
-using std::make_unique;
+using std::ios_base;
+using std::fstream;
 using std::move;
 using std::string;
 using std::valarray;
-using std::vector;
 
 namespace sedaman {
-class common_segy::impl {
-public:
-    impl(string const &file_name) : d_file_name(file_name) {}
-    impl(string &&file_name) : d_file_name(move(file_name)) {}
+common_segy::common_segy(string const &name, ios_base::openmode mode)
+    : file_name{name}, hdr_buf{valarray<uint8_t>(common_segy::TR_HEADER_SIZE)}
+{
+    fstream fl;
+    fl.exceptions(fstream::failbit | fstream::badbit);
+    fl.open(file_name, mode);
+    file = move(fl);
+}
 
-    static std::valarray<std::string> const strings;
-
-    string d_file_name;
-    vector<string> d_text_headers;
-    vector<string> d_trailer_stanzas;
-    binary_header d_bin_hdr;
-    vector<char> buf;
-    int bytes_per_sample;
-};
-
-common_segy::common_segy(string const &file_name) : pimpl(make_unique<impl>(file_name)) {}
-
-common_segy::common_segy(string &&file_name) noexcept : pimpl(make_unique<impl>(move(file_name))) {}
-
-common_segy::~common_segy() = default;
-
-string const &common_segy::file_name() {return pimpl->d_file_name;}
-common_segy::binary_header &common_segy::bin_hdr() {return pimpl->d_bin_hdr;}
-void common_segy::set_bin_hdr(binary_header &&b_h) {pimpl->d_bin_hdr = b_h;}
-void common_segy::set_bin_hdr(const binary_header &b_h) {pimpl->d_bin_hdr = b_h;}
-vector<string> &common_segy::txt_hdrs() {return pimpl->d_text_headers;}
-vector<string> &common_segy::trail_stnzs() {return pimpl->d_trailer_stanzas;}
-vector<char> &common_segy::buffer() {return  pimpl->buf;}
-int common_segy::bytes_per_sample() {return pimpl->bytes_per_sample;}
-void common_segy::set_bytes_per_sample(int n) {pimpl->bytes_per_sample = n;}
+common_segy::common_segy(string &&name, ios_base::openmode mode)
+    : file_name{move(name)}, hdr_buf{valarray<uint8_t>(common_segy::TR_HEADER_SIZE)}
+{
+    fstream fl;
+    fl.exceptions(fstream::failbit | fstream::badbit);
+    fl.open(file_name, mode);
+    file = move(fl);
+}
 
 static uint8_t constexpr e2a[256] = {
     0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,
@@ -76,7 +63,19 @@ static uint8_t constexpr a2e[256] = {
     0x8c,0x49,0xcd,0xce,0xcb,0xcf,0xcc,0xe1,0x70,0xdd,0xde,0xdb,0xdc,0x8d,0x8e,0xdf
 };
 
-const valarray<string> common_segy::impl::strings =
+void common_segy::ebcdic_to_ascii(string ebcdic)
+{
+    for (auto from = ebcdic.begin(), end = ebcdic.end(); from != end; ++from)
+        *from = e2a[static_cast<uint8_t>(*from)];
+}
+
+void common_segy::ascii_to_ebcdic(string ascii)
+{
+    for (auto from = ascii.begin(), end = ascii.end(); from != end; ++from)
+        *from = a2e[static_cast<uint8_t>(*from)];
+}
+
+static valarray<string> const bin_names =
 {
     "Job identification number",
     "Line number",
@@ -124,44 +123,12 @@ const valarray<string> common_segy::impl::strings =
     "Number of data trailer stanza records"
 };
 
-string common_segy::ebcdic_to_ascii(const string &ebcdic)
-{
-    string result;
-    result.reserve((ebcdic.size()));
-
-    for (auto from = ebcdic.begin(), end = ebcdic.end(); from != end; ++from)
-        result.push_back(static_cast<char>(e2a[static_cast<uint8_t>(*from)]));
-
-    return result;
-}
-
-string common_segy::ebcdic_to_ascii(string &&ebcdic)
-{
-    return ebcdic_to_ascii(ebcdic);
-}
-
-string common_segy::ascii_to_ebcdic(const string &ascii)
-{
-    string result;
-    result.reserve((ascii.size()));
-
-    for (auto from = ascii.begin(), end = ascii.end(); from != end; ++from)
-        result.push_back(static_cast<char>(a2e[static_cast<uint8_t>(*from)]));
-
-    return result;
-}
-
-string common_segy::ascii_to_ebcdic(string &&ascii)
-{
-    return ascii_to_ebcdic(ascii);
-}
-
 string const &common_segy::binary_header::name_as_string(name n)
 {
-    return impl::strings[static_cast<decltype (impl::strings.size())>(n)];
+    return bin_names[static_cast<decltype (bin_names.size())>(n)];
 }
 
-const char *common_segy::default_text_header =
+char const *common_segy::default_text_header =
         "C 1 CLIENT                        COMPANY                       CREW NO         "
         "C 2 LINE            AREA                        MAP ID                          "
         "C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER                  "

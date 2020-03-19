@@ -11,8 +11,7 @@
 #define SEDAMAN_COMMON_SEGY_HPP
 
 #include <cstdint>
-#include <experimental/propagate_const>
-#include <memory>
+#include <fstream>
 #include <string>
 #include <valarray>
 #include <vector>
@@ -105,35 +104,28 @@ public:
     ///
     /// \param file_name Name of SEGY file.
     ///
-    explicit common_segy(std::string const &file_name);
+    explicit common_segy(std::string const &name, std::ios_base::openmode mode);
     ///
     /// \param file_name Name of SEGY file.
-    /// \param bin_hdr (optional)SEGY binary header.
-    /// \param text_hdr (optional)SEGY text header.
     ///
-    explicit common_segy(std::string &&file_name) noexcept;
-    virtual ~common_segy();
+    explicit common_segy(std::string &&name, std::ios_base::openmode mode);
     ///
     /// \fn ebcdic_to_ascii
-    /// \brief Transform ebcdic string to ascii string.
-    /// \param ebcdic String to transform.
-    /// \return Transformed string.
+    /// \brief Transform text header from ebcdic to ascii.
+    /// \param ebcdic String in ebcdic encoding.
     ///
-    static std::string ebcdic_to_ascii(const std::string &ebcdic);
-    static std::string ebcdic_to_ascii(std::string &&ebcdic);
+    static void ebcdic_to_ascii(std::string ebcdic);
     ///
     /// \fn ascii_to_ebcdic
-    /// \brief Transform ascii string to ebcdic string.
-    /// \param ascii String to transform.
-    /// \return Transformed string.
+    /// \brief Transform text header from ascii to ebcdic.
+    /// \param ascii String in ascii encoding.
     ///
-    static std::string ascii_to_ebcdic(const std::string &ascii);
-    static std::string ascii_to_ebcdic(std::string &&ascii);
+    static void ascii_to_ebcdic(std::string ascii);
     ///
     /// \var default_text_header
     /// \brief Default SEGY text header from standard.
     ///
-    static const char *default_text_header;
+    static char const *default_text_header;
     ///
     /// \var TEXT_HEADER_SIZE
     /// \brief SEGY text header length in bytes
@@ -149,19 +141,52 @@ public:
     /// \brief SEGY trace header length in bytes
     ///
     static constexpr auto TR_HEADER_SIZE = 240;
-protected:
-    std::string const &file_name();
-    std::vector<std::string> &txt_hdrs();
-    std::vector<std::string> &trail_stnzs();
-    binary_header &bin_hdr();
-    void set_bin_hdr(const binary_header &b_h);
-    void set_bin_hdr(binary_header &&b_h);
-    std::vector<char> &buffer();
-    int bytes_per_sample();
-    void set_bytes_per_sample(int n);
-private:
-    class impl;
-    std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
+    ///
+    /// \var file_name
+    /// \brief Name of file on disk.
+    ///
+    std::string file_name;
+    ///
+    /// \var file
+    /// \brief File handler.
+    ///
+    std::fstream file;
+    ///
+    /// \var txt_hdrs
+    /// \brief All text headers
+    ///
+    std::vector<std::string> txt_hdrs;
+    ///
+    /// \var trlr_stzs
+    /// \brief All trailer stanzas
+    ///
+    std::vector<std::string> trlr_stnzs;
+    ///
+    /// \var bin_hdr
+    /// \brief Binary header
+    ///
+    binary_header bin_hdr;
+    ///
+    /// \var samp_buf
+    /// \brief Buffer for samples
+    ///
+    std::vector<uint8_t> samp_buf;
+    ///
+    /// \var hdr_buf
+    /// \brief Buffer for headers
+    /// Size of buffer should be set by isegy or osegy
+    ///
+    std::valarray<uint8_t> hdr_buf;
+    ///
+    /// \var bytes_per_sample
+    /// \brief Number of bytes per sample. Used for buffer size calculations.
+    ///
+    int bytes_per_sample;
+    ///
+    /// \var samp_per_tr
+    /// \brief Number of samples. Used for buffer size calculations.
+    ///
+    int32_t samp_per_tr;
 };
 } // namespace sedaman
 

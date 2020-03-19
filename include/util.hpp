@@ -41,11 +41,11 @@ T read(const char **buf)
 /// \return swapped value
 ///
 template<typename T>
-T swap(const T val)
+T swap(T const val)
 {
     T result;
-    char *to = reinterpret_cast<char *>(&result);
-    const char *from = reinterpret_cast<const char *>(&val) + sizeof(T) - 1;
+    unsigned char *to = reinterpret_cast<unsigned char *>(&result);
+    unsigned char const *from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
     for (int counter = sizeof(T); counter; --counter)
         *to++ = *from--;
     return result;
