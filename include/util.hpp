@@ -25,8 +25,8 @@ namespace sedaman {
 /// \param buf pointer to buffer to read from
 /// \return desired value
 ///
-template<typename T>
-T read(const char **buf)
+template <typename T>
+T read(char const** buf)
 {
     T result;
     memcpy(&result, *buf, sizeof(T));
@@ -40,12 +40,12 @@ T read(const char **buf)
 /// \param val
 /// \return swapped value
 ///
-template<typename T>
+template <typename T>
 T swap(T const val)
 {
     T result;
-    unsigned char *to = reinterpret_cast<unsigned char *>(&result);
-    unsigned char const *from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
+    unsigned char* to = reinterpret_cast<unsigned char*>(&result);
+    unsigned char const* from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
     for (int counter = sizeof(T); counter; --counter)
         *to++ = *from--;
     return result;

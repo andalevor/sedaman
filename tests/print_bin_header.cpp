@@ -1,27 +1,27 @@
-#include <iostream>
+#include "ISegy.hpp"
 #include <iomanip>
-#include "isegy.hpp"
+#include <iostream>
 
-using sedaman::isegy;
-using sedaman::common_segy;
+using sedaman::CommonSegy;
+using sedaman::ISegy;
 using std::cout;
 using std::setw;
 using std::string;
 
-template<typename T>
+template <typename T>
 void print(T v, string s)
 {
     cout << setw(20) << +v << " = " << s << '\n';
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     if (argc < 2)
         return 1;
-    isegy segy(argv[1]);
+    ISegy segy(argv[1]);
     auto bin_hdr = segy.binary_header();
-    using name = common_segy::binary_header::name;
-    auto name_as_string = common_segy::binary_header::name_as_string;
+    using name = CommonSegy::BinaryHeader::Name;
+    auto name_as_string = CommonSegy::BinaryHeader::name_as_string;
     print(bin_hdr.job_id, name_as_string(name::JOB_ID));
     print(bin_hdr.line_num, name_as_string(name::LINE_NUM));
     print(bin_hdr.reel_num, name_as_string(name::REEL_NUM));

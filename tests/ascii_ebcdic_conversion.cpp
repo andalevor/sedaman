@@ -1,16 +1,16 @@
-#include "common_segy.hpp"
+#include "CommonSegy.hpp"
 
-using sedaman::common_segy;
+using sedaman::CommonSegy;
 using std::string;
 
 int main()
 {
-    //string ascii = common_segy::ebcdic_to_ascii(common_segy::ascii_to_ebcdic(common_segy::default_text_header));
-    string ascii(common_segy::default_text_header, common_segy::TEXT_HEADER_SIZE);
+    //string ascii = CommonSegy::ebcdic_to_ascii(CommonSegy::ascii_to_ebcdic(CommonSegy::default_text_header));
+    string ascii(CommonSegy::default_text_header, CommonSegy::TEXT_HEADER_SIZE);
     string ebcdic = ascii;
-    common_segy::ascii_to_ebcdic(ebcdic);
+    CommonSegy::ascii_to_ebcdic(ebcdic);
     string ascii_converted = ebcdic;
-    common_segy::ebcdic_to_ascii(ascii_converted);
+    CommonSegy::ebcdic_to_ascii(ascii_converted);
     if (ascii != ascii_converted)
         return 1;
 }

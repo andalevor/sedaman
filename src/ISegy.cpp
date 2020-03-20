@@ -1,9 +1,9 @@
-#include <cfloat>
-#include <functional>
-#include <fstream>
-#include "isegy.hpp"
-#include "sexception.hpp"
+#include "ISegy.hpp"
+#include "Exception.hpp"
 #include "util.hpp"
+#include <cfloat>
+#include <fstream>
+#include <functional>
 
 using std::fstream;
 using std::function;
@@ -15,62 +15,65 @@ using std::string;
 using std::vector;
 
 namespace sedaman {
-class isegy::impl {
+class ISegy::Impl {
 public:
-    impl(string const &name);
-    impl(string &&name);
-    common_segy common;
+    Impl(string const& name);
+    Impl(string&& name);
+    CommonSegy common;
     streampos first_trace_pos;
     streampos curr_pos;
     streampos end_of_data;
-    function<char(char const **)> read_8;
-    function<uint16_t(char const **)> read_16;
-    function<uint16_t(char const **)> read_24;
-    function<uint32_t(char const **)> read_32;
-    function<uint64_t(char const **)> read_64;
-    function<double(char const **)> read_sample;
+    function<char(char const**)> read_8;
+    function<uint16_t(char const**)> read_16;
+    function<uint16_t(char const**)> read_24;
+    function<uint32_t(char const**)> read_32;
+    function<uint64_t(char const**)> read_64;
+    function<double(char const**)> read_sample;
+
 private:
     void initialization();
-    void fill_bin_header(char const *buf);
+    void fill_bin_header(char const* buf);
     void assign_raw_readers();
     void assign_sample_reader();
     void read_ext_text_headers();
     void assign_bytes_per_sample();
     void read_trailer_stanzas();
-    double dbl_from_ibm_float(char const **buf);
-    double dbl_from_IEEE_float(char const **buf);
-    double dbl_from_IEEE_float_not_native(char const **buf);
-    double dbl_from_IEEE_double(char const **buf);
-    double dbl_from_IEEE_double_not_native(char const **buf);
-    double dbl_from_uint64(char const **buf);
-    double dbl_from_int64(char const **buf);
-    double dbl_from_uint32(char const **buf);
-    double dbl_from_int32(char const **buf);
-    double dbl_from_uint24(char const **buf);
-    double dbl_from_int24(char const **buf);
-    double dbl_from_uint16(char const **buf);
-    double dbl_from_int16(char const **buf);
-    double dbl_from_uint8(char const **buf);
-    double dbl_from_int8(char const **buf);
+    double dbl_from_ibm_float(char const** buf);
+    double dbl_from_IEEE_float(char const** buf);
+    double dbl_from_IEEE_float_not_native(char const** buf);
+    double dbl_from_IEEE_double(char const** buf);
+    double dbl_from_IEEE_double_not_native(char const** buf);
+    double dbl_from_uint64(char const** buf);
+    double dbl_from_int64(char const** buf);
+    double dbl_from_uint32(char const** buf);
+    double dbl_from_int32(char const** buf);
+    double dbl_from_uint24(char const** buf);
+    double dbl_from_int24(char const** buf);
+    double dbl_from_uint16(char const** buf);
+    double dbl_from_int16(char const** buf);
+    double dbl_from_uint8(char const** buf);
+    double dbl_from_int8(char const** buf);
 };
 
-isegy::impl::impl(string const &name) : common{name, fstream::in | fstream::binary}
+ISegy::Impl::Impl(string const& name)
+    : common { name, fstream::in | fstream::binary }
 {
     initialization();
 }
 
-isegy::impl::impl(string &&name) : common{move(name), fstream::in | fstream::binary}
+ISegy::Impl::Impl(string&& name)
+    : common { move(name), fstream::in | fstream::binary }
 {
     initialization();
 }
 
-void isegy::impl::initialization()
+void ISegy::Impl::initialization()
 {
-    char text_buf[common_segy::TEXT_HEADER_SIZE];
-    common.file.read(text_buf, common_segy::TEXT_HEADER_SIZE);
-    common.txt_hdrs.push_back(string(text_buf, common_segy::TEXT_HEADER_SIZE));
-    char bin_buf[common_segy::BIN_HEADER_SIZE];
-    common.file.read(bin_buf, common_segy::BIN_HEADER_SIZE);
+    char text_buf[CommonSegy::TEXT_HEADER_SIZE];
+    common.file.read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
+    common.txt_hdrs.push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
+    char bin_buf[CommonSegy::BIN_HEADER_SIZE];
+    common.file.read(bin_buf, CommonSegy::BIN_HEADER_SIZE);
     fill_bin_header(bin_buf);
     assign_sample_reader();
     assign_bytes_per_sample();
@@ -82,14 +85,13 @@ void isegy::impl::initialization()
         first_trace_pos = common.file.tellg();
     }
     curr_pos = first_trace_pos;
-    common.samp_per_tr = common.bin_hdr.ext_samp_per_tr ? common.bin_hdr.ext_samp_per_tr :
-                                                          common.bin_hdr.samp_per_tr;
+    common.samp_per_tr = common.bin_hdr.ext_samp_per_tr ? common.bin_hdr.ext_samp_per_tr : common.bin_hdr.samp_per_tr;
     read_trailer_stanzas();
     common.file.seekg(first_trace_pos);
-    common.samp_buf.resize(static_cast<decltype (common.samp_buf.size())>(common.samp_per_tr * common.bytes_per_sample));
+    common.samp_buf.resize(static_cast<decltype(common.samp_buf.size())>(common.samp_per_tr * common.bytes_per_sample));
 }
 
-void isegy::impl::fill_bin_header(char const *buf)
+void ISegy::Impl::fill_bin_header(char const* buf)
 {
     memcpy(&common.bin_hdr.endianness, buf + 96, sizeof(int32_t));
     assign_raw_readers();
@@ -139,169 +141,166 @@ void isegy::impl::fill_bin_header(char const *buf)
     common.bin_hdr.num_of_trailer_stanza = static_cast<int32_t>(read_32(&buf));
 }
 
-void isegy::impl::assign_raw_readers()
+void ISegy::Impl::assign_raw_readers()
 {
-    read_8 = [](const char **buf) {return read<char>(buf);};
+    read_8 = [](char const** buf) { return read<char>(buf); };
     switch (common.bin_hdr.endianness) {
     case 0x01020304:
-        read_16 = [](char const **buf) {return read<uint16_t>(buf);};
-        read_24 = [](char const **buf) {return read<uint16_t>(buf) |
-                    read<char>(buf) << 16;};
-        read_32 = [](char const **buf) {return read<uint32_t>(buf);};
-        read_64 = [](char const **buf) {return read<uint64_t>(buf);};
+        read_16 = [](char const** buf) { return read<uint16_t>(buf); };
+        read_24 = [](char const** buf) { return read<uint16_t>(buf) | read<char>(buf) << 16; };
+        read_32 = [](char const** buf) { return read<uint32_t>(buf); };
+        read_64 = [](char const** buf) { return read<uint64_t>(buf); };
         break;
     case 0:
     case 0x04030201:
-        read_16 = [](char const **buf) {return swap(read<uint16_t>(buf));};
-        read_24 = [](char const **buf) {return swap(read<uint16_t>(buf) |
-                                                    read<char>(buf) << 16);};
-        read_32 = [](char const **buf) {return swap(read<uint32_t>(buf));};
-        read_64 = [](char const **buf) {return swap(read<uint64_t>(buf));};
+        read_16 = [](char const** buf) { return swap(read<uint16_t>(buf)); };
+        read_24 = [](char const** buf) { return swap(read<uint16_t>(buf) | read<char>(buf) << 16); };
+        read_32 = [](char const** buf) { return swap(read<uint32_t>(buf)); };
+        read_64 = [](char const** buf) { return swap(read<uint64_t>(buf)); };
         break;
     default:
-        throw sexception(__FILE__, __LINE__, "unsupported endianness");
+        throw Exception(__FILE__, __LINE__, "unsupported endianness");
     }
 }
 
-void isegy::impl::assign_sample_reader()
+void ISegy::Impl::assign_sample_reader()
 {
     switch (common.bin_hdr.format_code) {
     case 1:
-        read_sample = [this] (char const **buf) {return dbl_from_ibm_float(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_ibm_float(buf); };
         break;
     case 2:
-        read_sample = [this] (char const **buf) {return dbl_from_int32(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_int32(buf); };
         break;
     case 3:
-        read_sample = [this] (char const **buf) {return dbl_from_int16(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_int16(buf); };
         break;
     case 5:
         if (FLT_RADIX == 2 && DBL_MANT_DIG == 53)
-            read_sample = [this] (char const **buf) {return dbl_from_IEEE_float(buf);};
+            read_sample = [this](char const** buf) { return dbl_from_IEEE_float(buf); };
         else
-            read_sample = [this] (char const **buf) {return dbl_from_IEEE_float_not_native(buf);};
+            read_sample = [this](char const** buf) { return dbl_from_IEEE_float_not_native(buf); };
         break;
     case 6:
         if (FLT_RADIX == 2 && DBL_MANT_DIG == 53)
-            read_sample = [this] (char const **buf) {return dbl_from_IEEE_double(buf);};
+            read_sample = [this](char const** buf) { return dbl_from_IEEE_double(buf); };
         else
-            read_sample = [this] (char const **buf) {return dbl_from_IEEE_double_not_native(buf);};
+            read_sample = [this](char const** buf) { return dbl_from_IEEE_double_not_native(buf); };
         break;
     case 7:
-        read_sample = [this] (char const **buf) {return dbl_from_int24(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_int24(buf); };
         break;
     case 8:
-        read_sample = [this] (char const **buf) {return dbl_from_int8(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_int8(buf); };
         break;
     case 9:
-        read_sample = [this] (char const **buf) {return dbl_from_int64(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_int64(buf); };
         break;
     case 10:
-        read_sample = [this] (char const **buf) {return dbl_from_uint32(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_uint32(buf); };
         break;
     case 11:
-        read_sample = [this] (char const **buf) {return dbl_from_uint16(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_uint16(buf); };
         break;
     case 12:
-        read_sample = [this] (char const **buf) {return dbl_from_uint64(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_uint64(buf); };
         break;
     case 15:
-        read_sample = [this] (char const **buf) {return dbl_from_uint24(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_uint24(buf); };
         break;
     case 16:
-        read_sample = [this] (char const **buf) {return dbl_from_uint8(buf);};
+        read_sample = [this](char const** buf) { return dbl_from_uint8(buf); };
         break;
     default:
-        throw(sexception(__FILE__, __LINE__, "unsupported format"));
+        throw(Exception(__FILE__, __LINE__, "unsupported format"));
     }
 }
 
-void isegy::impl::read_ext_text_headers()
+void ISegy::Impl::read_ext_text_headers()
 {
     int num = common.bin_hdr.ext_text_headers_num;
     if (!num)
         return;
-    char buf[common_segy::TEXT_HEADER_SIZE];
+    char buf[CommonSegy::TEXT_HEADER_SIZE];
     if (num == -1) {
         string end_stanza = "((SEG: EndText))";
         while (1) {
-            common.file.read(buf, common_segy::TEXT_HEADER_SIZE);
-            common.txt_hdrs.push_back(string(buf, common_segy::TEXT_HEADER_SIZE));
+            common.file.read(buf, CommonSegy::TEXT_HEADER_SIZE);
+            common.txt_hdrs.push_back(string(buf, CommonSegy::TEXT_HEADER_SIZE));
             if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
                 return;
         }
     } else {
         for (int i = common.bin_hdr.ext_text_headers_num; i; --i) {
-            common.file.read(buf, common_segy::TEXT_HEADER_SIZE);
-            common.txt_hdrs.push_back(string(buf, common_segy::TEXT_HEADER_SIZE));
+            common.file.read(buf, CommonSegy::TEXT_HEADER_SIZE);
+            common.txt_hdrs.push_back(string(buf, CommonSegy::TEXT_HEADER_SIZE));
         }
     }
 }
 
-void isegy::impl::read_trailer_stanzas() {
-    char text_buf[common_segy::TEXT_HEADER_SIZE];
+void ISegy::Impl::read_trailer_stanzas()
+{
+    char text_buf[CommonSegy::TEXT_HEADER_SIZE];
     if (common.bin_hdr.num_of_trailer_stanza == -1) {
         if (!common.bin_hdr.num_of_tr_in_file)
-            throw(sexception(__FILE__, __LINE__, "unable to determine end of trace data"));
+            throw(Exception(__FILE__, __LINE__, "unable to determine end of trace data"));
         if (common.bin_hdr.fixed_tr_length) {
             // skip all traces
-            common.file.seekg(common.bytes_per_sample * common.samp_per_tr *
-                              common.bin_hdr.num_of_tr_in_file, ios_base::cur);
+            common.file.seekg(common.bytes_per_sample * common.samp_per_tr * common.bin_hdr.num_of_tr_in_file, ios_base::cur);
             end_of_data = common.file.tellg();
             string end_stanza = "((SEG: EndText))";
-            while(1) {
-                common.file.read(text_buf, common_segy::TEXT_HEADER_SIZE);
-                common.trlr_stnzs.push_back(string(text_buf, common_segy::TEXT_HEADER_SIZE));
+            while (1) {
+                common.file.read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
+                common.trlr_stnzs.push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
                 if (!end_stanza.compare(0, end_stanza.size(), text_buf, end_stanza.size()))
                     return;
             }
         } else {
             // variable trace length
-            char trc_hdr_buf[common_segy::TR_HEADER_SIZE];
+            char trc_hdr_buf[CommonSegy::TR_HEADER_SIZE];
             for (auto i = common.bin_hdr.num_of_tr_in_file; i; --i) {
-                common.file.read(trc_hdr_buf, common_segy::TR_HEADER_SIZE);
+                common.file.read(trc_hdr_buf, CommonSegy::TR_HEADER_SIZE);
                 // get number of samples from main header
-                const char *ptr = trc_hdr_buf + 114;
+                char const* ptr = trc_hdr_buf + 114;
                 int32_t trc_samp_num = read_16(&ptr);
                 if (common.bin_hdr.max_num_add_tr_headers) {
                     // if there are additional header(s)
                     // get number of samples from first additional header
-                    common.file.read(trc_hdr_buf, common_segy::TR_HEADER_SIZE);
+                    common.file.read(trc_hdr_buf, CommonSegy::TR_HEADER_SIZE);
                     ptr = trc_hdr_buf + 136;
                     trc_samp_num = read_32(&ptr);
                     ptr = trc_hdr_buf + 156;
                     int16_t add_tr_hdr_num = read_16(&ptr);
-                    add_tr_hdr_num = add_tr_hdr_num ? add_tr_hdr_num :
-                                                      common.bin_hdr.max_num_add_tr_headers;
+                    add_tr_hdr_num = add_tr_hdr_num ? add_tr_hdr_num : common.bin_hdr.max_num_add_tr_headers;
                     // skip addional headers
-                    common.file.seekg((add_tr_hdr_num - 1) * common_segy::TR_HEADER_SIZE,
-                                      ios_base::cur);
+                    common.file.seekg((add_tr_hdr_num - 1) * CommonSegy::TR_HEADER_SIZE,
+                        ios_base::cur);
                 }
                 // skip trace samples
                 common.file.seekg(trc_samp_num * common.bytes_per_sample, ios_base::cur);
             }
             end_of_data = common.file.tellg();
             string end_stanza = "((SEG: EndText))";
-            while(1) {
-                common.file.read(text_buf, common_segy::TEXT_HEADER_SIZE);
-                common.trlr_stnzs.push_back(string(text_buf, common_segy::TEXT_HEADER_SIZE));
+            while (1) {
+                common.file.read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
+                common.trlr_stnzs.push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
                 if (!end_stanza.compare(0, end_stanza.size(), text_buf, end_stanza.size()))
                     return;
             }
         }
     } else if (common.bin_hdr.num_of_trailer_stanza) {
         // go to first trailer stanza
-        common.file.seekg(common.bin_hdr.num_of_trailer_stanza * common_segy::TEXT_HEADER_SIZE,
-                          ios_base::end);
+        common.file.seekg(common.bin_hdr.num_of_trailer_stanza * CommonSegy::TEXT_HEADER_SIZE,
+            ios_base::end);
         end_of_data = common.file.tellg();
         for (int32_t i = common.bin_hdr.num_of_trailer_stanza; i; --i) {
-            common.file.read(text_buf, common_segy::TEXT_HEADER_SIZE);
-            common.trlr_stnzs.push_back(string(text_buf, common_segy::TEXT_HEADER_SIZE));
+            common.file.read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
+            common.trlr_stnzs.push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
         }
     }
 }
 
-void isegy::impl::assign_bytes_per_sample()
+void ISegy::Impl::assign_bytes_per_sample()
 {
     switch (common.bin_hdr.format_code) {
     case 1:
@@ -331,7 +330,7 @@ void isegy::impl::assign_bytes_per_sample()
     }
 }
 
-double isegy::impl::dbl_from_ibm_float(const char **buf)
+double ISegy::Impl::dbl_from_ibm_float(char const** buf)
 {
     uint32_t ibm = read_32(buf);
     int sign = ibm >> 31 ? -1 : 1;
@@ -341,7 +340,7 @@ double isegy::impl::dbl_from_ibm_float(const char **buf)
     return fraction / pow(2, 24) * pow(16, exp - 64) * sign;
 }
 
-double isegy::impl::dbl_from_IEEE_float(const char **buf)
+double ISegy::Impl::dbl_from_IEEE_float(char const** buf)
 {
     uint32_t tmp = read_32(buf);
     float result;
@@ -349,7 +348,7 @@ double isegy::impl::dbl_from_IEEE_float(const char **buf)
     return static_cast<double>(result);
 }
 
-double isegy::impl::dbl_from_IEEE_float_not_native(const char **buf)
+double ISegy::Impl::dbl_from_IEEE_float_not_native(char const** buf)
 {
     uint32_t tmp = read_32(buf);
     int sign = tmp >> 31 ? -1 : 1;
@@ -358,7 +357,7 @@ double isegy::impl::dbl_from_IEEE_float_not_native(const char **buf)
     return sign * pow(2, exp - 127) * (1 + fraction / pow(2, 23));
 }
 
-double isegy::impl::dbl_from_IEEE_double(const char **buf)
+double ISegy::Impl::dbl_from_IEEE_double(char const** buf)
 {
     uint64_t tmp = read_64(buf);
     double result;
@@ -366,7 +365,7 @@ double isegy::impl::dbl_from_IEEE_double(const char **buf)
     return result;
 }
 
-double isegy::impl::dbl_from_IEEE_double_not_native(const char **buf)
+double ISegy::Impl::dbl_from_IEEE_double_not_native(char const** buf)
 {
     uint64_t tmp = read_64(buf);
     int sign = tmp >> 63 ? -1 : 1;
@@ -375,32 +374,32 @@ double isegy::impl::dbl_from_IEEE_double_not_native(const char **buf)
     return sign * pow(2, exp - 1023) * (1 + fraction / pow(2, 52));
 }
 
-double isegy::impl::dbl_from_uint64(const char **buf)
+double ISegy::Impl::dbl_from_uint64(char const** buf)
 {
     return static_cast<double>(read_64(buf));
 }
 
-double isegy::impl::dbl_from_int64(const char **buf)
+double ISegy::Impl::dbl_from_int64(char const** buf)
 {
     return static_cast<double>(static_cast<int64_t>(read_64(buf)));
 }
 
-double isegy::impl::dbl_from_uint32(const char **buf)
+double ISegy::Impl::dbl_from_uint32(char const** buf)
 {
     return static_cast<double>(read_32(buf));
 }
 
-double isegy::impl::dbl_from_int32(const char **buf)
+double ISegy::Impl::dbl_from_int32(char const** buf)
 {
     return static_cast<double>(static_cast<int32_t>(read_32(buf)));
 }
 
-double isegy::impl::dbl_from_uint24(const char **buf)
+double ISegy::Impl::dbl_from_uint24(char const** buf)
 {
     return static_cast<double>(read_24(buf));
 }
 
-double isegy::impl::dbl_from_int24(const char **buf)
+double ISegy::Impl::dbl_from_int24(char const** buf)
 {
     uint32_t tmp = read_24(buf);
     if (tmp & 0x800000)
@@ -408,43 +407,49 @@ double isegy::impl::dbl_from_int24(const char **buf)
     return static_cast<double>(static_cast<int32_t>(tmp));
 }
 
-double isegy::impl::dbl_from_uint16(const char **buf)
+double ISegy::Impl::dbl_from_uint16(char const** buf)
 {
     return static_cast<double>(read_16(buf));
 }
 
-double isegy::impl::dbl_from_int16(const char **buf)
+double ISegy::Impl::dbl_from_int16(char const** buf)
 {
     return static_cast<double>(static_cast<int16_t>(read_16(buf)));
 }
 
-double isegy::impl::dbl_from_uint8(const char **buf)
+double ISegy::Impl::dbl_from_uint8(char const** buf)
 {
     return static_cast<double>(read_8(buf));
 }
 
-double isegy::impl::dbl_from_int8(const char **buf)
+double ISegy::Impl::dbl_from_int8(char const** buf)
 {
     return static_cast<double>(static_cast<int8_t>(read_8(buf)));
 }
 
-vector<string> const &isegy::text_headers() const
+vector<string> const& ISegy::text_headers() const
 {
     return pimpl->common.txt_hdrs;
 }
 
-vector<string> const &isegy::trailer_stanzas() const
+vector<string> const& ISegy::trailer_stanzas() const
 {
     return pimpl->common.trlr_stnzs;
 }
 
-common_segy::binary_header const &isegy::binary_header() const
+CommonSegy::BinaryHeader const& ISegy::binary_header() const
 {
     return pimpl->common.bin_hdr;
 }
 
-isegy::isegy(string const &name) : pimpl(make_unique<impl>(name)) {}
-isegy::isegy(string &&name) : pimpl(make_unique<impl>(move(name))) {}
+ISegy::ISegy(string const& name)
+    : pimpl(make_unique<Impl>(name))
+{
+}
+ISegy::ISegy(string&& name)
+    : pimpl(make_unique<Impl>(move(name)))
+{
+}
 
-isegy::~isegy() = default;
+ISegy::~ISegy() = default;
 } // namespace sedaman
