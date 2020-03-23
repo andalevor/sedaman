@@ -12,6 +12,7 @@ using std::make_unique;
 using std::move;
 using std::streampos;
 using std::string;
+using std::unordered_map;
 using std::vector;
 
 namespace sedaman {
@@ -38,6 +39,7 @@ private:
     void read_ext_text_headers();
     void assign_bytes_per_sample();
     void read_trailer_stanzas();
+    void read_header();
     double dbl_from_ibm_float(char const** buf);
     double dbl_from_IEEE_float(char const** buf);
     double dbl_from_IEEE_float_not_native(char const** buf);
@@ -328,6 +330,12 @@ void ISegy::Impl::assign_bytes_per_sample()
         common.bytes_per_sample = 1;
         break;
     }
+}
+
+void ISegy::Impl::read_header()
+{
+    common.file.read(common.hdr_buf.data(), CommonSegy::TR_HEADER_SIZE);
+    unordered_map<string, Trace::Header::Value> hdr;
 }
 
 double ISegy::Impl::dbl_from_ibm_float(char const** buf)

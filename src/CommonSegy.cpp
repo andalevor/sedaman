@@ -1,15 +1,17 @@
 #include "CommonSegy.hpp"
+#include <valarray>
 
 using std::fstream;
 using std::ios_base;
 using std::move;
 using std::string;
 using std::valarray;
+using std::vector;
 
 namespace sedaman {
 CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
     : file_name { name }
-    , hdr_buf { valarray<uint8_t>(CommonSegy::TR_HEADER_SIZE) }
+    , hdr_buf { vector<char>(CommonSegy::TR_HEADER_SIZE) }
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
@@ -19,7 +21,7 @@ CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
 
 CommonSegy::CommonSegy(string&& name, ios_base::openmode mode)
     : file_name { move(name) }
-    , hdr_buf { valarray<uint8_t>(CommonSegy::TR_HEADER_SIZE) }
+    , hdr_buf { vector<char>(CommonSegy::TR_HEADER_SIZE) }
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);

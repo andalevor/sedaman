@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <valarray>
 #include <vector>
 
 ///
@@ -202,13 +201,13 @@ public:
     /// \var samp_buf
     /// \brief Buffer for samples
     ///
-    std::valarray<uint8_t> samp_buf;
+    std::vector<char> samp_buf;
     ///
     /// \var hdr_buf
     /// \brief Buffer for headers
     /// Size of buffer should be set by ISegy or OSegy
     ///
-    std::valarray<uint8_t> hdr_buf;
+    std::vector<char> hdr_buf;
     ///
     /// \var bytes_per_sample
     /// \brief Number of bytes per sample. Used for buffer size calculations.

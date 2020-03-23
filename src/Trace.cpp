@@ -11,18 +11,15 @@ using std::vector;
 namespace sedaman {
 class Trace::Header::Impl {
 public:
-    Impl(vector<char> const& h, unordered_map<string, pair<int, ValueType>> const& hdr_map)
-        : d_data(h)
-        , d_hdr_map(hdr_map)
+    Impl(unordered_map<string, Header::Value> const& hdr)
+        : d_hdr(hdr)
     {
     }
-    Impl(vector<char>&& h, unordered_map<string, pair<int, ValueType>>&& hdr_map)
-        : d_data(move(h))
-        , d_hdr_map(move(hdr_map))
+    Impl(unordered_map<string, Header::Value>&& hdr)
+        : d_hdr(move(hdr))
     {
     }
-    vector<char> d_data;
-    unordered_map<string, pair<int, ValueType>> d_hdr_map;
+    unordered_map<string, Header::Value> d_hdr;
 };
 
 class Trace::Impl {
@@ -37,15 +34,13 @@ public:
         , d_samples(move(s))
     {
     }
-    Impl(vector<char> const& h, valarray<double> const& s,
-        unordered_map<string, pair<int, Header::ValueType>> const& hdr_map)
-        : d_header(h, hdr_map)
+    Impl(unordered_map<string, Header::Value> const& hdr, valarray<double> const& s)
+        : d_header(hdr)
         , d_samples(s)
     {
     }
-    Impl(vector<char>&& h, valarray<double>&& s,
-        unordered_map<string, pair<int, Header::ValueType>>&& hdr_map)
-        : d_header(move(h), move(hdr_map))
+    Impl(unordered_map<string, Header::Value>&& hdr, valarray<double>&& s)
+        : d_header(move(hdr))
         , d_samples(move(s))
     {
     }
@@ -55,42 +50,37 @@ public:
 
 Trace::Header const& Trace::header() const { return pimpl->d_header; }
 valarray<double> const& Trace::samples() const { return pimpl->d_samples; }
+Trace::Header::Value& Trace::Header::operator[](string key) { return pimpl->d_hdr[key]; }
 
 Trace::Header::Header(Header const& hdr)
-    : pimpl(make_unique<Impl>(hdr.pimpl->d_data, hdr.pimpl->d_hdr_map))
+    : pimpl(make_unique<Impl>(hdr.pimpl->d_hdr))
 {
 }
 Trace::Header::Header(Header&& hdr)
-    : pimpl(make_unique<Impl>(move(hdr.pimpl->d_data), move(hdr.pimpl->d_hdr_map)))
+    : pimpl(make_unique<Impl>(move(hdr.pimpl->d_hdr)))
 {
 }
-Trace::Header::Header(vector<char> const& h,
-    unordered_map<string, pair<int, ValueType>> const& hdr_map)
-    : pimpl(make_unique<Impl>(h, hdr_map))
+Trace::Header::Header(unordered_map<string, Value> const& hdr)
+    : pimpl(make_unique<Impl>(hdr))
 {
 }
-Trace::Header::Header(vector<char>&& h,
-    unordered_map<string, pair<int, ValueType>>&& hdr_map)
-    : pimpl(make_unique<Impl>(move(h), move(hdr_map)))
+Trace::Header::Header(unordered_map<string, Value>&& hdr)
+    : pimpl(make_unique<Impl>(move(hdr)))
 {
 }
 Trace::Header::~Header() = default;
 
 Trace::Header& Trace::Header::operator=(Header const& o)
 {
-    if (&o != this) {
-        pimpl->d_data = o.pimpl->d_data;
-        pimpl->d_hdr_map = o.pimpl->d_hdr_map;
-    }
+    if (&o != this)
+        pimpl->d_hdr = o.pimpl->d_hdr;
     return *this;
 }
 
 Trace::Header& Trace::Header::operator=(Header&& o) noexcept
 {
-    if (&o != this) {
-        pimpl->d_data = move(o.pimpl->d_data);
-        pimpl->d_hdr_map = move(o.pimpl->d_hdr_map);
-    }
+    if (&o != this)
+        pimpl->d_hdr = move(o.pimpl->d_hdr);
     return *this;
 }
 
@@ -102,14 +92,12 @@ Trace::Trace(Trace&& t) noexcept
     : pimpl(make_unique<Impl>(move(t.pimpl->d_header), move(t.pimpl->d_samples)))
 {
 }
-Trace::Trace(vector<char> const& h, valarray<double> const& s,
-    unordered_map<string, pair<int, Header::ValueType>> const& hdr_map)
-    : pimpl(make_unique<Impl>(h, s, hdr_map))
+Trace::Trace(unordered_map<string, Header::Value> const& hdr, valarray<double> const& s)
+    : pimpl(make_unique<Impl>(hdr, s))
 {
 }
-Trace::Trace(vector<char>&& h, valarray<double>&& s,
-    unordered_map<string, pair<int, Header::ValueType>>&& hdr_map)
-    : pimpl(make_unique<Impl>(move(h), move(s), move(hdr_map)))
+Trace::Trace(unordered_map<string, Header::Value>&& hdr, valarray<double>&& s)
+    : pimpl(make_unique<Impl>(move(hdr), move(s)))
 {
 }
 Trace::~Trace() = default;

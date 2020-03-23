@@ -14,6 +14,7 @@
 #include <experimental/propagate_const>
 #include <memory>
 #include <unordered_map>
+#include <variant>
 #include <valarray>
 #include <vector>
 
@@ -34,18 +35,7 @@ public:
     ///
     class Header {
     public:
-        enum class ValueType {
-            i8,
-            i16,
-            i32,
-            i64,
-            u8,
-            u16,
-            u32,
-            u64,
-            f32,
-            f64
-        };
+        typedef std::variant<int8_t, int16_t, int32_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t, float, double> Value;
         ///
         /// \param hdr Header to copy data from
         ///
@@ -57,16 +47,15 @@ public:
         ///
         /// \param hdr Header bytes
         ///
-        Header(std::vector<char> const& hdr,
-            std::unordered_map<std::string, std::pair<int, ValueType>> const& hdr_map);
+        Header(std::unordered_map<std::string, Value> const& hdr);
         ///
         /// \param hdr Header bytes
         ///
-        Header(std::vector<char>&& hdr,
-            std::unordered_map<std::string, std::pair<int, ValueType>>&& hdr_map);
+        Header(std::unordered_map<std::string, Value>&& hdr);
         ~Header();
         Header& operator=(Header const& other);
         Header& operator=(Header&& other) noexcept;
+        Value& operator[](std::string key);
 
     private:
         class Impl;
@@ -84,14 +73,14 @@ public:
     /// \param hdr Header values
     /// \param smpl Samples values
     ///
-    Trace(std::vector<char> const& hdr, std::valarray<double> const& smpl,
-        std::unordered_map<std::string, std::pair<int, Header::ValueType>> const& hdr_map);
+    Trace(std::unordered_map<std::string, Header::Value> const& hdr,
+        std::valarray<double> const& smpl);
     ///
     /// \param hdr Header values
     /// \param smpl Samples values
     ///
-    Trace(std::vector<char>&& hdr, std::valarray<double>&& smpl,
-        std::unordered_map<std::string, std::pair<int, Header::ValueType>>&& hdr_map);
+    Trace(std::unordered_map<std::string, Header::Value>&& hdr,
+        std::valarray<double>&& smpl);
     ~Trace();
     Trace& operator=(Trace const& other);
     Trace& operator=(Trace&& other) noexcept;
