@@ -14,8 +14,8 @@
 #include <experimental/propagate_const>
 #include <memory>
 #include <unordered_map>
-#include <variant>
 #include <valarray>
+#include <variant>
 #include <vector>
 
 ///
@@ -55,7 +55,33 @@ public:
         ~Header();
         Header& operator=(Header const& other);
         Header& operator=(Header&& other) noexcept;
-        Value& operator[](std::string key);
+        ///
+        /// \fn get
+        /// \brief gets header value by specified key
+        /// \param key to get assosiated value
+        /// \return value
+        /// \throws out_of_range if there is no such key
+        ///
+        Value const& get(std::string const& key);
+        Value const& get(std::string&& key);
+        ///
+        /// \fn get_mut
+        /// \brief gets mutable header value by specified key
+        /// \param key to get assosiated value
+        /// \return value
+        /// \throws out_of_range if there is no such key
+        ///
+        Value& get_mut(std::string const& key);
+        Value& get_mut(std::string&& key);
+        ///
+        /// \fn insert
+        /// \brief inserts new header with given value
+        /// \param pair of key and value
+        /// \return true if insertion was successful
+        /// Inserts only if there was no such header.
+        ///
+        bool insert(std::pair<std::string, Value> const& pair);
+        bool insert(std::pair<std::string, Value>&& pair);
 
     private:
         class Impl;

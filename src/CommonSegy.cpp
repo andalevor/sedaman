@@ -3,6 +3,7 @@
 
 using std::fstream;
 using std::ios_base;
+using std::map;
 using std::move;
 using std::string;
 using std::valarray;
@@ -11,7 +12,6 @@ using std::vector;
 namespace sedaman {
 CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
     : file_name { name }
-    , hdr_buf { vector<char>(CommonSegy::TR_HEADER_SIZE) }
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
@@ -21,7 +21,6 @@ CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
 
 CommonSegy::CommonSegy(string&& name, ios_base::openmode mode)
     : file_name { move(name) }
-    , hdr_buf { vector<char>(CommonSegy::TR_HEADER_SIZE) }
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
@@ -79,7 +78,7 @@ void CommonSegy::ascii_to_ebcdic(string ascii)
         *from = a2e[static_cast<uint8_t>(*from)];
 }
 
-static valarray<string> const bin_names = {
+static char const* bin_names[] = {
     "Job identification number",
     "Line number",
     "Reel number",
@@ -126,49 +125,146 @@ static valarray<string> const bin_names = {
     "Number of data trailer stanza records"
 };
 
-string const& CommonSegy::BinaryHeader::name_as_string(Name n)
+char const* CommonSegy::BinaryHeader::name_as_string(Name n)
 {
-    return bin_names[static_cast<decltype(bin_names.size())>(n)];
+    return bin_names[static_cast<int>(n)];
 }
 
-char const* CommonSegy::default_text_header = "C 1 CLIENT                        COMPANY                       CREW NO         "
-                                              "C 2 LINE            AREA                        MAP ID                          "
-                                              "C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER                  "
-                                              "C 4 INSTRUMENT: MFG            MODEL            SERIAL NO                       "
-                                              "C 5 DATA TRACES/RECORD        AUXILIARY TRACES/RECORD         CDP FOLD          "
-                                              "C 6 SAMPLE INTERVAL        SAMPLES/TRACE        BITS/IN     BYTES/SAMPLE        "
-                                              "C 7 RECORDING FORMAT       FORMAT THIS REEL         MEASUREMENT SYSTEM          "
-                                              "C 8 SAMPLE CODE: FLOATING PT     FIXED PT     FIXED PT-GAIN     CORRELATED      "
-                                              "C 9 GAIN  TYPE: FIXED     BINARY     FLOATING POINT     OTHER                   "
-                                              "C10 FILTERS: ALIAS     HZ  NOTCH     HZ  BAND     -     HZ  SLOPE    -    DB/OCT"
-                                              "C11 SOURCE: TYPE            NUMBER/POINT        POINT INTERVAL                  "
-                                              "C12     PATTERN:                           LENGTH        WIDTH                  "
-                                              "C13 SWEEP: START     HZ END      HZ  LENGTH      MS  CHANNEL NO     TYPE        "
-                                              "C14 TAPER: START LENGTH       MS  END LENGTH       MS TYPE                      "
-                                              "C15 SPREAD: OFFSET        MAX DISTANCE        GROUP INTEVAL                     "
-                                              "C16 GEOPHONES: PER GROUP     SPACEING    FREQUENCY     MFG          MODEL       "
-                                              "C17     PATTERN:                           LENGTH        WIDTH                  "
-                                              "C18 TRACES SORTED BY: RECORD     CDP     OTHER                                  "
-                                              "C19 AMPLITUDE RECOVERY: NONE      SPHERICAL DIV       AGC    OTHER              "
-                                              "C20 MAP PROJECTION                      ZONE ID       COORDINATE UNITS          "
-                                              "C21 PROCESSING:                                                                 "
-                                              "C22 PROCESSING:                                                                 "
-                                              "C23                                                                             "
-                                              "C24                                                                             "
-                                              "C25                                                                             "
-                                              "C26                                                                             "
-                                              "C27                                                                             "
-                                              "C28                                                                             "
-                                              "C29                                                                             "
-                                              "C30                                                                             "
-                                              "C31                                                                             "
-                                              "C32                                                                             "
-                                              "C33                                                                             "
-                                              "C34                                                                             "
-                                              "C35                                                                             "
-                                              "C36                                                                             "
-                                              "C37                                                                             "
-                                              "C38                                                                             "
-                                              "C39 SEG-Y_REV2.0                                                                "
-                                              "C40 END TEXTUAL HEADER                                                          ";
+map<string, string> CommonSegy::trace_header_description = {
+    { "TRC_SEQ_LINE", "Trace sequence number within line." },
+    { "TRC_SEQ_SGY", "Trace sequence number within SEGY file." },
+    { "FFID", "Original field record number." },
+    { "CHAN", "Trace number within the original field record." },
+    { "ESP", "Energy source point number. Used when more than one record occures at the same effective surface location." },
+    { "ENS_NO", "Ensemble number (i.e. CDP, CMP, CRP, etc.)." },
+    { "SEQ_NO", "Trace number within the ensemble." },
+    { "TRACE_ID", "Trace identification code." },
+    { "VERT_SUM", "Number of vertically summed traces yielding this trace." },
+    { "HOR_SUM", "Number of horizontally stacked traces yielding this trace." },
+    { "DATA_USE", "Data use: 1 = Production, 2 = Test" },
+    { "OFFSET", "Distance from center of the source point to the center of the receiver group." },
+    { "R_ELEV", "Elevation of receiver group." },
+    { "S_ELEV", "Surface elevation at source location." },
+    { "S_DEPTH", "Source depth below surface." },
+    { "R_DATUM", "Seismic Datum elevation at receiver group." },
+    { "S_DATUM", "Seismic Datum elevation at source." },
+    { "S_WATER", "Water column height at source location." },
+    { "R_WATER", "Water column height at reseiver group location." },
+    { "ELEV_SCALAR", "Scalar to be aplied to all elevations and depths." },
+    { "COORD_SCALAR", "Scalar to be applied to all coordinates." },
+    { "SOU_X", "Source coordinate X." },
+    { "SOU_Y", "Source coordinate Y." },
+    { "REC_X", "Group coordinate X." },
+    { "REC_Y", "Group coordinate Y." },
+    { "COORD_UNITS", "Coordinate units. (1,3,4): lengt; decimal degrees; DMS." },
+    { "WEATH_VEL", "Weathering velocity." },
+    { "SUBWEATH_VEL", "Subweathering velocity." },
+    { "S_UPHOLE", "Uphole time at source in milliseconds." },
+    { "R_UPHOLE", "Uphole time at group in milliseconds." },
+    { "S_STAT", "Source static correction in milliseconds." },
+    { "R_STAT", "Receiver static correction in milliseconds." },
+    { "TOT_STAT", "Total static applied in milliseconds." },
+    { "LAG_A", "Lag time A. Time in ms between end of trace header and time break." },
+    { "LAG_B", "Lag time B. Time in ms between time break and initiation of source." },
+    { "DELAY_TIME", "Delay recording time. Time in ms between initiation of source andstart of recording" },
+    { "MUTE_START", "Mute time. Start time in milliseconds." },
+    { "MUTE_END", "Mute time. End time in milliseconds." },
+    { "SAMP_NUM", "Number of samples in this trace." },
+    { "SAMP_INT", "Sample interval for this trace." },
+    { "GAIN_TYPE", "Gain type of field instruments: 1 = fixed, 2 = binary, 3 = floating point." },
+    { "GAIN_CONST", "Instrument gain constant (dB)." },
+    { "INIT_GAIN", "Instrument early or initial gain (dB)." },
+    { "CORRELATED", "Correlated: 1 = no, 2 = yes." },
+    { "SW_START", "Sweep frequency at start (Hz)." },
+    { "SW_END", "Sweep frequency at end (Hz)." },
+    { "SW_LENGTH", "Sweep length in milliseconds." },
+    { "SW_TYPE", "Sweep type: 1 = linear, 2 = parabolic, 3 = exponential." },
+    { "SW_TAPER_START", "Sweep trace taper length at start in milliseconds." },
+    { "SW_TAPER_END", "Sweep trace taper length at end in milliseconds." },
+    { "TAPER_TYPE", "Taper type: 1 = linear, 2 = cos^2, 3 = other." },
+    { "ALIAS_FILT_FREQ", "Alias filter frequency (Hz), if used." },
+    { "ALIAS_FILT_SLOPE", "Alias filter slope (dB/octave)." },
+    { "NOTCH_FILT_FREQ", "Notch filter frequency (Hz), if used." },
+    { "NOTCH_FILT_SLOPE", "Notch filter slope (dB/octave)." },
+    { "LOW_CUT_FREQ", "Low-cut frequency (Hz), if used." },
+    { "HIGH_CUT_FREQ", "High-cut frequency (Hz), if used." },
+    { "LOW_CUT_SLOPE", "Low-cut slope (dB/octave)." },
+    { "HIGH_CUT_SLOPE", "High-cut slope (dB/octave)." },
+    { "YEAR", "Year data recorded." },
+    { "DAY", "Day of year." },
+    { "HOUR", "Year data recorded." },
+    { "MINUTE", "Minute of hour." },
+    { "SECOND", "Second of minute." },
+    { "TIME_BASIS_CODE", "Time basis code. 1 = local, 2 = GMT, 4 = UTC, 5 = GPS" },
+    { "TRACE_WEIGHT", "Trace weighting factor. Defined as 2^-N." },
+    { "GROUP_NUM_ROLL", "Geophone group number of roll switch position one." },
+    { "GROUP_NUM_FIRST", "Geophone group number of trace number one within original field record." },
+    { "GROUP_NUM_LAST", "Geophone group number of last trace within original field record." },
+    { "GAP_SIZE", "Gap size (total number of groups dropped)." },
+    { "OVER_TRAVEL", "Over travel associated with taper at beginning or end of line." },
+    { "CDP_X", "X coordinate of ensemble (CDP) position." },
+    { "CDP_Y", "Y coordinate of ensemble (CDP) position." },
+    { "INLINE", "In-line number (for 3D)." },
+    { "XLINE", "Cross-line number (for 3D)." },
+    { "SP_NUM", "Shotpoint number. Shotpoint number refers to the source location nearest to CDP location" },
+    { "SP_NUM_SCALAR", "Scalar to be applied to the SP_NUM." },
+    { "TR_VAL_UNIT", "Trace value measurement unit. 1 = Pa, 2 = V, 3 = mV, 4 = A, 5 = m, 6 = m/s, 7 = m/s/s, 8 = N, 9 = W" },
+    { "TRANS_CONST", "Transduction Constant. Transforms trace samples to the Transduction Units" },
+    { "TRANS_UNITS", "Transduction Units. 1 = Pa, 2 = V, 3 = mV, 4 = A, 5 = m, 6 = m/s, 7 = m/s/s, 8 = N, 9 = W" },
+    { "DEVICE_ID", "Device/Trace Identifier. The unit number or id of the device associated with trace data." },
+    { "TIME_SCALAR", "Scalar to be applied to upholes, statics, lags, delay and mutes." },
+    { "SOURCE_TYPE", "Defines the type and the orientation of energy source." },
+    { "SOU_V_DIR", "Source Energy Direction with respect to source orientation. Vertical." },
+    { "SOU_X_DIR", "Source Energy Direction with respect to source orientation. Cross-line." },
+    { "SOU_I_DIR", "Source Energy Direction with respect to source orientation. In-line." },
+    { "SOURCE_MEASUREMENT", "Source Measurement. Describes the source effort used to generate the trace." },
+    { "SOU_MEAS_UNIT", "The unit used for the Source Measurement. 1 = J, 2 = kW, 3 = Pa, 4 = Bar, 5 = N, 6 = kg." },
+    { "R_DEPTH", "Receiver group depth below the surface locacation of receiver group." },
+    { "NANO_SECOND", "Nanoseconds to add to Second of minute." },
+    { "CABLE_NUM", "Cable number for multi-cable acquisition or Recording Device/Sensor ID number." },
+    { "ADD_TRC_HDR_NUM", "Number of additional trace header extension blocks including this one." },
+    { "LAST_TRC_FLAG", "Last trace flag. 1 = in ensemble, 2 = in line, 4 = in file, 8 = in survey." },
+};
+
+char const* CommonSegy::default_text_header
+    = "C 1 CLIENT                        COMPANY                       CREW NO         "
+      "C 2 LINE            AREA                        MAP ID                          "
+      "C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER                  "
+      "C 4 INSTRUMENT: MFG            MODEL            SERIAL NO                       "
+      "C 5 DATA TRACES/RECORD        AUXILIARY TRACES/RECORD         CDP FOLD          "
+      "C 6 SAMPLE INTERVAL        SAMPLES/TRACE        BITS/IN     BYTES/SAMPLE        "
+      "C 7 RECORDING FORMAT       FORMAT THIS REEL         MEASUREMENT SYSTEM          "
+      "C 8 SAMPLE CODE: FLOATING PT     FIXED PT     FIXED PT-GAIN     CORRELATED      "
+      "C 9 GAIN  TYPE: FIXED     BINARY     FLOATING POINT     OTHER                   "
+      "C10 FILTERS: ALIAS     HZ  NOTCH     HZ  BAND     -     HZ  SLOPE    -    DB/OCT"
+      "C11 SOURCE: TYPE            NUMBER/POINT        POINT INTERVAL                  "
+      "C12     PATTERN:                           LENGTH        WIDTH                  "
+      "C13 SWEEP: START     HZ END      HZ  LENGTH      MS  CHANNEL NO     TYPE        "
+      "C14 TAPER: START LENGTH       MS  END LENGTH       MS TYPE                      "
+      "C15 SPREAD: OFFSET        MAX DISTANCE        GROUP INTEVAL                     "
+      "C16 GEOPHONES: PER GROUP     SPACEING    FREQUENCY     MFG          MODEL       "
+      "C17     PATTERN:                           LENGTH        WIDTH                  "
+      "C18 TRACES SORTED BY: RECORD     CDP     OTHER                                  "
+      "C19 AMPLITUDE RECOVERY: NONE      SPHERICAL DIV       AGC    OTHER              "
+      "C20 MAP PROJECTION                      ZONE ID       COORDINATE UNITS          "
+      "C21 PROCESSING:                                                                 "
+      "C22 PROCESSING:                                                                 "
+      "C23                                                                             "
+      "C24                                                                             "
+      "C25                                                                             "
+      "C26                                                                             "
+      "C27                                                                             "
+      "C28                                                                             "
+      "C29                                                                             "
+      "C30                                                                             "
+      "C31                                                                             "
+      "C32                                                                             "
+      "C33                                                                             "
+      "C34                                                                             "
+      "C35                                                                             "
+      "C36                                                                             "
+      "C37                                                                             "
+      "C38                                                                             "
+      "C39 SEG-Y_REV2.0                                                                "
+      "C40 END TEXTUAL HEADER                                                          ";
 } // namespace sedaman

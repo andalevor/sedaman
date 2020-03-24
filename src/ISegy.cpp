@@ -11,6 +11,7 @@ using std::ios_base;
 using std::make_unique;
 using std::move;
 using std::streampos;
+using std::streamsize;
 using std::string;
 using std::unordered_map;
 using std::vector;
@@ -21,6 +22,8 @@ public:
     Impl(string const& name);
     Impl(string&& name);
     CommonSegy common;
+
+private:
     streampos first_trace_pos;
     streampos curr_pos;
     streampos end_of_data;
@@ -30,8 +33,8 @@ public:
     function<uint32_t(char const**)> read_32;
     function<uint64_t(char const**)> read_64;
     function<double(char const**)> read_sample;
-
-private:
+    function<double(char const** buf)> dbl_from_IEEE_float;
+    function<double(char const** buf)> dbl_from_IEEE_double;
     void initialization();
     void fill_bin_header(char const* buf);
     void assign_raw_readers();
@@ -39,11 +42,12 @@ private:
     void read_ext_text_headers();
     void assign_bytes_per_sample();
     void read_trailer_stanzas();
-    void read_header();
+    unordered_map<string, Trace::Header::Value> read_header();
+    void read_file(char* buf, streamsize n);
     double dbl_from_ibm_float(char const** buf);
-    double dbl_from_IEEE_float(char const** buf);
+    double dbl_from_IEEE_float_native(char const** buf);
     double dbl_from_IEEE_float_not_native(char const** buf);
-    double dbl_from_IEEE_double(char const** buf);
+    double dbl_from_IEEE_double_native(char const** buf);
     double dbl_from_IEEE_double_not_native(char const** buf);
     double dbl_from_uint64(char const** buf);
     double dbl_from_int64(char const** buf);
@@ -69,6 +73,12 @@ ISegy::Impl::Impl(string&& name)
     initialization();
 }
 
+void ISegy::Impl::read_file(char* buf, streamsize n)
+{
+    common.file.read(buf, n);
+    curr_pos = common.file.tellg();
+}
+
 void ISegy::Impl::initialization()
 {
     char text_buf[CommonSegy::TEXT_HEADER_SIZE];
@@ -86,10 +96,10 @@ void ISegy::Impl::initialization()
     } else {
         first_trace_pos = common.file.tellg();
     }
-    curr_pos = first_trace_pos;
     common.samp_per_tr = common.bin_hdr.ext_samp_per_tr ? common.bin_hdr.ext_samp_per_tr : common.bin_hdr.samp_per_tr;
     read_trailer_stanzas();
     common.file.seekg(first_trace_pos);
+    curr_pos = first_trace_pos;
     common.samp_buf.resize(static_cast<decltype(common.samp_buf.size())>(common.samp_per_tr * common.bytes_per_sample));
 }
 
@@ -163,6 +173,13 @@ void ISegy::Impl::assign_raw_readers()
     default:
         throw Exception(__FILE__, __LINE__, "unsupported endianness");
     }
+    if (FLT_RADIX == 2 && DBL_MANT_DIG == 53) {
+        dbl_from_IEEE_float = [this](char const** buf) { return dbl_from_IEEE_float_native(buf); };
+        dbl_from_IEEE_double = [this](char const** buf) { return dbl_from_IEEE_double_native(buf); };
+    } else {
+        dbl_from_IEEE_float = [this](char const** buf) { return dbl_from_IEEE_float_not_native(buf); };
+        dbl_from_IEEE_double = [this](char const** buf) { return dbl_from_IEEE_double_not_native(buf); };
+    }
 }
 
 void ISegy::Impl::assign_sample_reader()
@@ -178,16 +195,10 @@ void ISegy::Impl::assign_sample_reader()
         read_sample = [this](char const** buf) { return dbl_from_int16(buf); };
         break;
     case 5:
-        if (FLT_RADIX == 2 && DBL_MANT_DIG == 53)
-            read_sample = [this](char const** buf) { return dbl_from_IEEE_float(buf); };
-        else
-            read_sample = [this](char const** buf) { return dbl_from_IEEE_float_not_native(buf); };
+        read_sample = [this](char const** buf) { return dbl_from_IEEE_float(buf); };
         break;
     case 6:
-        if (FLT_RADIX == 2 && DBL_MANT_DIG == 53)
-            read_sample = [this](char const** buf) { return dbl_from_IEEE_double(buf); };
-        else
-            read_sample = [this](char const** buf) { return dbl_from_IEEE_double_not_native(buf); };
+        read_sample = [this](char const** buf) { return dbl_from_IEEE_double(buf); };
         break;
     case 7:
         read_sample = [this](char const** buf) { return dbl_from_int24(buf); };
@@ -332,10 +343,136 @@ void ISegy::Impl::assign_bytes_per_sample()
     }
 }
 
-void ISegy::Impl::read_header()
+unordered_map<string, Trace::Header::Value> ISegy::Impl::read_header()
 {
-    common.file.read(common.hdr_buf.data(), CommonSegy::TR_HEADER_SIZE);
+    read_file(common.hdr_buf, CommonSegy::TR_HEADER_SIZE);
+    char const* buf = common.hdr_buf;
     unordered_map<string, Trace::Header::Value> hdr;
+    hdr["TRC_SEQ_LINE"] = static_cast<int32_t>(read_32(&buf));
+    hdr["TRC_SEQ_SGY"] = static_cast<int32_t>(read_32(&buf));
+    hdr["FFID"] = static_cast<int32_t>(read_32(&buf));
+    hdr["CHAN"] = static_cast<int32_t>(read_32(&buf));
+    hdr["ESP"] = static_cast<int32_t>(read_32(&buf));
+    hdr["ENS_NO"] = static_cast<int32_t>(read_32(&buf));
+    hdr["SEQ_NO"] = static_cast<int32_t>(read_32(&buf));
+    hdr["TRACE_ID"] = static_cast<int16_t>(read_16(&buf));
+    hdr["VERT_SUM"] = static_cast<int16_t>(read_16(&buf));
+    hdr["HOR_SUM"] = static_cast<int16_t>(read_16(&buf));
+    hdr["DATA_USE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["OFFSET"] = static_cast<int32_t>(read_32(&buf));
+    hdr["R_ELEV"] = static_cast<int32_t>(read_32(&buf));
+    hdr["S_ELEV"] = static_cast<int32_t>(read_32(&buf));
+    hdr["S_DEPTH"] = static_cast<int32_t>(read_32(&buf));
+    hdr["R_DATUM"] = static_cast<int32_t>(read_32(&buf));
+    hdr["S_DATUM"] = static_cast<int32_t>(read_32(&buf));
+    hdr["S_WATER"] = static_cast<int32_t>(read_32(&buf));
+    hdr["R_WATER"] = static_cast<int32_t>(read_32(&buf));
+    hdr["ELEV_SCALAR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["COORD_SCALAR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SOU_X"] = static_cast<int32_t>(read_32(&buf));
+    hdr["SOU_Y"] = static_cast<int32_t>(read_32(&buf));
+    hdr["REC_X"] = static_cast<int32_t>(read_32(&buf));
+    hdr["REC_Y"] = static_cast<int32_t>(read_32(&buf));
+    hdr["COORD_UNITS"] = static_cast<int16_t>(read_16(&buf));
+    hdr["WEATH_VEL"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SUBWEATH_VEL"] = static_cast<int16_t>(read_16(&buf));
+    hdr["S_UPHOLE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["R_UPHOLE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["S_STAT"] = static_cast<int16_t>(read_16(&buf));
+    hdr["R_STAT"] = static_cast<int16_t>(read_16(&buf));
+    hdr["TOT_STAT"] = static_cast<int16_t>(read_16(&buf));
+    hdr["LAG_A"] = static_cast<int16_t>(read_16(&buf));
+    hdr["LAG_B"] = static_cast<int16_t>(read_16(&buf));
+    hdr["DELAY_TIME"] = static_cast<int16_t>(read_16(&buf));
+    hdr["MUTE_START"] = static_cast<int16_t>(read_16(&buf));
+    hdr["MUTE_END"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SAMP_NUM"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SAMP_INT"] = static_cast<int16_t>(read_16(&buf));
+    hdr["GAIN_TYPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["GAIN_CONST"] = static_cast<int16_t>(read_16(&buf));
+    hdr["INIT_GAIN"] = static_cast<int16_t>(read_16(&buf));
+    hdr["CORRELATED"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SW_START"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SW_END"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SW_LENGTH"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SW_TYPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SW_TAPER_START"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SW_TAPER_END"] = static_cast<int16_t>(read_16(&buf));
+    hdr["TAPER_TYPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["ALIAS_FILT_FREQ"] = static_cast<int16_t>(read_16(&buf));
+    hdr["ALIAS_FILT_SLOPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["NOTCH_FILT_FREQ"] = static_cast<int16_t>(read_16(&buf));
+    hdr["NOTCH_FILT_SLOPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["LOW_CUT_FREQ"] = static_cast<int16_t>(read_16(&buf));
+    hdr["HIGH_CUT_FREQ"] = static_cast<int16_t>(read_16(&buf));
+    hdr["LOW_CUT_SLOPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["HIGH_CUT_SLOPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["YEAR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["DAY"] = static_cast<int16_t>(read_16(&buf));
+    hdr["HOUR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["MINUTE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SECOND"] = static_cast<int16_t>(read_16(&buf));
+    hdr["TIME_BASIS_CODE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["TRACE_WEIGHT"] = static_cast<int16_t>(read_16(&buf));
+    hdr["GROUP_NUM_ROLL"] = static_cast<int16_t>(read_16(&buf));
+    hdr["GROUP_NUM_FIRST"] = static_cast<int16_t>(read_16(&buf));
+    hdr["GROUP_NUM_LAST"] = static_cast<int16_t>(read_16(&buf));
+    hdr["GAP_SIZE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["OVER_TRAVEL"] = static_cast<int16_t>(read_16(&buf));
+    hdr["CDP_X"] = static_cast<int32_t>(read_32(&buf));
+    hdr["CDP_Y"] = static_cast<int32_t>(read_32(&buf));
+    hdr["INLINE"] = static_cast<int32_t>(read_32(&buf));
+    hdr["XLINE"] = static_cast<int32_t>(read_32(&buf));
+    hdr["SP_NUM"] = static_cast<int32_t>(read_32(&buf));
+    hdr["SP_NUM_SCALAR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["TR_VAL_UNIT"] = static_cast<int16_t>(read_16(&buf));
+    int32_t mant = static_cast<int32_t>(read_32(&buf));
+    hdr["TRANS_CONST"] = mant * pow(10, static_cast<int16_t>(read_16(&buf)));
+    hdr["TRANS_UNITS"] = static_cast<int16_t>(read_16(&buf));
+    hdr["DEVICE_ID"] = static_cast<int16_t>(read_16(&buf));
+    hdr["TIME_SCALAR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SOURCE_TYPE"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SOU_V_DIR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SOU_X_DIR"] = static_cast<int16_t>(read_16(&buf));
+    hdr["SOU_I_DIR"] = static_cast<int16_t>(read_16(&buf));
+    mant = static_cast<int32_t>(read_32(&buf));
+    hdr["SOURCE_MEASUREMENT"] = mant * pow(10, static_cast<int16_t>(read_16(&buf)));
+    hdr["SOU_MEAS_UNIT"] = static_cast<int16_t>(read_16(&buf));
+    if (common.bin_hdr.max_num_add_tr_headers > 0) {
+        read_file(common.hdr_buf, CommonSegy::TR_HEADER_SIZE);
+        char const* buf = common.hdr_buf;
+        hdr["TRC_SEQ_LINE"] = read_64(&buf);
+        hdr["TRC_SEQ_SGY"] = read_64(&buf);
+        hdr["FFID"] = read_64(&buf);
+        hdr["ENS_NO"] = read_64(&buf);
+        hdr["R_ELEV"] = dbl_from_IEEE_double(&buf);
+        hdr["R_DEPTH"] = dbl_from_IEEE_double(&buf);
+        hdr["S_DEPTH"] = dbl_from_IEEE_double(&buf);
+        hdr["R_DATUM"] = dbl_from_IEEE_double(&buf);
+        hdr["S_DATUM"] = dbl_from_IEEE_double(&buf);
+        hdr["S_WATER"] = dbl_from_IEEE_double(&buf);
+        hdr["R_WATER"] = dbl_from_IEEE_double(&buf);
+        hdr["SOU_X"] = dbl_from_IEEE_double(&buf);
+        hdr["SOU_Y"] = dbl_from_IEEE_double(&buf);
+        hdr["REC_X"] = dbl_from_IEEE_double(&buf);
+        hdr["REC_Y"] = dbl_from_IEEE_double(&buf);
+        hdr["OFFSET"] = dbl_from_IEEE_double(&buf);
+        hdr["SAMP_NUM"] = read_32(&buf);
+        hdr["NANOSECOND"] = static_cast<int32_t>(read_32(&buf));
+        double samp_int = dbl_from_IEEE_double(&buf);
+        if (samp_int)
+            hdr["SAMP_INT"] = samp_int;
+        hdr["CABLE_NUM"] = static_cast<int32_t>(read_32(&buf));
+        uint16_t add_trc_hdr_num = read_16(&buf);
+        if (!add_trc_hdr_num)
+            hdr["ADD_TRC_HDR_NUM"] = common.bin_hdr.max_num_add_tr_headers;
+        else
+            hdr["ADD_TRC_HDR_NUM"] = add_trc_hdr_num;
+        hdr["LAST_TRC_FLAG"] = static_cast<int16_t>(read_16(&buf));
+        hdr["CDP_X"] = dbl_from_IEEE_double(&buf);
+        hdr["CDP_Y"] = dbl_from_IEEE_double(&buf);
+    }
+    return hdr;
 }
 
 double ISegy::Impl::dbl_from_ibm_float(char const** buf)
@@ -348,7 +485,7 @@ double ISegy::Impl::dbl_from_ibm_float(char const** buf)
     return fraction / pow(2, 24) * pow(16, exp - 64) * sign;
 }
 
-double ISegy::Impl::dbl_from_IEEE_float(char const** buf)
+double ISegy::Impl::dbl_from_IEEE_float_native(char const** buf)
 {
     uint32_t tmp = read_32(buf);
     float result;
@@ -365,7 +502,7 @@ double ISegy::Impl::dbl_from_IEEE_float_not_native(char const** buf)
     return sign * pow(2, exp - 127) * (1 + fraction / pow(2, 23));
 }
 
-double ISegy::Impl::dbl_from_IEEE_double(char const** buf)
+double ISegy::Impl::dbl_from_IEEE_double_native(char const** buf)
 {
     uint64_t tmp = read_64(buf);
     double result;

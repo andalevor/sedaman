@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -130,16 +131,8 @@ public:
             BYTE_OFF_OF_FIRST_TR,
             NUM_OF_TRAILER_STANZA
         };
-        static std::string const& name_as_string(Name n);
+        static char const* name_as_string(Name n);
     };
-    ///
-    /// \param file_name Name of SEGY file.
-    ///
-    CommonSegy(std::string const& name, std::ios_base::openmode mode);
-    ///
-    /// \param file_name Name of SEGY file.
-    ///
-    CommonSegy(std::string&& name, std::ios_base::openmode mode);
     ///
     /// \fn ebcdic_to_ascii
     /// \brief Transform text header from ebcdic to ascii.
@@ -172,6 +165,18 @@ public:
     /// \brief SEGY trace header length in bytes
     ///
     static constexpr auto TR_HEADER_SIZE = 240;
+    ///
+    /// \brief trace_header_description
+    ///
+    static std::map<std::string, std::string> trace_header_description;
+    ///
+    /// \param file_name Name of SEGY file.
+    ///
+    CommonSegy(std::string const& name, std::ios_base::openmode mode);
+    ///
+    /// \param file_name Name of SEGY file.
+    ///
+    CommonSegy(std::string&& name, std::ios_base::openmode mode);
     ///
     /// \var file_name
     /// \brief Name of file on disk.
@@ -207,7 +212,7 @@ public:
     /// \brief Buffer for headers
     /// Size of buffer should be set by ISegy or OSegy
     ///
-    std::vector<char> hdr_buf;
+    char hdr_buf[TR_HEADER_SIZE];
     ///
     /// \var bytes_per_sample
     /// \brief Number of bytes per sample. Used for buffer size calculations.
