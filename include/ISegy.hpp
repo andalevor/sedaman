@@ -58,11 +58,17 @@ public:
     ///
     CommonSegy::BinaryHeader const& binary_header() const;
     ///
+    /// \fn has_next
+    /// \brief checks for next trace in file
+    /// \return true if there is at least one trace
+    ///
+    bool has_next();
+    ///
     /// \fn read_trace
     /// \brief reads one trace from file
-    /// \return trace
+    /// \return Trace
     ///
-    //trace read_trace();
+    Trace read_trace();
     ~ISegy();
 
 private:

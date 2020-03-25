@@ -11,3 +11,7 @@ target_link_libraries(print_text_header sedaman)
 add_executable(print_bin_header print_bin_header.cpp)
 add_test(print_bin_header_test print_bin_header ${PROJECT_SOURCE_DIR}/samples/ibm.sgy)
 target_link_libraries(print_bin_header sedaman)
+
+add_executable(no_such_file no_such_file.cpp)
+add_test(no_such_file_test no_such_file ${PROJECT_SOURCE_DIR}/samples/no_such_file)
+target_link_libraries(no_such_file sedaman)

@@ -1,19 +1,31 @@
 #include "ISegy.hpp"
+#include "CommonSegy.hpp"
 #include "Exception.hpp"
+#include "Trace.hpp"
 #include "util.hpp"
+#include <bits/stdint-intn.h>
+#include <bits/stdint-uintn.h>
 #include <cfloat>
 #include <fstream>
 #include <functional>
+#include <ios>
+#include <string>
+#include <unordered_map>
+#include <valarray>
+#include <variant>
 
+using std::get;
+using std::ios_base;
 using std::fstream;
 using std::function;
-using std::ios_base;
+using std::holds_alternative;
 using std::make_unique;
 using std::move;
 using std::streampos;
 using std::streamsize;
 using std::string;
 using std::unordered_map;
+using std::valarray;
 using std::vector;
 
 namespace sedaman {
@@ -22,11 +34,14 @@ public:
     Impl(string const& name);
     Impl(string&& name);
     CommonSegy common;
-
-private:
     streampos first_trace_pos;
     streampos curr_pos;
     streampos end_of_data;
+    unordered_map<string, Trace::Header::Value> read_trc_header();
+    valarray<double> read_trc_smpls();
+    valarray<double> read_trc_smpls_var(uint32_t samp_num);
+
+private:
     function<char(char const**)> read_8;
     function<uint16_t(char const**)> read_16;
     function<uint16_t(char const**)> read_24;
@@ -42,7 +57,6 @@ private:
     void read_ext_text_headers();
     void assign_bytes_per_sample();
     void read_trailer_stanzas();
-    unordered_map<string, Trace::Header::Value> read_header();
     void read_file(char* buf, streamsize n);
     double dbl_from_ibm_float(char const** buf);
     double dbl_from_IEEE_float_native(char const** buf);
@@ -343,7 +357,7 @@ void ISegy::Impl::assign_bytes_per_sample()
     }
 }
 
-unordered_map<string, Trace::Header::Value> ISegy::Impl::read_header()
+unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
 {
     read_file(common.hdr_buf, CommonSegy::TR_HEADER_SIZE);
     char const* buf = common.hdr_buf;
@@ -473,6 +487,59 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_header()
         hdr["CDP_Y"] = dbl_from_IEEE_double(&buf);
     }
     return hdr;
+}
+
+valarray<double> ISegy::Impl::read_trc_smpls()
+{
+    read_file(common.samp_buf.data(), common.samp_buf.size());
+    char const* buf = common.samp_buf.data();
+    valarray<double> result(common.samp_buf.size() / common.bytes_per_sample);
+    for (decltype(result.size()) i = 0; i < result.size(); ++i)
+        result[i] = read_sample(&buf);
+    return result;
+}
+
+valarray<double> ISegy::Impl::read_trc_smpls_var(uint32_t samp_num)
+{
+    if (common.samp_buf.size() != samp_num * common.bytes_per_sample)
+        common.samp_buf.resize(samp_num * common.bytes_per_sample);
+    return read_trc_smpls();
+}
+
+Trace ISegy::read_trace()
+{
+    unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trc_header();
+    auto it = hdr.find("ADD_TRC_HDR_NUM");
+    if (it != hdr.end()) {
+        int32_t trc_hrs_to_skip;
+        Trace::Header::Value v = (*it).second;
+        if (holds_alternative<uint16_t>(v))
+            trc_hrs_to_skip = get<uint16_t>(v) - 1; // cos we already read one
+        else
+            trc_hrs_to_skip = get<int32_t>(v) - 1; // cos we already read one
+        pimpl->common.file.seekg(CommonSegy::TR_HEADER_SIZE * trc_hrs_to_skip, ios_base::cur);
+    }
+    valarray<double> samples;
+    if (pimpl->common.bin_hdr.fixed_tr_length || pimpl->common.bin_hdr.SEGY_rev_major_ver == 0) {
+        samples = pimpl->read_trc_smpls();
+    } else {
+        uint32_t samp_num;
+        Trace::Header::Value v = hdr["SAMP_NUM"];
+        if (holds_alternative<uint32_t>(v))
+            samp_num = get<uint32_t>(v);
+        else
+            samp_num = get<int16_t>(v);
+        samples = pimpl->read_trc_smpls_var(samp_num);
+    }
+    return Trace(move(hdr), move(samples));
+}
+
+bool ISegy::has_next()
+{
+    if (pimpl->curr_pos == pimpl->end_of_data)
+        return false;
+    else
+        return true;
 }
 
 double ISegy::Impl::dbl_from_ibm_float(char const** buf)
