@@ -64,6 +64,12 @@ public:
     ///
     bool has_next();
     ///
+    /// \fn read_header
+    /// \brief reads header, skips samples
+    /// \return Trace::Header
+    ///
+    Trace::Header read_header();
+    ///
     /// \fn read_trace
     /// \brief reads one trace from file
     /// \return Trace

@@ -12,4 +12,5 @@ int main()
     CommonSegy::ebcdic_to_ascii(ascii_converted);
     if (ascii != ascii_converted)
         return 1;
+    return 0;
 }
