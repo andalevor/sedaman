@@ -63,21 +63,6 @@ private:
 	void assign_bytes_per_sample();
 	void read_trailer_stanzas();
 	void fill_buf_from_file(char* buf, streamsize n);
-	double dbl_from_ibm_float(char const** buf);
-	double dbl_from_IEEE_float_native(char const** buf);
-	double dbl_from_IEEE_float_not_native(char const** buf);
-	double dbl_from_IEEE_double_native(char const** buf);
-	double dbl_from_IEEE_double_not_native(char const** buf);
-	double dbl_from_uint64(char const** buf);
-	double dbl_from_int64(char const** buf);
-	double dbl_from_uint32(char const** buf);
-	double dbl_from_int32(char const** buf);
-	double dbl_from_uint24(char const** buf);
-	double dbl_from_int24(char const** buf);
-	double dbl_from_uint16(char const** buf);
-	double dbl_from_int16(char const** buf);
-	double dbl_from_uint8(char const** buf);
-	double dbl_from_int8(char const** buf);
 };
 
 ISegy::Impl::Impl(string const& name)
@@ -217,11 +202,33 @@ void ISegy::Impl::assign_raw_readers()
 			throw Exception(__FILE__, __LINE__, "unsupported endianness");
 	}
 	if (FLT_RADIX == 2 && DBL_MANT_DIG == 53) {
-		dbl_from_IEEE_float = [this](char const** buf) { return dbl_from_IEEE_float_native(buf); };
-		dbl_from_IEEE_double = [this](char const** buf) { return dbl_from_IEEE_double_native(buf); };
+		dbl_from_IEEE_float = [this](char const** buf) {
+			uint32_t tmp = read_u32(buf);
+			float result;
+			memcpy(&result, &tmp, sizeof(result));
+			return static_cast<double>(result);
+		};
+		dbl_from_IEEE_double = [this](char const** buf) {
+			uint64_t tmp = read_u64(buf);
+			double result;
+			memcpy(&result, &tmp, sizeof(result));
+			return result;
+		};
 	} else {
-		dbl_from_IEEE_float = [this](char const** buf) { return dbl_from_IEEE_float_not_native(buf); };
-		dbl_from_IEEE_double = [this](char const** buf) { return dbl_from_IEEE_double_not_native(buf); };
+		dbl_from_IEEE_float = [this](char const** buf) {
+			uint32_t tmp = read_u32(buf);
+			int sign = tmp >> 31 ? -1 : 1;
+			int exp = (tmp & 0x7fffffff) >> 23;
+			uint32_t fraction = tmp & 0x7fffff;
+			return sign * pow(2, exp - 127) * (1 + fraction / pow(2, 23));
+		};
+		dbl_from_IEEE_double = [this](char const** buf) {
+			uint64_t tmp = read_u64(buf);
+			int sign = tmp >> 63 ? -1 : 1;
+			int exp = (tmp & 0x7fffffffffffffff) >> 52;
+			uint64_t fraction = tmp & 0x000fffffffffffff;
+			return sign * pow(2, exp - 1023) * (1 + fraction / pow(2, 52));
+		};
 	}
 }
 
@@ -229,13 +236,20 @@ void ISegy::Impl::assign_sample_reader()
 {
 	switch (common.bin_hdr.format_code) {
 		case 1:
-			read_sample = [this](char const** buf) { return dbl_from_ibm_float(buf); };
+			read_sample = [this](char const** buf) {
+				uint32_t ibm = read_u32(buf);
+				int sign = ibm >> 31 ? -1 : 1;
+				int exp = ibm >> 24 & 0x7f;
+				uint32_t fraction = ibm & 0x00ffffff;
+
+				return fraction / pow(2, 24) * pow(16, exp - 64) * sign;
+			};
 			break;
 		case 2:
-			read_sample = [this](char const** buf) { return dbl_from_int32(buf); };
+			read_sample = [this](char const** buf) { return read_i32(buf);};
 			break;
 		case 3:
-			read_sample = [this](char const** buf) { return dbl_from_int16(buf); };
+			read_sample = [this](char const** buf) { return read_i16(buf);};
 			break;
 		case 5:
 			read_sample = [this](char const** buf) { return dbl_from_IEEE_float(buf); };
@@ -244,28 +258,28 @@ void ISegy::Impl::assign_sample_reader()
 			read_sample = [this](char const** buf) { return dbl_from_IEEE_double(buf); };
 			break;
 		case 7:
-			read_sample = [this](char const** buf) { return dbl_from_int24(buf); };
+			read_sample = [this](char const** buf) { return read_i24(buf);};
 			break;
 		case 8:
-			read_sample = [this](char const** buf) { return dbl_from_int8(buf); };
+			read_sample = [this](char const** buf) { return read_i8(buf);};
 			break;
 		case 9:
-			read_sample = [this](char const** buf) { return dbl_from_int64(buf); };
+			read_sample = [this](char const** buf) { return read_i64(buf);};
 			break;
 		case 10:
-			read_sample = [this](char const** buf) { return dbl_from_uint32(buf); };
+			read_sample = [this](char const** buf) { return read_u32(buf);};
 			break;
 		case 11:
-			read_sample = [this](char const** buf) { return dbl_from_uint16(buf); };
+			read_sample = [this](char const** buf) { return read_u16(buf);};
 			break;
 		case 12:
-			read_sample = [this](char const** buf) { return dbl_from_uint64(buf); };
+			read_sample = [this](char const** buf) { return read_u64(buf);};
 			break;
 		case 15:
-			read_sample = [this](char const** buf) { return dbl_from_uint24(buf); };
+			read_sample = [this](char const** buf) { return read_u24(buf);};
 			break;
 		case 16:
-			read_sample = [this](char const** buf) { return dbl_from_uint8(buf); };
+			read_sample = [this](char const** buf) { return read_u8(buf);};
 			break;
 		default:
 			throw(Exception(__FILE__, __LINE__, "unsupported format"));
@@ -588,100 +602,6 @@ bool ISegy::has_next()
 		return false;
 	else
 		return true;
-}
-
-double ISegy::Impl::dbl_from_ibm_float(char const** buf)
-{
-	uint32_t ibm = read_u32(buf);
-	int sign = ibm >> 31 ? -1 : 1;
-	int exp = ibm >> 24 & 0x7f;
-	uint32_t fraction = ibm & 0x00ffffff;
-
-	return fraction / pow(2, 24) * pow(16, exp - 64) * sign;
-}
-
-double ISegy::Impl::dbl_from_IEEE_float_native(char const** buf)
-{
-	uint32_t tmp = read_u32(buf);
-	float result;
-	memcpy(&result, &tmp, sizeof(result));
-	return static_cast<double>(result);
-}
-
-double ISegy::Impl::dbl_from_IEEE_float_not_native(char const** buf)
-{
-	uint32_t tmp = read_u32(buf);
-	int sign = tmp >> 31 ? -1 : 1;
-	int exp = (tmp & 0x7fffffff) >> 23;
-	uint32_t fraction = tmp & 0x7fffff;
-	return sign * pow(2, exp - 127) * (1 + fraction / pow(2, 23));
-}
-
-double ISegy::Impl::dbl_from_IEEE_double_native(char const** buf)
-{
-	uint64_t tmp = read_u64(buf);
-	double result;
-	memcpy(&result, &tmp, sizeof(result));
-	return result;
-}
-
-double ISegy::Impl::dbl_from_IEEE_double_not_native(char const** buf)
-{
-	uint64_t tmp = read_u64(buf);
-	int sign = tmp >> 63 ? -1 : 1;
-	int exp = (tmp & 0x7fffffffffffffff) >> 52;
-	uint64_t fraction = tmp & 0x000fffffffffffff;
-	return sign * pow(2, exp - 1023) * (1 + fraction / pow(2, 52));
-}
-
-double ISegy::Impl::dbl_from_uint64(char const** buf)
-{
-	return static_cast<double>(read_u64(buf));
-}
-
-double ISegy::Impl::dbl_from_int64(char const** buf)
-{
-	return static_cast<double>(read_i64(buf));
-}
-
-double ISegy::Impl::dbl_from_uint32(char const** buf)
-{
-	return static_cast<double>(read_u32(buf));
-}
-
-double ISegy::Impl::dbl_from_int32(char const** buf)
-{
-	return static_cast<double>(read_i32(buf));
-}
-
-double ISegy::Impl::dbl_from_uint24(char const** buf)
-{
-	return static_cast<double>(read_u24(buf));
-}
-
-double ISegy::Impl::dbl_from_int24(char const** buf)
-{
-	return static_cast<double>(read_i24(buf));
-}
-
-double ISegy::Impl::dbl_from_uint16(char const** buf)
-{
-	return static_cast<double>(read_u16(buf));
-}
-
-double ISegy::Impl::dbl_from_int16(char const** buf)
-{
-	return static_cast<double>(read_i16(buf));
-}
-
-double ISegy::Impl::dbl_from_uint8(char const** buf)
-{
-	return static_cast<double>(read_u8(buf));
-}
-
-double ISegy::Impl::dbl_from_int8(char const** buf)
-{
-	return static_cast<double>(read_i8(buf));
 }
 
 vector<string> const& ISegy::text_headers() const
