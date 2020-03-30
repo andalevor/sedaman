@@ -35,6 +35,19 @@ T read(char const** buf)
 }
 
 ///
+/// \fn write
+/// \brief writes specified value to buffer
+/// Writes to buffer value converted of bytes.
+/// \param buf pointer to buffer to write to
+///
+template <typename T>
+void write(char const** buf, T val)
+{
+	memcpy(*buf, &val, sizeof(T));
+	*buf += sizeof(T);
+}
+
+///
 /// \fn swap
 /// \brief swaps bytes
 /// \param val
