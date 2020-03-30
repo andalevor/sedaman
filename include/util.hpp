@@ -28,10 +28,10 @@ namespace sedaman {
 template <typename T>
 T read(char const** buf)
 {
-    T result;
-    memcpy(&result, *buf, sizeof(T));
-    *buf += sizeof(T);
-    return result;
+	T result;
+	memcpy(&result, *buf, sizeof(T));
+	*buf += sizeof(T);
+	return result;
 }
 
 ///
@@ -43,12 +43,12 @@ T read(char const** buf)
 template <typename T>
 T swap(T const val)
 {
-    T result;
-    unsigned char* to = reinterpret_cast<unsigned char*>(&result);
-    unsigned char const* from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
-    for (int counter = sizeof(T); counter; --counter)
-        *to++ = *from--;
-    return result;
+	T result;
+	unsigned char* to = reinterpret_cast<unsigned char*>(&result);
+	unsigned char const* from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
+	for (int counter = sizeof(T); counter; --counter)
+		*to++ = *from--;
+	return result;
 }
 } // namespace sedaman
 

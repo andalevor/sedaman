@@ -18,18 +18,18 @@
 namespace sedaman {
 class Exception : public std::exception {
 public:
-    Exception(Exception const& e);
-    Exception(Exception&& e);
-    Exception(std::string const& file_name, unsigned long long line_num,
-        std::string const& message);
-    Exception(std::string&& file_name, unsigned long long line_num,
-        std::string&& message);
-    char const* what() const noexcept override;
-    virtual ~Exception() override;
+	Exception(Exception const& e);
+	Exception(Exception&& e);
+	Exception(std::string const& file_name, unsigned long long line_num,
+			  std::string const& message);
+	Exception(std::string&& file_name, unsigned long long line_num,
+			  std::string&& message);
+	char const* what() const noexcept override;
+	virtual ~Exception() override;
 
 private:
-    class Impl;
-    std::experimental::propagate_const<std::unique_ptr<Impl>> pimpl;
+	class Impl;
+	std::experimental::propagate_const<std::unique_ptr<Impl>> pimpl;
 };
 } // namespace sedaman
 
