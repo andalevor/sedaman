@@ -41,7 +41,7 @@ T read(char const** buf)
 /// \param buf pointer to buffer to write to
 ///
 template <typename T>
-void write(char const** buf, T val)
+void write(char** buf, T val)
 {
 	memcpy(*buf, &val, sizeof(T));
 	*buf += sizeof(T);

@@ -30,7 +30,7 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	explicit ISegy(std::string const& segy_name);
+	explicit ISegy(std::string const& file_name);
 	///
 	/// \param file_name Name of SEGY file.
 	/// \throws std::ifstream::failure In case of file operations falure
