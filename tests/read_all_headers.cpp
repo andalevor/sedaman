@@ -12,7 +12,12 @@ int main(int argc, char *argv[])
         sedaman::ISegy segy(argv[1]);
         while (segy.has_next()) {
             sedaman::Trace::Header hdr = segy.read_header();
-            sedaman::Trace::Header::Value v = hdr.get("TRC_SEQ_LINE");
+			std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");
+			sedaman::Trace::Header::Value v;
+			if (opt)
+				v = *opt;
+			else
+				return 1;
             assert(std::get<int32_t>(v) == val++);
         }
     } catch (std::exception& e) {

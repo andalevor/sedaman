@@ -2,6 +2,8 @@
 
 using std::make_unique;
 using std::move;
+using std::nullopt;
+using std::optional;
 using std::pair;
 using std::string;
 using std::unordered_map;
@@ -50,12 +52,18 @@ public:
 Trace::Header const& Trace::header() const { return pimpl->d_header; }
 valarray<double> const& Trace::samples() const { return pimpl->d_samples; }
 
-Trace::Header::Value const& Trace::Header::get(string const& key) { return pimpl->d_hdr.at(key); }
-Trace::Header::Value const& Trace::Header::get(string&& key) { return pimpl->d_hdr.at(move(key)); }
-Trace::Header::Value& Trace::Header::get_mut(string const& key) { return pimpl->d_hdr.at(key); }
-Trace::Header::Value& Trace::Header::get_mut(string&& key) { return pimpl->d_hdr.at(move(key)); }
-bool Trace::Header::insert(pair<string, Value> const& pair) { return (pimpl->d_hdr.insert(pair)).second; }
-bool Trace::Header::insert(pair<string, Value>&& pair) { return (pimpl->d_hdr.insert(move(pair))).second; }
+optional<Trace::Header::Value> Trace::Header::get(string const& key) const
+{
+	auto it = pimpl->d_hdr.find(key);
+	return it == pimpl->d_hdr.end() ? nullopt : optional<Header::Value>(it->second);
+}
+optional<Trace::Header::Value> Trace::Header::get(string&& key) const
+{
+	auto it = pimpl->d_hdr.find(move(key));
+	return it == pimpl->d_hdr.end() ? nullopt : optional<Header::Value>(it->second);
+}
+void Trace::Header::set(string const& key, Value v) { pimpl->d_hdr[key] = v; }
+void Trace::Header::set(string&& key, Value v) { pimpl->d_hdr[move(key)] = v; }
 
 Trace::Header::Header(Header const& hdr)
 	: pimpl { make_unique<Impl>(hdr.pimpl->d_hdr) }

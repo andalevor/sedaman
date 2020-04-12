@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <experimental/propagate_const>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <valarray>
 #include <variant>
@@ -59,29 +60,18 @@ public:
 		/// \fn get
 		/// \brief gets header value by specified key
 		/// \param key to get assosiated value
-		/// \return value
-		/// \throws out_of_range if there is no such key
+		/// \return optional value
 		///
-		Value const& get(std::string const& key);
-		Value const& get(std::string&& key);
+		std::optional<Value> get(std::string const& key) const;
+		std::optional<Value> get(std::string&& key) const;
 		///
-		/// \fn get_mut
-		/// \brief gets mutable header value by specified key
+		/// \fn set
+		/// \brief sets or adds header value by specified key
 		/// \param key to get assosiated value
-		/// \return value
-		/// \throws out_of_range if there is no such key
+		/// \param v value to set
 		///
-		Value& get_mut(std::string const& key);
-		Value& get_mut(std::string&& key);
-		///
-		/// \fn insert
-		/// \brief inserts new header with given value
-		/// \param pair of key and value
-		/// \return true if insertion was successful
-		/// Inserts only if there was no such header.
-		///
-		bool insert(std::pair<std::string, Value> const& pair);
-		bool insert(std::pair<std::string, Value>&& pair);
+		void set(std::string const& key, Value v);
+		void set(std::string&& key, Value v);
 
 	private:
 		class Impl;

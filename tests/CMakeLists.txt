@@ -31,3 +31,7 @@ target_link_libraries(count_all_traces sedaman)
 add_executable(read_trace_samples read_trace_samples.cpp)
 add_test(read_trace_samples_test read_trace_samples ${PROJECT_SOURCE_DIR}/samples/ibm.sgy)
 target_link_libraries(read_trace_samples sedaman)
+
+add_executable(read_and_write read_and_write.cpp)
+add_test(read_and_write_test read_and_write ${PROJECT_SOURCE_DIR}/samples/ibm.sgy /tmp/test.sgy)
+target_link_libraries(read_and_write sedaman)

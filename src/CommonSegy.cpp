@@ -11,7 +11,7 @@ using std::vector;
 
 namespace sedaman {
 CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
-	: file_name { name }
+	: file_name { name }, bin_hdr {}
 {
 	fstream fl;
 	fl.exceptions(fstream::failbit | fstream::badbit);
@@ -20,7 +20,7 @@ CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
 }
 
 CommonSegy::CommonSegy(string&& name, ios_base::openmode mode)
-	: file_name { move(name) }
+	: file_name { move(name) }, bin_hdr {}
 {
 	fstream fl;
 	fl.exceptions(fstream::failbit | fstream::badbit);
