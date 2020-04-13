@@ -10,17 +10,8 @@ using std::valarray;
 using std::vector;
 
 namespace sedaman {
-CommonSegy::CommonSegy(string const& name, ios_base::openmode mode)
-	: file_name { name }, bin_hdr {}
-{
-	fstream fl;
-	fl.exceptions(fstream::failbit | fstream::badbit);
-	fl.open(file_name, mode);
-	file = move(fl);
-}
-
-CommonSegy::CommonSegy(string&& name, ios_base::openmode mode)
-	: file_name { move(name) }, bin_hdr {}
+CommonSegy::CommonSegy(string name, ios_base::openmode mode, BinaryHeader bh)
+	: file_name { move(name) }, bin_hdr { move(bh) }
 {
 	fstream fl;
 	fl.exceptions(fstream::failbit | fstream::badbit);

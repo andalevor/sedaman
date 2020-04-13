@@ -171,12 +171,10 @@ public:
 	static std::map<std::string, std::string> trace_header_description;
 	///
 	/// \param file_name Name of SEGY file.
+	/// \param mode Used to switch between input and output
+	/// \param bh Can be used to override binary header values. Usefull for OSegy.
 	///
-	CommonSegy(std::string const& name, std::ios_base::openmode mode);
-	///
-	/// \param file_name Name of SEGY file.
-	///
-	CommonSegy(std::string&& name, std::ios_base::openmode mode);
+	CommonSegy(std::string name, std::ios_base::openmode mode, BinaryHeader bh = {});
 	///
 	/// \var file_name
 	/// \brief Name of file on disk.

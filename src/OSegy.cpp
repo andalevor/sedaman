@@ -23,8 +23,7 @@ using std::valarray;
 namespace sedaman {
 class OSegy::Impl {
 public:
-	Impl(string const& name, string const& revision);
-	Impl(string&& name, string&& revision);
+	Impl(string name, string revision);
 	void write_trace_header(Trace::Header const &hdr);
 	void write_trace_samples(Trace const &t, uint32_t samp_num);
 	~Impl();
@@ -52,18 +51,7 @@ private:
 	void write_bin_header();
 };
 
-OSegy::Impl::Impl(string const& name, string const& revision)
-	: common { name, fstream::out | fstream::binary }
-{
-	if (revision == "rev0")
-		init_r0();
-	else if (revision == "rev1")
-		init_r1();
-	else
-		init_r20();
-}
-
-OSegy::Impl::Impl(string&& name, string&& revision)
+OSegy::Impl::Impl(string name, string revision)
 	: common { move(name), fstream::out | fstream::binary }
 {
 	if (revision == "rev0")
@@ -510,11 +498,7 @@ void OSegy::Impl::write_trace_samples(Trace const &t, uint32_t samp_num)
 	common.file.write(common.samp_buf.data(), common.samp_buf.size());
 }
 
-OSegy::OSegy(string const& name, string const& revision)
-	: pimpl(make_unique<Impl>(name, revision))
-{
-}
-OSegy::OSegy(string&& name, string&& revision)
+OSegy::OSegy(string name, string revision)
 	: pimpl(make_unique<Impl>(move(name), move(revision)))
 {
 }

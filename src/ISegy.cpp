@@ -30,8 +30,7 @@ using std::vector;
 namespace sedaman {
 class ISegy::Impl {
 public:
-	Impl(string const& name);
-	Impl(string&& name);
+	Impl(string name);
 	CommonSegy common;
 	streampos first_trace_pos;
 	streampos curr_pos;
@@ -65,31 +64,8 @@ private:
 	void fill_buf_from_file(char* buf, streamsize n);
 };
 
-ISegy::Impl::Impl(string const& name)
-	: common { name, fstream::in | fstream::binary }
-{
-	initialization();
-}
-
-ISegy::Impl::Impl(string&& name)
+ISegy::Impl::Impl(string name)
 	: common { move(name), fstream::in | fstream::binary }
-{
-	initialization();
-}
-
-void ISegy::Impl::fill_buf_from_file(char* buf, streamsize n)
-{
-	common.file.read(buf, n);
-	curr_pos = common.file.tellg();
-}
-
-void ISegy::Impl::file_skip_bytes(streamoff off)
-{
-	common.file.seekg(off, ios_base::cur);
-	curr_pos = common.file.tellg();
-}
-
-void ISegy::Impl::initialization()
 {
 	char text_buf[CommonSegy::TEXT_HEADER_SIZE];
 	common.file.read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
@@ -113,6 +89,18 @@ void ISegy::Impl::initialization()
 	curr_pos = first_trace_pos;
 	common.samp_buf.resize(static_cast<decltype(common.samp_buf.size())>(
 			common.samp_per_tr * common.bytes_per_sample));
+}
+
+void ISegy::Impl::fill_buf_from_file(char* buf, streamsize n)
+{
+	common.file.read(buf, n);
+	curr_pos = common.file.tellg();
+}
+
+void ISegy::Impl::file_skip_bytes(streamoff off)
+{
+	common.file.seekg(off, ios_base::cur);
+	curr_pos = common.file.tellg();
 }
 
 void ISegy::Impl::fill_bin_header(char const* buf)
@@ -619,11 +607,7 @@ CommonSegy::BinaryHeader const& ISegy::binary_header() const
 	return pimpl->common.bin_hdr;
 }
 
-ISegy::ISegy(string const& name)
-	: pimpl(make_unique<Impl>(name))
-{
-}
-ISegy::ISegy(string&& name)
+ISegy::ISegy(string name)
 	: pimpl(make_unique<Impl>(move(name)))
 {
 }

@@ -30,13 +30,7 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	explicit ISegy(std::string const& file_name);
-	///
-	/// \param file_name Name of SEGY file.
-	/// \throws std::ifstream::failure In case of file operations falure
-	/// \throws sedaman::Exception
-	///
-	explicit ISegy(std::string&& file_name);
+	explicit ISegy(std::string file_name);
 	///
 	/// \fn text_header
 	/// \brief segy text headers getter

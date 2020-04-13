@@ -31,14 +31,7 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	OSegy(std::string const& file_name, std::string const& revision = "rev2.0");
-	///
-	/// \param file_name Name of SEGY file.
-	/// \param revision SEGY standard revision.
-	/// \throws std::ifstream::failure In case of file operations falure
-	/// \throws sedaman::Exception
-	///
-	OSegy(std::string&& file_name, std::string&& revision = "rev2.0");
+	OSegy(std::string file_name, std::string revision = "rev2.0");
 	///
 	/// \param
 	OSegy &write_trace(Trace &tr);

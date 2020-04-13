@@ -48,11 +48,7 @@ public:
 		///
 		/// \param hdr Header bytes
 		///
-		Header(std::unordered_map<std::string, Value> const& hdr);
-		///
-		/// \param hdr Header bytes
-		///
-		Header(std::unordered_map<std::string, Value>&& hdr);
+		Header(std::unordered_map<std::string, Value> hdr);
 		~Header();
 		Header& operator=(Header const& other);
 		Header& operator=(Header&& other) noexcept;
@@ -62,16 +58,14 @@ public:
 		/// \param key to get assosiated value
 		/// \return optional value
 		///
-		std::optional<Value> get(std::string const& key) const;
-		std::optional<Value> get(std::string&& key) const;
+		std::optional<Value> get(std::string key) const;
 		///
 		/// \fn set
 		/// \brief sets or adds header value by specified key
 		/// \param key to get assosiated value
 		/// \param v value to set
 		///
-		void set(std::string const& key, Value v);
-		void set(std::string&& key, Value v);
+		void set(std::string key, Value v);
 
 	private:
 		class Impl;
@@ -89,14 +83,8 @@ public:
 	/// \param hdr Header values
 	/// \param smpl Samples values
 	///
-	Trace(std::unordered_map<std::string, Header::Value> const& hdr,
-		  std::valarray<double> const& smpl);
-	///
-	/// \param hdr Header values
-	/// \param smpl Samples values
-	///
-	Trace(std::unordered_map<std::string, Header::Value>&& hdr,
-		  std::valarray<double>&& smpl);
+	Trace(std::unordered_map<std::string, Header::Value> hdr,
+		  std::valarray<double> smpl);
 	~Trace();
 	Trace& operator=(Trace const& other);
 	Trace& operator=(Trace&& other) noexcept;
