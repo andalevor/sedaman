@@ -30,7 +30,22 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	ISegy(std::string file_name, BinaryHeader binary_header = {});
+	explicit ISegy(std::string file_name);
+	///
+	/// \param file_name Name of SEGY file.
+	/// \param binary_header Could be used to override values in binary header.
+	/// \throws std::ifstream::failure In case of file operations falure
+	/// \throws sedaman::Exception
+	///
+	ISegy(std::string file_name, BinaryHeader binary_header);
+	///
+	/// \param file_name Name of SEGY file.
+	/// \throws std::ifstream::failure In case of file operations falure
+	/// \throws sedaman::Exception
+	/// \brief creates ISegy instance internally and returns binary header.
+	/// Could be used to get binary header from file to override some values.
+	///
+	static CommonSegy::BinaryHeader read_binary_header(std::string file_name);
 	///
 	/// \fn text_header
 	/// \brief segy text headers getter

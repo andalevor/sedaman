@@ -30,7 +30,7 @@ using std::vector;
 namespace sedaman {
 class ISegy::Impl {
 public:
-	Impl(ISegy &s);
+	Impl(ISegy &s, bool override_bin_hdr);
 	streampos first_trace_pos;
 	streampos curr_pos;
 	streampos end_of_data;
@@ -64,7 +64,7 @@ private:
 	void fill_buf_from_file(char* buf, streamsize n);
 };
 
-ISegy::Impl::Impl(ISegy &s)
+ISegy::Impl::Impl(ISegy &s, bool override_bin_hdr)
 	: sgy { s }
 {
 	char text_buf[CommonSegy::TEXT_HEADER_SIZE];
@@ -72,7 +72,8 @@ ISegy::Impl::Impl(ISegy &s)
 	sgy.p_txt_hdrs().push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
 	char bin_buf[CommonSegy::BIN_HEADER_SIZE];
 	sgy.p_file().read(bin_buf, CommonSegy::BIN_HEADER_SIZE);
-	fill_bin_header(bin_buf);
+	if (!override_bin_hdr)
+		fill_bin_header(bin_buf);
 	assign_sample_reader();
 	assign_bytes_per_sample();
 	read_ext_text_headers();
@@ -607,10 +608,22 @@ CommonSegy::BinaryHeader const& ISegy::binary_header()
 	return CommonSegy::p_bin_hdr();
 }
 
+ISegy::ISegy(string name)
+	: CommonSegy(move(name), fstream::in | fstream::binary, {}),
+	pimpl(make_unique<Impl>(*this, false))
+{
+}
+
 ISegy::ISegy(string name, BinaryHeader bh)
 	: CommonSegy(move(name), fstream::in | fstream::binary, move(bh)),
-	pimpl(make_unique<Impl>(*this))
+	pimpl(make_unique<Impl>(*this, true))
 {
+}
+
+CommonSegy::BinaryHeader ISegy::read_binary_header(std::string file_name)
+{
+	ISegy s(file_name);
+	return s.binary_header();
 }
 
 ISegy::~ISegy() = default;
