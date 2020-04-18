@@ -23,32 +23,32 @@ namespace sedaman {
 /// \brief Class for SEGY reading.
 /// Defines methods to read information from SEGY files.
 ///
-class ISegy {
+class ISegy : CommonSegy {
 public:
 	///
 	/// \param file_name Name of SEGY file.
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	explicit ISegy(std::string file_name);
+	ISegy(std::string file_name, BinaryHeader binary_header = {});
 	///
 	/// \fn text_header
 	/// \brief segy text headers getter
 	/// \return vector with text headers
 	///
-	std::vector<std::string> const& text_headers() const;
+	std::vector<std::string> const& text_headers();
 	///
 	/// \fn trailer_stanzas
 	/// \brief segy trailer stanzas getter
 	/// \return vector with text headers
 	///
-	std::vector<std::string> const& trailer_stanzas() const;
+	std::vector<std::string> const& trailer_stanzas();
 	///
 	/// \fn binary_header
 	/// \brief segy binary header getter
 	/// \return binary header
 	///
-	CommonSegy::BinaryHeader const& binary_header() const;
+	CommonSegy::BinaryHeader const& binary_header();
 	///
 	/// \fn has_next
 	/// \brief checks for next trace in file
@@ -67,11 +67,11 @@ public:
 	/// \return Trace
 	///
 	Trace read_trace();
-	~ISegy();
+	virtual ~ISegy();
 
 private:
 	class Impl;
-	std::experimental::propagate_const<std::unique_ptr<Impl>> pimpl;
+	std::unique_ptr<Impl> pimpl;
 };
 } // namespace sedaman
 

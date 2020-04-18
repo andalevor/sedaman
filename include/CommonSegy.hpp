@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -138,13 +139,13 @@ public:
 	/// \brief Transform text header from ebcdic to ascii.
 	/// \param ebcdic String in ebcdic encoding.
 	///
-	static void ebcdic_to_ascii(std::string ebcdic);
+	static void ebcdic_to_ascii(std::string &ebcdic);
 	///
 	/// \fn ascii_to_ebcdic
 	/// \brief Transform text header from ascii to ebcdic.
 	/// \param ascii String in ascii encoding.
 	///
-	static void ascii_to_ebcdic(std::string ascii);
+	static void ascii_to_ebcdic(std::string &ascii);
 	///
 	/// \var default_text_header
 	/// \brief Default SEGY text header from standard.
@@ -154,73 +155,68 @@ public:
 	/// \var TEXT_HEADER_SIZE
 	/// \brief SEGY text header length in bytes
 	///
-	static constexpr auto TEXT_HEADER_SIZE = 3200;
+	static constexpr int TEXT_HEADER_SIZE = 3200;
 	///
 	/// \var BIN_HEADER_SIZE
 	/// \brief SEGY binary header length in bytes
 	///
-	static constexpr auto BIN_HEADER_SIZE = 400;
+	static constexpr int BIN_HEADER_SIZE = 400;
 	///
 	/// \var TR_HEADER_SIZE
 	/// \brief SEGY trace header length in bytes
 	///
-	static constexpr auto TR_HEADER_SIZE = 240;
+	static constexpr int TR_HEADER_SIZE = 240;
 	///
-	/// \brief trace_header_description
+	/// \var trace_header_description
+	/// \brief Can be used to browse headers or get there description.
 	///
 	static std::map<std::string, std::string> trace_header_description;
+protected:
 	///
 	/// \param file_name Name of SEGY file.
 	/// \param mode Used to switch between input and output
 	/// \param bh Can be used to override binary header values. Usefull for OSegy.
 	///
-	CommonSegy(std::string name, std::ios_base::openmode mode, BinaryHeader bh = {});
+	CommonSegy(std::string name, std::ios_base::openmode mode, BinaryHeader bh);
 	///
-	/// \var file_name
-	/// \brief Name of file on disk.
+	/// \brief destructor
 	///
-	std::string file_name;
+	virtual ~CommonSegy();
 	///
-	/// \var file
-	/// \brief File handler.
+	/// \return Reference to file stream in pimpl;
 	///
-	std::fstream file;
+	std::fstream &p_file();
 	///
-	/// \var txt_hdrs
-	/// \brief All text headers
+	/// \return Reference to text header in pimpl;
 	///
-	std::vector<std::string> txt_hdrs;
+	std::vector<std::string> &p_txt_hdrs();
 	///
-	/// \var trlr_stzs
-	/// \brief All trailer stanzas
+	/// \return Reference to binary header in pimpl;
 	///
-	std::vector<std::string> trlr_stnzs;
+	BinaryHeader &p_bin_hdr();
 	///
-	/// \var bin_hdr
-	/// \brief Binary header
+	/// \return Reference to trailer stanzas in pimpl;
 	///
-	BinaryHeader bin_hdr;
+	std::vector<std::string> &p_trlr_stnzs();
 	///
-	/// \var samp_buf
-	/// \brief Buffer for samples
+	/// \return Pointer to trace header buffer in pimpl;
 	///
-	std::vector<char> samp_buf;
+	char *p_hdr_buf();
 	///
-	/// \var hdr_buf
-	/// \brief Buffer for headers
-	/// Size of buffer should be set by ISegy or OSegy
+	/// \return Reference to trace samples buffer in pimpl;
 	///
-	char hdr_buf[TR_HEADER_SIZE];
+	std::vector<char> &p_samp_buf();
 	///
-	/// \var bytes_per_sample
-	/// \brief Number of bytes per sample. Used for buffer size calculations.
+	/// \return Reference to bytes per sample number in pimpl;
 	///
-	int bytes_per_sample;
+	int &p_bytes_per_sample();
 	///
-	/// \var samp_per_tr
-	/// \brief Number of samples. Used for buffer size calculations.
+	/// \return Reference to sample per trace number in pimpl;
 	///
-	int32_t samp_per_tr;
+	int32_t &p_samp_per_tr();
+private:
+	class Impl;
+	std::unique_ptr<Impl> pimpl;
 };
 } // namespace sedaman
 

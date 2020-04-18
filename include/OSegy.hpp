@@ -20,26 +20,36 @@
 namespace sedaman {
 ///
 /// \class OSegy
-/// \brief Class for SEGY reading.
-/// Defines methods to write information from SEGY files.
+/// \brief Abstract class for SEGY writing.
+/// Declares common methods for all revisions to write information to SEGY files.
 ///
-class OSegy {
+class OSegy : protected CommonSegy {
 public:
 	///
 	/// \param file_name Name of SEGY file.
-	/// \param revision SEGY standard revision.
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	OSegy(std::string file_name, std::string revision = "rev2.0");
+	OSegy(std::string file_name, CommonSegy::BinaryHeader bin_header);
 	///
-	/// \param
-	OSegy &write_trace(Trace &tr);
-	~OSegy();
+	/// \param tr Trace to write.
+	/// \brief Writes trace to the end of file.
+	///
+	virtual void write_trace(Trace &tr) = 0;
+	virtual ~OSegy();
+
+protected:
+	void assign_raw_writers();
+	void assign_sample_writer();
+	void assign_bytes_per_sample();
+	void write_bin_header();
+	void write_trace_header(Trace::Header const &hdr);
+	void write_trace_samples(Trace const &t);
+	void write_trace_samples(Trace const &t, uint32_t samp_num);
 
 private:
 	class Impl;
-	std::experimental::propagate_const<std::unique_ptr<Impl>> pimpl;
+	std::unique_ptr<Impl> pimpl;
 };
 } // namespace sedaman
 

@@ -1,13 +1,12 @@
-#include "CommonSegy.hpp"
 #include "Exception.hpp"
 #include "OSegy.hpp"
 #include "util.hpp"
-#include <variant>
 #include <cfloat>
-#include <cmath>
 #include <climits>
-#include <functional>
+#include <cmath>
 #include <ios>
+#include <functional>
+#include <variant>
 
 using std::get;
 using std::ios_base;
@@ -15,6 +14,7 @@ using std::fstream;
 using std::function;
 using std::holds_alternative;
 using std::make_unique;
+using std::move;
 using std::optional;
 using std::streampos;
 using std::string;
@@ -23,13 +23,17 @@ using std::valarray;
 namespace sedaman {
 class OSegy::Impl {
 public:
-	Impl(string name, string revision);
+	Impl(OSegy &s);
+	void assign_raw_writers();
+	void assign_sample_writer();
+	void assign_bytes_per_sample();
+	void write_bin_header();
 	void write_trace_header(Trace::Header const &hdr);
+	void write_trace_samples(Trace const &t);
 	void write_trace_samples(Trace const &t, uint32_t samp_num);
-	~Impl();
-	CommonSegy common;
-	streampos first_trace_pos;
+
 private:
+	OSegy &sgy;
 	function<void(char**, uint8_t)> write_u8;
 	function<void(char**, uint8_t)> write_i8;
 	function<void(char**, uint16_t)> write_u16;
@@ -43,81 +47,10 @@ private:
 	function<void(char**, double)> write_sample;
 	function<void(char**, float)> write_IEEE_float;
 	function<void(char**, double)> write_IEEE_double;
-	void init_r0();
-	void init_r1();
-	void init_r20();
-	void assign_raw_writers();
-	void assign_sample_writer();
-	void write_bin_header();
 };
 
-OSegy::Impl::Impl(string name, string revision)
-	: common { move(name), fstream::out | fstream::binary }
-{
-	if (revision == "rev0")
-		init_r0();
-	else if (revision == "rev1")
-		init_r1();
-	else
-		init_r20();
-}
-
-OSegy::Impl::~Impl()
-{
-	common.file.seekg(0, ios_base::beg);
-	common.file.write(common.txt_hdrs[0].c_str(), CommonSegy::TEXT_HEADER_SIZE);
-	write_bin_header();
-}
-
-void OSegy::Impl::init_r0()
-{
-	string txt_hdr(CommonSegy::default_text_header, CommonSegy::TEXT_HEADER_SIZE);
-	CommonSegy::ascii_to_ebcdic(txt_hdr);
-	common.file.write(txt_hdr.c_str(), CommonSegy::TEXT_HEADER_SIZE);
-	common.txt_hdrs.push_back(txt_hdr);
-	assign_raw_writers();
-	common.bin_hdr.format_code = 1;
-	assign_sample_writer();
-	common.bytes_per_sample = 4;
-	write_bin_header();
-	first_trace_pos = common.file.tellg();
-}
-
-OSegy &OSegy::write_trace(Trace &t)
-{
-	// throw exception if trace header does not has a samples number
-	Trace::Header::Value v = *t.header().get("SAMP_NUM");
-	uint32_t samp_num;
-	if (holds_alternative<int16_t>(v))
-		samp_num = get<int16_t>(v);
-	else
-		samp_num = get<uint32_t>(v);
-	if (pimpl->common.file.tellg() == pimpl->first_trace_pos) {
-		if (samp_num > INT16_MAX)
-			throw Exception(__FILE__, __LINE__, "the number of samples is too much for revision 0");
-		else
-			pimpl->common.bin_hdr.samp_per_tr = samp_num;
-		Trace::Header::Value v = *t.header().get("SAMP_INT");
-		double samp_int;
-		if (holds_alternative<int16_t>(v))
-			samp_int = get<int16_t>(v);
-		else
-			samp_int = get<double>(v);
-		if (samp_int > INT16_MAX || !static_cast<int16_t>(samp_int))
-			throw Exception(__FILE__, __LINE__, "the sample interval con not be written to rev0");
-		else
-			pimpl->common.bin_hdr.samp_int = samp_int;
-	}
-	pimpl->write_trace_header(t.header());
-	pimpl->write_trace_samples(t, samp_num);
-	return *this;
-}
-
-void OSegy::Impl::init_r1()
-{
-}
-
-void OSegy::Impl::init_r20()
+OSegy::Impl::Impl(OSegy &s)
+	: sgy { s }
 {
 }
 
@@ -125,7 +58,7 @@ void OSegy::Impl::assign_raw_writers()
 {
 	write_u8 = [](char** buf, uint8_t val) { write<uint8_t>(buf, val); };
 	write_i8 = [](char** buf, int8_t val) { write<int8_t>(buf, val); };
-	switch (common.bin_hdr.endianness) {
+	switch (sgy.p_bin_hdr().endianness) {
 		case 0x01020304:
 			write_u16 = [](char** buf, uint16_t val) { write<uint16_t>(buf, val); };
 			write_i16 = [](char** buf, int16_t val) { write<int16_t>(buf, val); };
@@ -193,9 +126,39 @@ void OSegy::Impl::assign_raw_writers()
 	}
 }
 
+void OSegy::Impl::assign_bytes_per_sample()
+{
+	switch (sgy.p_bin_hdr().format_code) {
+		case 1:
+		case 2:
+		case 4:
+		case 5:
+		case 10:
+			sgy.p_bytes_per_sample() = 4;
+			break;
+		case 3:
+		case 11:
+			sgy.p_bytes_per_sample() = 2;
+			break;
+		case 6:
+		case 9:
+		case 12:
+			sgy.p_bytes_per_sample() = 8;
+			break;
+		case 7:
+		case 15:
+			sgy.p_bytes_per_sample() = 3;
+			break;
+		case 8:
+		case 16:
+			sgy.p_bytes_per_sample() = 1;
+			break;
+	}
+}
+
 void OSegy::Impl::assign_sample_writer()
 {
-	switch (common.bin_hdr.format_code) {
+	switch (sgy.p_bin_hdr().format_code) {
 		case 1:
 			write_sample = [this](char** buf, double val) {
 				uint8_t sign = val < 0 ? 1 : 0;
@@ -251,56 +214,57 @@ void OSegy::Impl::write_bin_header()
 {
 	char buf[CommonSegy::BIN_HEADER_SIZE] = {0};
 	char *ptr = buf;
-	write_i32(&ptr, common.bin_hdr.job_id);
-	write_i32(&ptr, common.bin_hdr.line_num);
-	write_i32(&ptr, common.bin_hdr.reel_num);
-	write_i16(&ptr, common.bin_hdr.tr_per_ens);
-	write_i16(&ptr, common.bin_hdr.aux_per_ens);
-	write_i16(&ptr, common.bin_hdr.samp_int);
-	write_i16(&ptr, common.bin_hdr.samp_int_orig);
-	write_i16(&ptr, common.bin_hdr.samp_per_tr);
-	write_i16(&ptr, common.bin_hdr.samp_per_tr_orig);
-	write_i16(&ptr, common.bin_hdr.format_code);
-	write_i16(&ptr, common.bin_hdr.ens_fold);
-	write_i16(&ptr, common.bin_hdr.sort_code);
-	write_i16(&ptr, common.bin_hdr.vert_sum_code);
-	write_i16(&ptr, common.bin_hdr.sw_freq_at_start);
-	write_i16(&ptr, common.bin_hdr.sw_freq_at_end);
-	write_i16(&ptr, common.bin_hdr.sw_length);
-	write_i16(&ptr, common.bin_hdr.sw_type_code);
-	write_i16(&ptr, common.bin_hdr.sw_ch_tr_num);
-	write_i16(&ptr, common.bin_hdr.taper_at_start);
-	write_i16(&ptr, common.bin_hdr.taper_at_end);
-	write_i16(&ptr, common.bin_hdr.taper_type);
-	write_i16(&ptr, common.bin_hdr.corr_traces);
-	write_i16(&ptr, common.bin_hdr.bin_gain_recov);
-	write_i16(&ptr, common.bin_hdr.amp_recov_meth);
-	write_i16(&ptr, common.bin_hdr.measure_system);
-	write_i16(&ptr, common.bin_hdr.impulse_sig_pol);
-	write_i16(&ptr, common.bin_hdr.vib_pol_code);
-	write_i32(&ptr, common.bin_hdr.ext_tr_per_ens);
-	write_i32(&ptr, common.bin_hdr.ext_aux_per_ens);
-	write_i32(&ptr, common.bin_hdr.ext_samp_per_tr);
-	write_IEEE_double(&ptr, common.bin_hdr.ext_samp_int);
-	write_IEEE_double(&ptr, common.bin_hdr.ext_samp_int_orig);
-	write_i32(&ptr, common.bin_hdr.ext_samp_per_tr_orig);
-	write_i32(&ptr, common.bin_hdr.ext_ens_fold);
-	write_i32(&ptr, common.bin_hdr.endianness);
-	write_u8(&ptr, common.bin_hdr.SEGY_rev_major_ver);
-	write_u8(&ptr, common.bin_hdr.SEGY_rev_minor_ver);
-	write_i16(&ptr, common.bin_hdr.fixed_tr_length);
-	write_i16(&ptr, common.bin_hdr.ext_text_headers_num);
-	write_i32(&ptr, common.bin_hdr.max_num_add_tr_headers);
-	write_i16(&ptr, common.bin_hdr.time_basis_code);
-	write_u64(&ptr, common.bin_hdr.num_of_tr_in_file);
-	write_u64(&ptr, common.bin_hdr.byte_off_of_first_tr);
-	write_i32(&ptr, common.bin_hdr.num_of_trailer_stanza);
-	common.file.write(buf, CommonSegy::BIN_HEADER_SIZE);
+	write_i32(&ptr, sgy.p_bin_hdr().job_id);
+	write_i32(&ptr, sgy.p_bin_hdr().line_num);
+	write_i32(&ptr, sgy.p_bin_hdr().reel_num);
+	write_i16(&ptr, sgy.p_bin_hdr().tr_per_ens);
+	write_i16(&ptr, sgy.p_bin_hdr().aux_per_ens);
+	write_i16(&ptr, sgy.p_bin_hdr().samp_int);
+	write_i16(&ptr, sgy.p_bin_hdr().samp_int_orig);
+	write_i16(&ptr, sgy.p_bin_hdr().samp_per_tr);
+	write_i16(&ptr, sgy.p_bin_hdr().samp_per_tr_orig);
+	write_i16(&ptr, sgy.p_bin_hdr().format_code);
+	write_i16(&ptr, sgy.p_bin_hdr().ens_fold);
+	write_i16(&ptr, sgy.p_bin_hdr().sort_code);
+	write_i16(&ptr, sgy.p_bin_hdr().vert_sum_code);
+	write_i16(&ptr, sgy.p_bin_hdr().sw_freq_at_start);
+	write_i16(&ptr, sgy.p_bin_hdr().sw_freq_at_end);
+	write_i16(&ptr, sgy.p_bin_hdr().sw_length);
+	write_i16(&ptr, sgy.p_bin_hdr().sw_type_code);
+	write_i16(&ptr, sgy.p_bin_hdr().sw_ch_tr_num);
+	write_i16(&ptr, sgy.p_bin_hdr().taper_at_start);
+	write_i16(&ptr, sgy.p_bin_hdr().taper_at_end);
+	write_i16(&ptr, sgy.p_bin_hdr().taper_type);
+	write_i16(&ptr, sgy.p_bin_hdr().corr_traces);
+	write_i16(&ptr, sgy.p_bin_hdr().bin_gain_recov);
+	write_i16(&ptr, sgy.p_bin_hdr().amp_recov_meth);
+	write_i16(&ptr, sgy.p_bin_hdr().measure_system);
+	write_i16(&ptr, sgy.p_bin_hdr().impulse_sig_pol);
+	write_i16(&ptr, sgy.p_bin_hdr().vib_pol_code);
+	write_i32(&ptr, sgy.p_bin_hdr().ext_tr_per_ens);
+	write_i32(&ptr, sgy.p_bin_hdr().ext_aux_per_ens);
+	write_i32(&ptr, sgy.p_bin_hdr().ext_samp_per_tr);
+	write_IEEE_double(&ptr, sgy.p_bin_hdr().ext_samp_int);
+	write_IEEE_double(&ptr, sgy.p_bin_hdr().ext_samp_int_orig);
+	write_i32(&ptr, sgy.p_bin_hdr().ext_samp_per_tr_orig);
+	write_i32(&ptr, sgy.p_bin_hdr().ext_ens_fold);
+	write_i32(&ptr, sgy.p_bin_hdr().endianness);
+	ptr += 200;
+	write_u8(&ptr, sgy.p_bin_hdr().SEGY_rev_major_ver);
+	write_u8(&ptr, sgy.p_bin_hdr().SEGY_rev_minor_ver);
+	write_i16(&ptr, sgy.p_bin_hdr().fixed_tr_length);
+	write_i16(&ptr, sgy.p_bin_hdr().ext_text_headers_num);
+	write_i32(&ptr, sgy.p_bin_hdr().max_num_add_tr_headers);
+	write_i16(&ptr, sgy.p_bin_hdr().time_basis_code);
+	write_u64(&ptr, sgy.p_bin_hdr().num_of_tr_in_file);
+	write_u64(&ptr, sgy.p_bin_hdr().byte_off_of_first_tr);
+	write_i32(&ptr, sgy.p_bin_hdr().num_of_trailer_stanza);
+	sgy.p_file().write(buf, CommonSegy::BIN_HEADER_SIZE);
 }
 
 void OSegy::Impl::write_trace_header(Trace::Header const &hdr)
 {
-	char *buf = common.hdr_buf;
+	char *buf = sgy.p_hdr_buf();
 	optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
 	write_i32(&buf, tmp ? get<int32_t>(*tmp) : 0);
 	tmp = hdr.get("TRC_SEQ_SGY");
@@ -483,24 +447,44 @@ void OSegy::Impl::write_trace_header(Trace::Header const &hdr)
 	write_i16(&buf, exp);
 	tmp = hdr.get("SOU_MEAS_UNIT");
 	write_i16(&buf, tmp ? get<int16_t>(*tmp) : 0);
-	common.file.write(common.hdr_buf, CommonSegy::TR_HEADER_SIZE);
+	sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
 }
 
 void OSegy::Impl::write_trace_samples(Trace const &t, uint32_t samp_num)
 {
-	uint64_t bytes_num = samp_num * common.bytes_per_sample;
-	if (bytes_num != common.samp_buf.size())
-		common.samp_buf.resize(bytes_num);
-	char *buf = common.samp_buf.data();
+	uint64_t bytes_num = samp_num * sgy.p_bytes_per_sample();
+	if (bytes_num != sgy.p_samp_buf().size())
+		sgy.p_samp_buf().resize(bytes_num);
+	write_trace_samples(t);
+}
+
+void OSegy::Impl::write_trace_samples(Trace const &t)
+{
+	char *buf = sgy.p_samp_buf().data();
 	valarray<double> const &samples = t.samples();
 	for (auto samp: samples)
 		write_sample(&buf, samp);
-	common.file.write(common.samp_buf.data(), common.samp_buf.size());
+	sgy.p_file().write(sgy.p_samp_buf().data(), sgy.p_samp_buf().size());
 }
 
-OSegy::OSegy(string name, string revision)
-	: pimpl(make_unique<Impl>(move(name), move(revision)))
+OSegy::OSegy(string name, CommonSegy::BinaryHeader bh)
+	: CommonSegy { move(name), fstream::out | fstream::binary, move(bh) },
+	pimpl(make_unique<Impl>(*this))
 {
+}
+
+void OSegy::assign_raw_writers() { pimpl->assign_raw_writers(); }
+void OSegy::assign_sample_writer() { pimpl->assign_sample_writer(); }
+void OSegy::assign_bytes_per_sample() { pimpl->assign_bytes_per_sample(); }
+void OSegy::write_bin_header() { pimpl->write_bin_header(); }
+void OSegy::write_trace_header(Trace::Header const &hdr) {
+	pimpl->write_trace_header(hdr);
+}
+void OSegy::write_trace_samples(Trace const &t) {
+	pimpl->write_trace_samples(t);
+}
+void OSegy::write_trace_samples(Trace const &t, uint32_t samp_num) {
+	pimpl->write_trace_samples(t, samp_num);
 }
 
 OSegy::~OSegy() = default;

@@ -11,7 +11,6 @@
 #define SEDAMAN_TRACE_HPP
 
 #include <cstdint>
-#include <experimental/propagate_const>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -69,7 +68,7 @@ public:
 
 	private:
 		class Impl;
-		std::experimental::propagate_const<std::unique_ptr<Impl>> pimpl;
+		std::unique_ptr<Impl> pimpl;
 	};
 	///
 	/// \param trc Trace to copy data from
@@ -103,7 +102,7 @@ public:
 
 private:
 	class Impl;
-	std::experimental::propagate_const<std::unique_ptr<Impl>> pimpl;
+	std::unique_ptr<Impl> pimpl;
 };
 } // namespace sedaman
 

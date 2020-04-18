@@ -1,23 +1,48 @@
 #include "CommonSegy.hpp"
-#include <valarray>
 
-using std::fstream;
 using std::ios_base;
+using std::fstream;
+using std::make_unique;
 using std::map;
 using std::move;
 using std::string;
-using std::valarray;
 using std::vector;
 
 namespace sedaman {
+class CommonSegy::Impl {
+public:
+	Impl(string name, BinaryHeader bh) :
+		file_name { move(name) }, binary_header { move(bh) } {}
+	string file_name;
+	fstream file;
+	vector<string> text_headers;
+	vector<string> trailer_stanzas;
+	BinaryHeader binary_header;
+	vector<char> samp_buf;
+	char hdr_buf[TR_HEADER_SIZE];
+	int bytes_per_sample;
+	int32_t samp_per_tr;
+};
+
 CommonSegy::CommonSegy(string name, ios_base::openmode mode, BinaryHeader bh)
-	: file_name { move(name) }, bin_hdr { move(bh) }
+	: pimpl { make_unique<Impl>(move(name), move(bh)) }
 {
 	fstream fl;
 	fl.exceptions(fstream::failbit | fstream::badbit);
-	fl.open(file_name, mode);
-	file = move(fl);
+	fl.open(pimpl->file_name, mode);
+	pimpl->file = move(fl);
 }
+
+CommonSegy::~CommonSegy() = default;
+
+fstream &CommonSegy::p_file() { return pimpl->file; }
+vector<string> &CommonSegy::p_txt_hdrs() { return pimpl->text_headers; }
+CommonSegy::BinaryHeader &CommonSegy::p_bin_hdr() { return pimpl->binary_header; }
+vector<string> &CommonSegy::p_trlr_stnzs() { return pimpl->trailer_stanzas; }
+char *CommonSegy::p_hdr_buf() { return pimpl->hdr_buf; }
+vector<char> &CommonSegy::p_samp_buf() { return pimpl->samp_buf; }
+int &CommonSegy::p_bytes_per_sample() { return pimpl->bytes_per_sample; }
+int32_t &CommonSegy::p_samp_per_tr() { return pimpl->samp_per_tr; }
 
 static uint8_t constexpr e2a[256] = {
 0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,
@@ -57,13 +82,13 @@ static uint8_t constexpr a2e[256] = {
 0x8c,0x49,0xcd,0xce,0xcb,0xcf,0xcc,0xe1,0x70,0xdd,0xde,0xdb,0xdc,0x8d,0x8e,0xdf
 };
 
-void CommonSegy::ebcdic_to_ascii(string ebcdic)
+void CommonSegy::ebcdic_to_ascii(string &ebcdic)
 {
 	for (auto from = ebcdic.begin(), end = ebcdic.end(); from != end; ++from)
 		*from = e2a[static_cast<uint8_t>(*from)];
 }
 
-void CommonSegy::ascii_to_ebcdic(string ascii)
+void CommonSegy::ascii_to_ebcdic(string &ascii)
 {
 	for (auto from = ascii.begin(), end = ascii.end(); from != end; ++from)
 		*from = a2e[static_cast<uint8_t>(*from)];
