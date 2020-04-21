@@ -12,7 +12,7 @@ namespace sedaman {
 class CommonSegy::Impl {
 public:
 	Impl(string name, BinaryHeader bh) :
-		file_name { move(name) }, binary_header { move(bh) } {}
+		file_name { move(name) }, binary_header { move(bh) }, hdr_buf {} {}
 	string file_name;
 	fstream file;
 	vector<string> text_headers;

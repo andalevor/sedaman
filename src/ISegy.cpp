@@ -229,7 +229,7 @@ void ISegy::Impl::assign_sample_reader()
 				uint32_t ibm = read_u32(buf);
 				int sign = ibm >> 31 ? -1 : 1;
 				int exp = ibm >> 24 & 0x7f;
-				uint32_t fraction = ibm & 0x00ffffff;
+				double fraction = ibm & 0x00ffffff;
 
 				return fraction / pow(2, 24) * pow(16, exp - 64) * sign;
 			};
