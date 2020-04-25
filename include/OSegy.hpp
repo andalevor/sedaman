@@ -43,9 +43,12 @@ protected:
 	void assign_sample_writer();
 	void assign_bytes_per_sample();
 	void write_bin_header();
+	void write_ext_text_headers();
+	void write_trailer_stanzas();
 	void write_trace_header(Trace::Header const &hdr);
+	void write_additional_trace_header(Trace::Header const &hdr);
 	void write_trace_samples(Trace const &t);
-	void write_trace_samples(Trace const &t, uint32_t samp_num);
+	void write_trace_samples_var(Trace const &t);
 
 private:
 	class Impl;

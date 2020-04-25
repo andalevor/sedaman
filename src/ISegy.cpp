@@ -561,6 +561,7 @@ Trace ISegy::read_trace()
 {
 	unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trc_header();
 	auto it = hdr.find("ADD_TRC_HDR_NUM");
+	// TODO: write additional trace headers reading
 	if (it != hdr.end()) {
 		int32_t trc_hrs_to_skip;
 		Trace::Header::Value v = (*it).second;

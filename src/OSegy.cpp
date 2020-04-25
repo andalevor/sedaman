@@ -28,9 +28,12 @@ public:
 	void assign_sample_writer();
 	void assign_bytes_per_sample();
 	void write_bin_header();
+	void write_ext_text_headers();
+	void write_trailer_stanzas();
 	void write_trace_header(Trace::Header const &hdr);
+	void write_additional_trace_header(Trace::Header const &hdr);
 	void write_trace_samples(Trace const &t);
-	void write_trace_samples(Trace const &t, uint32_t samp_num);
+	void write_trace_samples_var(Trace const &t);
 
 private:
 	OSegy &sgy;
@@ -450,8 +453,88 @@ void OSegy::Impl::write_trace_header(Trace::Header const &hdr)
 	sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
 }
 
-void OSegy::Impl::write_trace_samples(Trace const &t, uint32_t samp_num)
+void OSegy::Impl::write_additional_trace_header(Trace::Header const &hdr)
 {
+	// TODO: add writing arbitrary headers
+	char *buf = sgy.p_hdr_buf();
+	std::memset(buf, 0, CommonSegy::TR_HEADER_SIZE);
+	optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
+	write_u64(&buf, tmp ? get<uint64_t>(*tmp) : 0);
+	tmp = hdr.get("TRC_SEQ_SGY");
+	write_u64(&buf, tmp ? get<uint64_t>(*tmp) : 0);
+	tmp = hdr.get("FFID");
+	write_u64(&buf, tmp ? get<uint64_t>(*tmp) : 0);
+	tmp = hdr.get("ENS_NO");
+	write_u64(&buf, tmp ? get<uint64_t>(*tmp) : 0);
+	tmp = hdr.get("R_ELEV");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("R_DEPTH");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("S_DEPTH");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("R_DATUM");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("S_DATUM");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("R_WATER");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("S_WATER");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("SOU_X");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("SOU_Y");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("REC_X");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("REC_Y");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("OFFSET");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("SAMP_NUM");
+	write_u64(&buf, tmp ? get<uint32_t>(*tmp) : 0);
+	tmp = hdr.get("NANOSECOND");
+	write_u64(&buf, tmp ? get<int32_t>(*tmp) : 0);
+	tmp = hdr.get("SAMP_INT");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("CABLE_NUM");
+	write_u64(&buf, tmp ? get<int32_t>(*tmp) : 0);
+	tmp = hdr.get("ADD_TRC_HDR_NUM");
+	uint16_t add_trc_hdr_num = tmp ? get<uint16_t>(*tmp) : 0;
+	add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num : sgy.p_bin_hdr().max_num_add_tr_headers;
+	write_u64(&buf, add_trc_hdr_num);
+	tmp = hdr.get("LAST_TRC_FLAG");
+	write_u64(&buf, tmp ? get<int16_t>(*tmp) : 0);
+	tmp = hdr.get("CDP_X");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	tmp = hdr.get("CDP_Y");
+	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+	sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+}
+
+void OSegy::Impl::write_ext_text_headers()
+{
+	int hdrs_num = sgy.p_txt_hdrs().size() - 1;
+	sgy.p_bin_hdr().ext_text_headers_num = hdrs_num;
+	for (int i = 0; i < hdrs_num; ++i)
+		sgy.p_file().write(sgy.p_txt_hdrs()[i + 1].c_str(), CommonSegy::TEXT_HEADER_SIZE);
+}
+
+void OSegy::Impl::write_trailer_stanzas()
+{
+	int stanzas_num = sgy.p_trlr_stnzs().size();
+	sgy.p_bin_hdr().num_of_trailer_stanza = stanzas_num;
+	for (int i = 0; i < stanzas_num; ++i)
+		sgy.p_file().write(sgy.p_trlr_stnzs()[i].c_str(), CommonSegy::TEXT_HEADER_SIZE);
+}
+
+void OSegy::Impl::write_trace_samples_var(Trace const &t)
+{
+	Trace::Header::Value v = *t.header().get("SAMP_NUM");
+	uint32_t samp_num;
+	if (holds_alternative<int16_t>(v))
+		samp_num = get<int16_t>(v);
+	else
+		samp_num = get<uint32_t>(v);
 	uint64_t bytes_num = samp_num * sgy.p_bytes_per_sample();
 	if (bytes_num != sgy.p_samp_buf().size())
 		sgy.p_samp_buf().resize(bytes_num);
@@ -477,14 +560,20 @@ void OSegy::assign_raw_writers() { pimpl->assign_raw_writers(); }
 void OSegy::assign_sample_writer() { pimpl->assign_sample_writer(); }
 void OSegy::assign_bytes_per_sample() { pimpl->assign_bytes_per_sample(); }
 void OSegy::write_bin_header() { pimpl->write_bin_header(); }
+void OSegy::write_ext_text_headers() { pimpl->write_ext_text_headers(); }
+void OSegy::write_trailer_stanzas() { pimpl->write_trailer_stanzas(); }
 void OSegy::write_trace_header(Trace::Header const &hdr) {
 	pimpl->write_trace_header(hdr);
+}
+void OSegy::write_additional_trace_header(Trace::Header const &hdr)
+{
+	pimpl->write_additional_trace_header(hdr);
 }
 void OSegy::write_trace_samples(Trace const &t) {
 	pimpl->write_trace_samples(t);
 }
-void OSegy::write_trace_samples(Trace const &t, uint32_t samp_num) {
-	pimpl->write_trace_samples(t, samp_num);
+void OSegy::write_trace_samples_var(Trace const &t) {
+	pimpl->write_trace_samples_var(t);
 }
 
 OSegy::~OSegy() = default;
