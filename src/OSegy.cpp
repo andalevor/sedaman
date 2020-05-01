@@ -14,11 +14,14 @@ using std::fstream;
 using std::function;
 using std::holds_alternative;
 using std::make_unique;
+using std::map;
 using std::move;
 using std::optional;
+using std::pair;
 using std::streampos;
 using std::string;
 using std::valarray;
+using std::vector;
 
 namespace sedaman {
 class OSegy::Impl {
@@ -31,7 +34,7 @@ public:
 	void write_ext_text_headers();
 	void write_trailer_stanzas();
 	void write_trace_header(Trace::Header const &hdr);
-	void write_additional_trace_header(Trace::Header const &hdr);
+	void write_additional_trace_headers(Trace::Header const &hdr);
 	void write_trace_samples(Trace const &t);
 	void write_trace_samples_var(Trace const &t);
 
@@ -453,7 +456,7 @@ void OSegy::Impl::write_trace_header(Trace::Header const &hdr)
 	sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
 }
 
-void OSegy::Impl::write_additional_trace_header(Trace::Header const &hdr)
+void OSegy::Impl::write_additional_trace_headers(Trace::Header const &hdr)
 {
 	// TODO: add writing arbitrary headers
 	char *buf = sgy.p_hdr_buf();
@@ -509,6 +512,44 @@ void OSegy::Impl::write_additional_trace_header(Trace::Header const &hdr)
 	tmp = hdr.get("CDP_Y");
 	write_u64(&buf, tmp ? get<double>(*tmp) : 0);
 	sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+	// for each item in vector
+	for (auto &p: sgy.p_add_tr_hdrs_map()) {
+		std::memset(sgy.p_hdr_buf(), 0, CommonSegy::TR_HEADER_SIZE);
+		// for each item in map
+		for (auto &i: p.second) {
+			tmp = hdr.get(i.second.first);
+			char *pos = sgy.p_hdr_buf() + i.first;
+			switch (i.second.second) {
+				case TrHdrValueType::int8_t:
+					write_i8(&pos, get<int8_t>(*tmp));
+					break;
+				case TrHdrValueType::uint8_t:
+					write_u8(&pos, get<uint8_t>(*tmp));
+					break;
+				case TrHdrValueType::int16_t:
+					write_i16(&pos, get<int16_t>(*tmp));
+					break;
+				case TrHdrValueType::uint16_t:
+					write_u16(&pos, get<uint16_t>(*tmp));
+					break;
+				case TrHdrValueType::int32_t:
+					write_i32(&pos, get<int32_t>(*tmp));
+					break;
+				case TrHdrValueType::uint32_t:
+					write_u32(&pos, get<uint32_t>(*tmp));
+					break;
+				case TrHdrValueType::int64_t:
+					write_i64(&pos, get<int64_t>(*tmp));
+					break;
+				case TrHdrValueType::uint64_t:
+					write_u64(&pos, get<uint64_t>(*tmp));
+					break;
+			}
+		}
+		// copy additional trace header name
+		std::memcpy(sgy.p_hdr_buf() + 232, p.first.c_str(), p.first.size());
+		sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+	}
 }
 
 void OSegy::Impl::write_ext_text_headers()
@@ -550,8 +591,9 @@ void OSegy::Impl::write_trace_samples(Trace const &t)
 	sgy.p_file().write(sgy.p_samp_buf().data(), sgy.p_samp_buf().size());
 }
 
-OSegy::OSegy(string name, CommonSegy::BinaryHeader bh)
-	: CommonSegy { move(name), fstream::out | fstream::binary, move(bh) },
+OSegy::OSegy(string name, CommonSegy::BinaryHeader bh,
+			 vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
+	: CommonSegy { move(name), fstream::out | fstream::binary, move(bh), move(add_hdr_map) },
 	pimpl(make_unique<Impl>(*this))
 {
 }
@@ -565,9 +607,9 @@ void OSegy::write_trailer_stanzas() { pimpl->write_trailer_stanzas(); }
 void OSegy::write_trace_header(Trace::Header const &hdr) {
 	pimpl->write_trace_header(hdr);
 }
-void OSegy::write_additional_trace_header(Trace::Header const &hdr)
+void OSegy::write_additional_trace_headers(Trace::Header const &hdr)
 {
-	pimpl->write_additional_trace_header(hdr);
+	pimpl->write_additional_trace_headers(hdr);
 }
 void OSegy::write_trace_samples(Trace const &t) {
 	pimpl->write_trace_samples(t);

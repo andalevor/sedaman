@@ -18,7 +18,9 @@ using std::fstream;
 using std::function;
 using std::holds_alternative;
 using std::make_unique;
+using std::map;
 using std::move;
+using std::pair;
 using std::streampos;
 using std::streamsize;
 using std::streamoff;
@@ -610,13 +612,14 @@ CommonSegy::BinaryHeader const& ISegy::binary_header()
 }
 
 ISegy::ISegy(string name)
-	: CommonSegy(move(name), fstream::in | fstream::binary, {}),
+	: CommonSegy(move(name), fstream::in | fstream::binary, {}, {}),
 	pimpl(make_unique<Impl>(*this, false))
 {
 }
 
-ISegy::ISegy(string name, BinaryHeader bh)
-	: CommonSegy(move(name), fstream::in | fstream::binary, move(bh)),
+ISegy::ISegy(string name, BinaryHeader bh,
+			 vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
+	: CommonSegy(move(name), fstream::in | fstream::binary, move(bh), move(add_hdr_map)),
 	pimpl(make_unique<Impl>(*this, true))
 {
 }

@@ -1,18 +1,21 @@
 #include "CommonSegy.hpp"
+#include "Exception.hpp"
 
 using std::ios_base;
 using std::fstream;
 using std::make_unique;
 using std::map;
 using std::move;
+using std::pair;
 using std::string;
+using std::to_string;
 using std::vector;
 
 namespace sedaman {
 class CommonSegy::Impl {
 public:
-	Impl(string name, BinaryHeader bh) :
-		file_name { move(name) }, binary_header { move(bh) }, hdr_buf {} {}
+	Impl(string name, BinaryHeader bh,
+		 vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> m);
 	string file_name;
 	fstream file;
 	vector<string> text_headers;
@@ -22,15 +25,82 @@ public:
 	char hdr_buf[TR_HEADER_SIZE];
 	int bytes_per_sample;
 	int32_t samp_per_tr;
+	vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map;
+private:
+	void check_add_tr_hdr_map();
 };
 
-CommonSegy::CommonSegy(string name, ios_base::openmode mode, BinaryHeader bh)
-	: pimpl { make_unique<Impl>(move(name), move(bh)) }
+CommonSegy::CommonSegy(string name, ios_base::openmode mode, BinaryHeader bh,
+					   vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
+	: pimpl { make_unique<Impl>(move(name), move(bh), move(add_hdr_map)) }
 {
 	fstream fl;
 	fl.exceptions(fstream::failbit | fstream::badbit);
 	fl.open(pimpl->file_name, mode);
 	pimpl->file = move(fl);
+}
+
+CommonSegy::Impl::Impl(string name, BinaryHeader bh,
+					   vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> m)
+	: file_name { move(name) }, binary_header { move(bh) }, hdr_buf {}, add_hdr_map { move(m) }
+{
+	check_add_tr_hdr_map();
+}
+
+void CommonSegy::Impl::check_add_tr_hdr_map()
+{
+	int first = 1, size = 0;
+	uint32_t prev = 0;
+	if (binary_header.max_num_add_tr_headers && 
+		static_cast<int32_t>(add_hdr_map.size()) + 1 != binary_header.max_num_add_tr_headers)
+		throw Exception(__FILE__, __LINE__,
+						"number of additional trace headers not equal to max number of headers in binary header");
+	for (auto &p: add_hdr_map) {
+		if (p.first.size() != 8)
+			throw Exception(__FILE__, __LINE__, "additional trace header name must have 8 bytes length");
+		for (auto &i: p.second) {
+			if (first) {
+				prev = i.first;
+				first = 0;
+			} else {
+				switch (i.second.second) {
+					case TrHdrValueType::int8_t:
+						size = 1;
+						break;
+					case TrHdrValueType::uint8_t:
+						size = 1;
+						break;
+					case TrHdrValueType::int16_t:
+						size = 2;
+						break;
+					case TrHdrValueType::uint16_t:
+						size = 2;
+						break;
+					case TrHdrValueType::int32_t:
+						size = 4;
+						break;
+					case TrHdrValueType::uint32_t:
+						size = 4;
+						break;
+					case TrHdrValueType::int64_t:
+						size = 8;
+						break;
+					case TrHdrValueType::uint64_t:
+						size = 8;
+						break;
+					default:
+						throw Exception(__FILE__, __LINE__, "impossible, unexpected type in TrHdrValueType");
+				}
+				if (i.first - prev != static_cast<uint32_t>(size))
+					throw Exception(__FILE__, __LINE__,
+									string("wrong type/offset in additional trace headers map: ") + to_string(i.first));
+				if (i.first > 224 && i.first + size > 232)
+					throw Exception(__FILE__, __LINE__,
+									string("last 8 bytes should be used for header name"));
+				prev = i.first;
+			}
+		}
+	}
 }
 
 CommonSegy::~CommonSegy() = default;
@@ -43,6 +113,11 @@ char *CommonSegy::p_hdr_buf() { return pimpl->hdr_buf; }
 vector<char> &CommonSegy::p_samp_buf() { return pimpl->samp_buf; }
 int &CommonSegy::p_bytes_per_sample() { return pimpl->bytes_per_sample; }
 int32_t &CommonSegy::p_samp_per_tr() { return pimpl->samp_per_tr; }
+vector<pair<string, map<uint32_t, pair<string, CommonSegy::TrHdrValueType>>>>
+&CommonSegy::p_add_tr_hdrs_map()
+{
+	return pimpl->add_hdr_map;
+}
 
 static uint8_t constexpr e2a[256] = {
 0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,

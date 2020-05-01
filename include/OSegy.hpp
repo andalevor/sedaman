@@ -30,7 +30,8 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	OSegy(std::string file_name, CommonSegy::BinaryHeader bin_header);
+	OSegy(std::string file_name, CommonSegy::BinaryHeader bin_header,
+		  std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
 	///
 	/// \param tr Trace to write.
 	/// \brief Writes trace to the end of file.
@@ -46,7 +47,7 @@ protected:
 	void write_ext_text_headers();
 	void write_trailer_stanzas();
 	void write_trace_header(Trace::Header const &hdr);
-	void write_additional_trace_header(Trace::Header const &hdr);
+	void write_additional_trace_headers(Trace::Header const &hdr);
 	void write_trace_samples(Trace const &t);
 	void write_trace_samples_var(Trace const &t);
 

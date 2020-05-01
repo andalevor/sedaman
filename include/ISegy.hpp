@@ -37,7 +37,8 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	ISegy(std::string file_name, BinaryHeader binary_header);
+	ISegy(std::string file_name, BinaryHeader binary_header,
+		  std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map);
 	///
 	/// \param file_name Name of SEGY file.
 	/// \throws std::ifstream::failure In case of file operations falure

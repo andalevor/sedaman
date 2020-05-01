@@ -92,7 +92,7 @@ void OSegyRev0::write_trace(Trace &tr)
 }
 
 OSegyRev0::OSegyRev0(string name, string th, CommonSegy::BinaryHeader bh)
-	: OSegy(move(name), move(bh)), pimpl(make_unique<Impl>(*this, move(th)))
+	: OSegy(move(name), move(bh), {}), pimpl(make_unique<Impl>(*this, move(th)))
 {}
 
 OSegyRev0::~OSegyRev0() = default;

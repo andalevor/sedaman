@@ -135,6 +135,13 @@ public:
 		static char const* name_as_string(Name n);
 	};
 	///
+	/// \enum
+	/// \brief Enumiration to set type of additional trace header values.
+	///
+	enum class TrHdrValueType {
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t
+	};
+	///
 	/// \fn ebcdic_to_ascii
 	/// \brief Transform text header from ebcdic to ascii.
 	/// \param ebcdic String in ebcdic encoding.
@@ -176,8 +183,10 @@ protected:
 	/// \param file_name Name of SEGY file.
 	/// \param mode Used to switch between input and output
 	/// \param bh Can be used to override binary header values. Usefull for OSegy.
+	/// \param add_tr_hdrs_map Each item of vector is pair of headers name and map.
 	///
-	CommonSegy(std::string name, std::ios_base::openmode mode, BinaryHeader bh);
+	CommonSegy(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
+			   std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
 	///
 	/// \brief destructor
 	///
@@ -214,6 +223,11 @@ protected:
 	/// \return Reference to sample per trace number in pimpl;
 	///
 	int32_t &p_samp_per_tr();
+	///
+	/// \return Reference to additional trace header map in pimpl;
+	///
+	std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>>
+		&p_add_tr_hdrs_map();
 private:
 	class Impl;
 	std::unique_ptr<Impl> pimpl;

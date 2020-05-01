@@ -10,9 +10,11 @@ using std::function;
 using std::get;
 using std::holds_alternative;
 using std::make_unique;
+using std::map;
 using std::memcmp;
 using std::move;
 using std::optional;
+using std::pair;
 using std::streampos;
 using std::string;
 using std::vector;
@@ -62,7 +64,7 @@ OSegyRev2::Impl::Impl(OSegyRev2 &s, vector<string> txt_hdrs, vector<string> trlr
 			if (sgy.p_bin_hdr().max_num_add_tr_headers)
 				write_trace = [this](Trace &tr) {
 					sgy.write_trace_header(tr.header());
-					sgy.write_additional_trace_header(tr.header());
+					sgy.write_additional_trace_headers(tr.header());
 					sgy.write_trace_samples(tr);
 				};
 			else
@@ -74,7 +76,7 @@ OSegyRev2::Impl::Impl(OSegyRev2 &s, vector<string> txt_hdrs, vector<string> trlr
 			if (sgy.p_bin_hdr().max_num_add_tr_headers)
 				write_trace = [this](Trace &tr) {
 					sgy.write_trace_header(tr.header());
-					sgy.write_additional_trace_header(tr.header());
+					sgy.write_additional_trace_headers(tr.header());
 					sgy.write_trace_samples_var(tr);
 				};
 			else
@@ -89,7 +91,7 @@ OSegyRev2::Impl::Impl(OSegyRev2 &s, vector<string> txt_hdrs, vector<string> trlr
 				write_trace = [this](Trace &tr) {
 					set_min_hdrs(tr);
 					sgy.write_trace_header(tr.header());
-					sgy.write_additional_trace_header(tr.header());
+					sgy.write_additional_trace_headers(tr.header());
 					sgy.write_trace_samples(tr);
 				};
 			else
@@ -103,7 +105,7 @@ OSegyRev2::Impl::Impl(OSegyRev2 &s, vector<string> txt_hdrs, vector<string> trlr
 				write_trace = [this](Trace &tr) {
 					set_min_hdrs(tr);
 					sgy.write_trace_header(tr.header());
-					sgy.write_additional_trace_header(tr.header());
+					sgy.write_additional_trace_headers(tr.header());
 					sgy.write_trace_samples_var(tr);
 				};
 			else
@@ -150,8 +152,10 @@ void OSegyRev2::write_trace(Trace &tr)
 }
 
 OSegyRev2::OSegyRev2(string name, vector<string> ths, CommonSegy::BinaryHeader bh,
-					 vector<string> trlr_stnzs)
-	: OSegy(move(name), move(bh)), pimpl(make_unique<Impl>(*this, move(ths), move(trlr_stnzs)))
+					 vector<string> trlr_stnzs,
+					 vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
+	: OSegy(move(name), move(bh), move(add_hdr_map)),
+	pimpl {make_unique<Impl>(*this, move(ths), move(trlr_stnzs))}
 {}
 
 OSegyRev2::~OSegyRev2()
