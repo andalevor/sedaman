@@ -8,6 +8,7 @@
 #include <functional>
 #include <variant>
 
+using std::abs;
 using std::get;
 using std::ios_base;
 using std::fstream;
@@ -51,6 +52,7 @@ private:
 	function<void(char**, uint64_t)> write_u64;
 	function<void(char**, uint64_t)> write_i64;
 	function<void(char**, double)> write_sample;
+	function<void(char**, float)> write_ibm_float;
 	function<void(char**, float)> write_IEEE_float;
 	function<void(char**, double)> write_IEEE_double;
 };
@@ -115,21 +117,31 @@ void OSegy::Impl::assign_raw_writers()
 			write_u64(buf, tmp);
 		};
 	} else {
-		write_IEEE_float = [this](char** buf, float val) {
-			uint8_t sign = val < 0 ? 1 : 0;
-			uint8_t exp = log(val) / log(2) + 1 + 127;
-			uint32_t fraction = val / pow(2, exp - 127) * pow(2, 23) - 1;
+		write_IEEE_float = [this](char** buf, double val) {
+			uint32_t sign = val < 0 ? 1 : 0;
+			double abs_val = abs(val);
+			uint32_t exp = static_cast<uint32_t>((log(abs_val) / log(2) + 1 + 127)) & 0xff;
+			uint32_t fraction = abs_val / pow(2, static_cast<int>(exp) - 127) * pow(2, 23) - 1;
 			uint32_t result = sign << 31 | exp << 23 | (fraction & 0x007fffff);
 			write_u32(buf, result);
 		};
 		write_IEEE_double = [this](char** buf, double val) {
 			uint64_t sign = val < 0 ? 1 : 0;
-			uint64_t exp = static_cast<uint16_t>(log(val) / log(2) + 1 + 1023) & 0x7ff;
-			uint64_t fraction = val / pow(2, exp - 1023) * pow(2, 52) - 1;
+			double abs_val = abs(val);
+			uint64_t exp = static_cast<uint64_t>(log(abs_val) / log(2) + 1 + 1023) & 0x7ff;
+			uint64_t fraction = abs_val / pow(2, static_cast<int>(exp) - 1023) * pow(2, 52) - 1;
 			uint64_t result = sign << 63 | exp << 52 | (fraction & 0xfffffffffffff);
 			write_u64(buf, result);
 		};
 	}
+	write_ibm_float = [this](char** buf, double val) {
+		uint32_t sign = val < 0 ? 1 : 0;
+		double abs_val = abs(val);
+		uint32_t exp = static_cast<uint32_t>(log(abs_val) / log(2) / 4 + 1 + 64) & 0x7f;
+		uint32_t fraction = abs_val / pow(16, static_cast<int>(exp) - 64) * pow(2, 24);
+		uint32_t result = sign << 31 | exp << 24 | (fraction & 0x00ffffff);
+		write_u32(buf, result);
+	};
 }
 
 void OSegy::Impl::assign_bytes_per_sample()
@@ -166,14 +178,7 @@ void OSegy::Impl::assign_sample_writer()
 {
 	switch (sgy.p_bin_hdr().format_code) {
 		case 1:
-			write_sample = [this](char** buf, double val) {
-				uint8_t sign = val < 0 ? 1 : 0;
-				double abs_val = std::abs(val);
-				uint8_t exp = static_cast<uint32_t>(log(abs_val) / log(2) / 4 + 1 + 64) & 0x7f;
-				uint32_t fraction = abs_val / pow(16, exp - 64) * pow(2, 24);
-				uint32_t result = sign << 31 | exp << 24 | (fraction & 0x00ffffff);
-				write_u32(buf, result);
-			};
+            write_sample = write_ibm_float;
 			break;
 		case 2:
 			write_sample = [this](char** buf, double val) { write_i32(buf, val); };
@@ -182,10 +187,10 @@ void OSegy::Impl::assign_sample_writer()
 			write_sample = [this](char** buf, double val) { write_i16(buf, val); };
 			break;
 		case 5:
-			write_sample = [this](char** buf, double val) { write_IEEE_float(buf, val); };
+            write_sample = write_IEEE_float;
 			break;
 		case 6:
-			write_sample = [this](char** buf, double val) { write_IEEE_double(buf, val); };
+            write_sample = write_IEEE_double;
 			break;
 		case 7:
 			write_sample = [this](char** buf, double val) { write_i24(buf, val); };
@@ -458,7 +463,6 @@ void OSegy::Impl::write_trace_header(Trace::Header const &hdr)
 
 void OSegy::Impl::write_additional_trace_headers(Trace::Header const &hdr)
 {
-	// TODO: add writing arbitrary headers
 	char *buf = sgy.p_hdr_buf();
 	std::memset(buf, 0, CommonSegy::TR_HEADER_SIZE);
 	optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
@@ -544,6 +548,15 @@ void OSegy::Impl::write_additional_trace_headers(Trace::Header const &hdr)
 				case TrHdrValueType::uint64_t:
 					write_u64(&pos, get<uint64_t>(*tmp));
 					break;
+				case TrHdrValueType::ibm:
+					write_u64(&pos, get<uint64_t>(*tmp));
+					break;
+				case TrHdrValueType::ieee_single:
+					write_u64(&pos, get<uint64_t>(*tmp));
+					break;
+				case TrHdrValueType::ieee_double:
+					write_u64(&pos, get<uint64_t>(*tmp));
+					break;
 			}
 		}
 		// copy additional trace header name
@@ -581,6 +594,7 @@ void OSegy::Impl::write_trace_samples_var(Trace const &t)
 		sgy.p_samp_buf().resize(bytes_num);
 	write_trace_samples(t);
 }
+
 
 void OSegy::Impl::write_trace_samples(Trace const &t)
 {

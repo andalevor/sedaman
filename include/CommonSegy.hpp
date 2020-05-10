@@ -139,7 +139,7 @@ public:
 	/// \brief Enumiration to set type of additional trace header values.
 	///
 	enum class TrHdrValueType {
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, ibm, ieee_single, ieee_double
 	};
 	///
 	/// \fn ebcdic_to_ascii

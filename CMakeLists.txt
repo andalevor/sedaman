@@ -1,3 +1,4 @@
+
 set(PROJ_NAME sedaman)
 project(${PROJ_NAME})
 cmake_minimum_required(VERSION 3.1)
@@ -11,10 +12,10 @@ file(GLOB SOURCES "src/*.cpp")
 add_library(${PROJ_NAME} SHARED ${SOURCES})
 
 if(MSVC)
-	target_compile_options(${PROJ_NAME} PRIVATE /W4 /WX)
+        target_compile_options(${PROJ_NAME} PRIVATE /W4 /WX)
 else()
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined -fsanitize=address -g")
-	target_compile_options(${PROJ_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined -fsanitize=address -g")
+        target_compile_options(${PROJ_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
 endif()
 
 add_subdirectory(tests)

@@ -13,10 +13,10 @@ int main(int argc, char *argv[])
         assert(bin_hdr.job_id == 9999);
         assert(bin_hdr.line_num == 9999);
         assert(bin_hdr.reel_num == 1);
-        assert(bin_hdr.tr_per_ens == 80);
-        assert(bin_hdr.samp_int == 1000);
-        assert(bin_hdr.samp_per_tr == 1001);
-        assert(bin_hdr.samp_per_tr_orig == 251);
+        assert(bin_hdr.tr_per_ens == 40);
+        assert(bin_hdr.samp_int == 2000);
+        assert(bin_hdr.samp_per_tr == 501);
+        assert(bin_hdr.samp_per_tr_orig == 2001);
         assert(bin_hdr.format_code == 1);
         assert(bin_hdr.ens_fold == 1);
         assert(bin_hdr.sort_code == 1);

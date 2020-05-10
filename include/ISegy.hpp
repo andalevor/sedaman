@@ -30,7 +30,8 @@ public:
 	/// \throws std::ifstream::failure In case of file operations falure
 	/// \throws sedaman::Exception
 	///
-	ISegy(std::string file_name, std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
+	ISegy(std::string file_name, std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
+		  std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
 	///
 	/// \param file_name Name of SEGY file.
 	/// \param binary_header Could be used to override values in binary header.
@@ -38,6 +39,7 @@ public:
 	/// \throws sedaman::Exception
 	///
 	ISegy(std::string file_name, BinaryHeader binary_header,
+		  std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
 		  std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
 	///
 	/// \param file_name Name of SEGY file.

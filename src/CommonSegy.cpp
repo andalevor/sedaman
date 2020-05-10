@@ -88,6 +88,15 @@ void CommonSegy::Impl::check_add_tr_hdr_map()
 					case TrHdrValueType::uint64_t:
 						size = 8;
 						break;
+					case TrHdrValueType::ibm:
+						size = 4;
+						break;
+					case TrHdrValueType::ieee_single:
+						size = 4;
+						break;
+					case TrHdrValueType::ieee_double:
+						size = 8;
+						break;
 					default:
 						throw Exception(__FILE__, __LINE__, "impossible, unexpected type in TrHdrValueType");
 				}

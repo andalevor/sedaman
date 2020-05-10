@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
         return 1;
-    int32_t val = 3861;
+    int32_t val = 1;
     try {
         sedaman::ISegy segy(argv[1]);
         while (segy.has_next()) {

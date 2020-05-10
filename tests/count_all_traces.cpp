@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
             sedaman::Trace t = segy.read_trace();
             ++counter;
         }
-        if (counter != 240)
+        if (counter != 160)
             return 1;
     } catch (std::exception& e) {
         std::cout << e.what() << '\n';

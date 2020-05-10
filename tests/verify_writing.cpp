@@ -23,11 +23,16 @@ int main(int argc, char *argv[])
     try {
 		std::fstream ref(argv[1], std::ios_base::binary | std::ios_base::in);
 		std::fstream test(argv[2], std::ios_base::binary | std::ios_base::in);
+		size_t counter = 0;
 		while (ref) {
 			int first = ref.get();
 			int second = test.get();
-			if (first != second)
+			if (first != second) {
+				std::cout << counter << '\n';
+				std::cerr << "reference file does not equal to created\n";
 				return 1;
+			}
+			++counter;
 		}
     } catch (std::exception& e) {
         std::cerr << "exception on file comparing\n" << e.what() << '\n';
