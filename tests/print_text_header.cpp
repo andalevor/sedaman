@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
             if ((i + 1) % 80 == 0)
                 std::cout << "\n";
         }
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

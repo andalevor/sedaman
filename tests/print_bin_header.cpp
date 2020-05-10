@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
         print(bin_hdr.num_of_tr_in_file, name_as_string(name::NUM_OF_TR_IN_FILE));
         print(bin_hdr.byte_off_of_first_tr, name_as_string(name::BYTE_OFF_OF_FIRST_TR));
         print(bin_hdr.num_of_trailer_stanza, name_as_string(name::NUM_OF_TRAILER_STANZA));
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         std::cerr << e.what() << '\n';
         return 1;
     }

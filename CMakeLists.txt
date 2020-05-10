@@ -1,15 +1,16 @@
-
 set(PROJ_NAME sedaman)
 project(${PROJ_NAME})
 cmake_minimum_required(VERSION 3.1)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB SOURCES "src/*.cpp")
 
 add_library(${PROJ_NAME} SHARED ${SOURCES})
+add_library(${PROJ_NAME}_static STATIC ${SOURCES})
 
 if(MSVC)
         target_compile_options(${PROJ_NAME} PRIVATE /W4 /WX)

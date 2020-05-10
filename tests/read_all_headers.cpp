@@ -1,9 +1,8 @@
 #include "ISegy.hpp"
-#include <cassert>
 #include <exception>
 #include <iostream>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     if (argc < 2)
         return 1;
@@ -12,13 +11,16 @@ int main(int argc, char *argv[])
         sedaman::ISegy segy(argv[1]);
         while (segy.has_next()) {
             sedaman::Trace::Header hdr = segy.read_header();
-			std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");
-			sedaman::Trace::Header::Value v;
-			if (opt)
-				v = *opt;
-			else
-				return 1;
-            assert(std::get<int32_t>(v) == val++);
+            std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");
+            sedaman::Trace::Header::Value v;
+            if (opt)
+                v = *opt;
+            else
+                return 1;
+            if (std::get<int32_t>(v) != val++) {
+                std::cerr << std::get<int32_t>(v) << " not equal to " << val - 1 << '\n';
+                return 1;
+            }
         }
     } catch (std::exception& e) {
         std::cerr << e.what() << '\n';

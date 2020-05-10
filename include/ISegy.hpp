@@ -25,71 +25,71 @@ namespace sedaman {
 ///
 class ISegy : CommonSegy {
 public:
-	///
-	/// \param file_name Name of SEGY file.
-	/// \throws std::ifstream::failure In case of file operations falure
-	/// \throws sedaman::Exception
-	///
-	ISegy(std::string file_name, std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
-		  std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
-	///
-	/// \param file_name Name of SEGY file.
-	/// \param binary_header Could be used to override values in binary header.
-	/// \throws std::ifstream::failure In case of file operations falure
-	/// \throws sedaman::Exception
-	///
-	ISegy(std::string file_name, BinaryHeader binary_header,
-		  std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
-		  std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
-	///
-	/// \param file_name Name of SEGY file.
-	/// \throws std::ifstream::failure In case of file operations falure
-	/// \throws sedaman::Exception
-	/// \brief creates ISegy instance internally and returns binary header.
-	/// Could be used to get binary header from file to override some values.
-	///
-	static CommonSegy::BinaryHeader read_binary_header(std::string file_name);
-	///
-	/// \fn text_header
-	/// \brief segy text headers getter
-	/// \return vector with text headers
-	///
-	std::vector<std::string> const& text_headers();
-	///
-	/// \fn trailer_stanzas
-	/// \brief segy trailer stanzas getter
-	/// \return vector with text headers
-	///
-	std::vector<std::string> const& trailer_stanzas();
-	///
-	/// \fn binary_header
-	/// \brief segy binary header getter
-	/// \return binary header
-	///
-	CommonSegy::BinaryHeader const& binary_header();
-	///
-	/// \fn has_next
-	/// \brief checks for next trace in file
-	/// \return true if there is at least one trace
-	///
-	bool has_next();
-	///
-	/// \fn read_header
-	/// \brief reads header, skips samples
-	/// \return Trace::Header
-	///
-	Trace::Header read_header();
-	///
-	/// \fn read_trace
-	/// \brief reads one trace from file
-	/// \return Trace
-	///
-	Trace read_trace();
-	virtual ~ISegy();
+    ///
+    /// \param file_name Name of SEGY file.
+    /// \throws std::ifstream::failure In case of file operations falure
+    /// \throws sedaman::Exception
+    ///
+    ISegy(std::string file_name, std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
+        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
+    ///
+    /// \param file_name Name of SEGY file.
+    /// \param binary_header Could be used to override values in binary header.
+    /// \throws std::ifstream::failure In case of file operations falure
+    /// \throws sedaman::Exception
+    ///
+    ISegy(std::string file_name, BinaryHeader binary_header,
+        std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
+        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
+    ///
+    /// \param file_name Name of SEGY file.
+    /// \throws std::ifstream::failure In case of file operations falure
+    /// \throws sedaman::Exception
+    /// \brief creates ISegy instance internally and returns binary header.
+    /// Could be used to get binary header from file to override some values.
+    ///
+    static CommonSegy::BinaryHeader read_binary_header(std::string file_name);
+    ///
+    /// \fn text_header
+    /// \brief segy text headers getter
+    /// \return vector with text headers
+    ///
+    std::vector<std::string> const& text_headers();
+    ///
+    /// \fn trailer_stanzas
+    /// \brief segy trailer stanzas getter
+    /// \return vector with text headers
+    ///
+    std::vector<std::string> const& trailer_stanzas();
+    ///
+    /// \fn binary_header
+    /// \brief segy binary header getter
+    /// \return binary header
+    ///
+    CommonSegy::BinaryHeader const& binary_header();
+    ///
+    /// \fn has_next
+    /// \brief checks for next trace in file
+    /// \return true if there is at least one trace
+    ///
+    bool has_next();
+    ///
+    /// \fn read_header
+    /// \brief reads header, skips samples
+    /// \return Trace::Header
+    ///
+    Trace::Header read_header();
+    ///
+    /// \fn read_trace
+    /// \brief reads one trace from file
+    /// \return Trace
+    ///
+    Trace read_trace();
+    virtual ~ISegy();
 
 private:
-	class Impl;
-	std::unique_ptr<Impl> pimpl;
+    class Impl;
+    std::unique_ptr<Impl> pimpl;
 };
 } // namespace sedaman
 
