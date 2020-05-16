@@ -1,4 +1,6 @@
 #include "ISegd.hpp"
+#include "util.hpp"
+#include <cmath>
 
 using std::fstream;
 using std::make_unique;
@@ -9,13 +11,47 @@ namespace sedaman {
 class ISegd::Impl {
 public:
     Impl(ISegd& s);
-    ISegd& sgy;
+    ISegd& sgd;
+private:
+    void read_gen_hdr();
 };
 
 ISegd::Impl::Impl(ISegd& s)
-    : sgy(s)
+    : sgd(s)
 {
+    read_gen_hdr();
 }
+
+void ISegd::Impl::read_gen_hdr()
+{
+    sgd.p_file().read(sgd.p_gen_hdr_buf().data(), sgd.p_gen_hdr_buf().size());
+    char const* buf = sgd.p_gen_hdr_buf().data();
+    GeneralHeader& gh = sgd.p_general_header();
+    gh.file_number = from_bcd<int>(&buf, false, 4);
+    gh.format_code = from_bcd<int>(&buf, false, 4);
+    gh.gen_const = from_bcd<long long>(&buf, false, 12);
+    gh.year = from_bcd<int>(&buf, false, 2);
+    gh.day = from_bcd<int>(&buf, true, 3);
+    gh.hour = from_bcd<int>(&buf, false, 2);
+    gh.minute = from_bcd<int>(&buf, false, 2);
+    gh.second = from_bcd<int>(&buf, false, 2);
+    gh.manufac_code = from_bcd<int>(&buf, false, 2);
+    gh.manufac_num = from_bcd<int>(&buf, false, 4);
+    gh.bytes_per_scan = from_bcd<long>(&buf, false, 6);
+    gh.base_scan_int = *buf++ / pow(2, 4);
+    gh.polarity = from_bcd<int>(&buf, false, 1);
+    int exp = static_cast<unsigned>(*buf++) & 0x0f;
+    gh.scans_per_block = static_cast<unsigned>(*buf++) * pow(2, exp);
+    gh.record_type = from_bcd<int>(&buf, false, 1);
+    gh.record_length = from_bcd<int>(&buf, true, 3);
+    gh.scan_types_per_record = from_bcd<int>(&buf, false, 2);
+    gh.channel_sets_per_scan_type = from_bcd<int>(&buf, false, 2);
+    gh.skew_blocks = from_bcd<int>(&buf, false, 2);
+    gh.extended_hdr_blocks = from_bcd<int>(&buf, false, 2);
+    gh.external_hdr_blocks = from_bcd<int>(&buf, false, 2);
+}
+
+CommonSegd::GeneralHeader const& ISegd::general_header() { return p_general_header(); }
 
 ISegd::ISegd(string name)
     : CommonSegd(move(name), fstream::in)

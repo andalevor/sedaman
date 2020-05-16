@@ -10,6 +10,7 @@
 #ifndef SEDAMAN_UTIL_HPP
 #define SEDAMAN_UTIL_HPP
 
+#include <cassert>
 #include <cstring>
 
 ///
@@ -61,6 +62,45 @@ T swap(T const val)
     unsigned char const* from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
     for (int counter = sizeof(T); counter; --counter)
         *to++ = *from--;
+    return result;
+}
+
+template <typename T>
+T from_bcd(char const **buf, bool skip_first, int num)
+{
+    assert(num);
+    char const *ptr = *buf;
+    T result = 0;
+    int first = (static_cast<unsigned>(*ptr) & 0xf0) >> 4;
+    int second = static_cast<unsigned>(*ptr) & 0x0f;
+    ++ptr;
+    int counter = 0;
+    if (!skip_first) {
+        result += first;
+         ++counter;
+    }
+    if (num != counter) {
+        result *= 10;
+        result += second;
+        ++counter;
+    }
+    for (int i = num - counter; i > 1; i -= 2) {
+        int first = (static_cast<unsigned>(*ptr) & 0xf0) >> 4;
+        int second = static_cast<unsigned>(*ptr) & 0x0f;
+        ++ptr;
+        result *= 10;
+        result += first;
+        ++counter;
+        result *= 10;
+        result += second;
+        ++counter;
+    }
+    if (num != counter) {
+        int first = (static_cast<unsigned>(*ptr) & 0xf0) >> 4;
+        result *= 10;
+        result += first;
+    }
+    *buf += (num + skip_first) / 2;
     return result;
 }
 } // namespace sedaman

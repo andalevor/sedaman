@@ -55,3 +55,7 @@ add_test(verify_writing_4I_test verify_writing ${PROJECT_SOURCE_DIR}/samples/4I.
 add_test(verify_writing_2I_test verify_writing ${PROJECT_SOURCE_DIR}/samples/2I.sgy test_2I.sgy)
 add_test(verify_writing_1I_test verify_writing ${PROJECT_SOURCE_DIR}/samples/1I.sgy test_1I.sgy)
 target_link_libraries(verify_writing sedaman)
+
+add_executable(print_gen_header print_gen_header.cpp)
+#add_test(print_gen_header_test print_gen_header)
+target_link_libraries(print_gen_header sedaman)

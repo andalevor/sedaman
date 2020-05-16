@@ -29,6 +29,11 @@ public:
     /// \param file_name Name of file to read from.
     ///
     explicit ISegd(std::string file_name);
+    ///
+    /// \brief General header getter
+    /// \return return constant reference to general header
+    ///
+    GeneralHeader const& general_header();
     virtual ~ISegd();
 
 private:
