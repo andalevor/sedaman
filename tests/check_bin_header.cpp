@@ -1,5 +1,5 @@
-#include "CommonSegy.hpp"
-#include "ISegy.hpp"
+#include "CommonSEGY.hpp"
+#include "ISEGY.hpp"
 #include <iostream>
 
 template <typename T, typename U>
@@ -16,8 +16,8 @@ int main(int argc, char* argv[])
     if (argc < 2)
         return 1;
     try {
-        sedaman::ISegy segy(argv[1]);
-        sedaman::CommonSegy::BinaryHeader bin_hdr = segy.binary_header();
+        sedaman::ISEGY segy(argv[1]);
+        sedaman::CommonSEGY::BinaryHeader bin_hdr = segy.binary_header();
         check(bin_hdr.job_id, 9999);
         check(bin_hdr.line_num, 9999);
         check(bin_hdr.reel_num, 1);

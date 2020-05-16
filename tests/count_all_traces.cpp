@@ -1,4 +1,4 @@
-#include "ISegy.hpp"
+#include "ISEGY.hpp"
 #include "Trace.hpp"
 #include <exception>
 #include <iostream>
@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     if (argc < 2)
         return 1;
     try {
-        sedaman::ISegy segy(argv[1]);
+        sedaman::ISEGY segy(argv[1]);
         int counter = 0;
         while (segy.has_next()) {
             sedaman::Trace t = segy.read_trace();

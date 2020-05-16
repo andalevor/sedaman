@@ -10,7 +10,7 @@
 #ifndef SEDAMAN_OSEGYREV0_HPP
 #define SEDAMAN_OSEGYREV0_HPP
 
-#include "OSegy.hpp"
+#include "OSEGY.hpp"
 
 ///
 /// \namespace sedaman
@@ -22,7 +22,7 @@ namespace sedaman {
 /// \brief Class for SEGY reading.
 /// Defines methods to write information from SEGY files.
 ///
-class OSegyRev0 : public OSegy {
+class OSEGYRev0 : public OSEGY {
 public:
     ///
     /// \param file_name Name of SEGY file.
@@ -36,14 +36,14 @@ public:
     /// CommonSegy::ascii_to_ebcdic could be used for transformation.
     /// By default will be used text header from standard.
     ///
-    OSegyRev0(std::string file_name, std::string text_header = {},
-        CommonSegy::BinaryHeader bin_header = {});
+    OSEGYRev0(std::string file_name, std::string text_header = {},
+        CommonSEGY::BinaryHeader bin_header = {});
     ///
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.
     ///
     void write_trace(Trace& trace) override;
-    virtual ~OSegyRev0();
+    virtual ~OSEGYRev0();
 
 private:
     class Impl;

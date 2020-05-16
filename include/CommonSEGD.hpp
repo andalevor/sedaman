@@ -27,7 +27,7 @@ namespace sedaman {
 /// \see ISegd
 /// \see OSegd
 ///
-class CommonSegd {
+class CommonSEGD {
 public:
     class GeneralHeader {
     public:
@@ -89,7 +89,7 @@ protected:
     /// \param file_name Name of file.
     /// \param mode Choose input or output.
     ///
-    CommonSegd(std::string file_name, std::fstream::openmode mode);
+    CommonSEGD(std::string file_name, std::fstream::openmode mode);
     ///
     /// \brief p_file file handler getter
     /// \return reference to a file handler
@@ -105,7 +105,7 @@ protected:
     /// \return reference to buffer
     ///
     std::vector<char>& p_gen_hdr_buf();
-    virtual ~CommonSegd();
+    virtual ~CommonSEGD();
 
 private:
     class Impl;

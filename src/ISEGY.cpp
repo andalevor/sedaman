@@ -1,5 +1,5 @@
-#include "ISegy.hpp"
-#include "CommonSegy.hpp"
+#include "ISEGY.hpp"
+#include "CommonSEGY.hpp"
 #include "Exception.hpp"
 #include "Trace.hpp"
 #include "util.hpp"
@@ -31,9 +31,9 @@ using std::valarray;
 using std::vector;
 
 namespace sedaman {
-class ISegy::Impl {
+class ISEGY::Impl {
 public:
-    Impl(ISegy& s, bool override_bin_hdr,
+    Impl(ISEGY& s, bool override_bin_hdr,
         vector<map<uint32_t, pair<string, TrHdrValueType>>> tr_hdr_over);
     streampos first_trace_pos;
     streampos curr_pos;
@@ -47,7 +47,7 @@ public:
     vector<map<uint32_t, pair<string, TrHdrValueType>>> tr_hdr_default_io_map();
 
 private:
-    ISegy& sgy;
+    ISEGY& sgy;
     function<uint8_t(char const**)> read_u8;
     function<int8_t(char const**)> read_i8;
     function<uint16_t(char const**)> read_u16;
@@ -73,16 +73,16 @@ private:
     void check_tr_hdr_over();
 };
 
-ISegy::Impl::Impl(ISegy& s, bool override_bin_hdr,
+ISEGY::Impl::Impl(ISEGY& s, bool override_bin_hdr,
     vector<map<uint32_t, pair<string, TrHdrValueType>>> tr_hdr_over)
     : tr_hdr_io_map(move(tr_hdr_over))
     , sgy { s }
 {
-    char text_buf[CommonSegy::TEXT_HEADER_SIZE];
-    sgy.p_file().read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
-    sgy.p_txt_hdrs().push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
-    char bin_buf[CommonSegy::BIN_HEADER_SIZE];
-    sgy.p_file().read(bin_buf, CommonSegy::BIN_HEADER_SIZE);
+    char text_buf[CommonSEGY::TEXT_HEADER_SIZE];
+    sgy.p_file().read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
+    sgy.p_txt_hdrs().push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
+    char bin_buf[CommonSEGY::BIN_HEADER_SIZE];
+    sgy.p_file().read(bin_buf, CommonSEGY::BIN_HEADER_SIZE);
     check_tr_hdr_over();
     if (!override_bin_hdr)
         fill_bin_header(bin_buf);
@@ -107,19 +107,19 @@ ISegy::Impl::Impl(ISegy& s, bool override_bin_hdr,
         read_trc_smpls = [this](unordered_map<string, Trace::Header::Value>& hdr) { return read_trc_smpls_var(hdr); };
 }
 
-void ISegy::Impl::fill_buf_from_file(char* buf, streamsize n)
+void ISEGY::Impl::fill_buf_from_file(char* buf, streamsize n)
 {
     sgy.p_file().read(buf, n);
     curr_pos = sgy.p_file().tellg();
 }
 
-void ISegy::Impl::file_skip_bytes(streamoff off)
+void ISEGY::Impl::file_skip_bytes(streamoff off)
 {
     sgy.p_file().seekg(off, ios_base::cur);
     curr_pos = sgy.p_file().tellg();
 }
 
-void ISegy::Impl::fill_bin_header(char const* buf)
+void ISEGY::Impl::fill_bin_header(char const* buf)
 {
     memcpy(&sgy.p_bin_hdr().endianness, buf + 96, sizeof(int32_t));
     assign_raw_readers();
@@ -169,7 +169,7 @@ void ISegy::Impl::fill_bin_header(char const* buf)
     sgy.p_bin_hdr().num_of_trailer_stanza = read_i32(&buf);
 }
 
-void ISegy::Impl::assign_raw_readers()
+void ISEGY::Impl::assign_raw_readers()
 {
     read_u8 = [](char const** buf) { return read<uint8_t>(buf); };
     read_i8 = [](char const** buf) { return read<int8_t>(buf); };
@@ -243,7 +243,7 @@ void ISegy::Impl::assign_raw_readers()
     };
 }
 
-void ISegy::Impl::assign_sample_reader()
+void ISEGY::Impl::assign_sample_reader()
 {
     switch (sgy.p_bin_hdr().format_code) {
     case 1:
@@ -290,31 +290,31 @@ void ISegy::Impl::assign_sample_reader()
     }
 }
 
-void ISegy::Impl::read_ext_text_headers()
+void ISEGY::Impl::read_ext_text_headers()
 {
     int num = sgy.p_bin_hdr().ext_text_headers_num;
     if (!num)
         return;
-    char buf[CommonSegy::TEXT_HEADER_SIZE];
+    char buf[CommonSEGY::TEXT_HEADER_SIZE];
     if (num == -1) {
         string end_stanza = "((SEG: EndText))";
         while (1) {
-            sgy.p_file().read(buf, CommonSegy::TEXT_HEADER_SIZE);
-            sgy.p_txt_hdrs().push_back(string(buf, CommonSegy::TEXT_HEADER_SIZE));
+            sgy.p_file().read(buf, CommonSEGY::TEXT_HEADER_SIZE);
+            sgy.p_txt_hdrs().push_back(string(buf, CommonSEGY::TEXT_HEADER_SIZE));
             if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
                 return;
         }
     } else {
         for (int i = sgy.p_bin_hdr().ext_text_headers_num; i; --i) {
-            sgy.p_file().read(buf, CommonSegy::TEXT_HEADER_SIZE);
-            sgy.p_txt_hdrs().push_back(string(buf, CommonSegy::TEXT_HEADER_SIZE));
+            sgy.p_file().read(buf, CommonSEGY::TEXT_HEADER_SIZE);
+            sgy.p_txt_hdrs().push_back(string(buf, CommonSEGY::TEXT_HEADER_SIZE));
         }
     }
 }
 
-void ISegy::Impl::read_trailer_stanzas()
+void ISEGY::Impl::read_trailer_stanzas()
 {
-    char text_buf[CommonSegy::TEXT_HEADER_SIZE];
+    char text_buf[CommonSEGY::TEXT_HEADER_SIZE];
     if (sgy.p_bin_hdr().num_of_trailer_stanza == -1) {
         if (!sgy.p_bin_hdr().num_of_tr_in_file)
             throw(Exception(__FILE__, __LINE__, "unable to determine end of trace data"));
@@ -324,30 +324,30 @@ void ISegy::Impl::read_trailer_stanzas()
             end_of_data = sgy.p_file().tellg();
             string end_stanza = "((SEG: EndText))";
             while (1) {
-                sgy.p_file().read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
-                sgy.p_trlr_stnzs().push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
+                sgy.p_file().read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
+                sgy.p_trlr_stnzs().push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
                 if (!end_stanza.compare(0, end_stanza.size(), text_buf, end_stanza.size()))
                     return;
             }
         } else {
             // variable trace length
-            char trc_hdr_buf[CommonSegy::TR_HEADER_SIZE];
+            char trc_hdr_buf[CommonSEGY::TR_HEADER_SIZE];
             for (auto i = sgy.p_bin_hdr().num_of_tr_in_file; i; --i) {
-                sgy.p_file().read(trc_hdr_buf, CommonSegy::TR_HEADER_SIZE);
+                sgy.p_file().read(trc_hdr_buf, CommonSEGY::TR_HEADER_SIZE);
                 // get number of samples from main header
                 char const* ptr = trc_hdr_buf + 114;
                 uint32_t trc_samp_num = read_i16(&ptr);
                 if (sgy.p_bin_hdr().max_num_add_tr_headers) {
                     // if there are additional header(s)
                     // get number of samples from first additional header
-                    sgy.p_file().read(trc_hdr_buf, CommonSegy::TR_HEADER_SIZE);
+                    sgy.p_file().read(trc_hdr_buf, CommonSEGY::TR_HEADER_SIZE);
                     ptr = trc_hdr_buf + 136;
                     trc_samp_num = read_u32(&ptr);
                     ptr = trc_hdr_buf + 156;
                     uint16_t add_tr_hdr_num = read_u16(&ptr);
                     add_tr_hdr_num = add_tr_hdr_num ? add_tr_hdr_num : sgy.p_bin_hdr().max_num_add_tr_headers;
                     // skip addional headers
-                    sgy.p_file().seekg((add_tr_hdr_num - 1) * CommonSegy::TR_HEADER_SIZE,
+                    sgy.p_file().seekg((add_tr_hdr_num - 1) * CommonSEGY::TR_HEADER_SIZE,
                         ios_base::cur);
                 }
                 // skip trace samples
@@ -356,24 +356,24 @@ void ISegy::Impl::read_trailer_stanzas()
             end_of_data = sgy.p_file().tellg();
             string end_stanza = "((SEG: EndText))";
             while (1) {
-                sgy.p_file().read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
-                sgy.p_trlr_stnzs().push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
+                sgy.p_file().read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
+                sgy.p_trlr_stnzs().push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
                 if (!end_stanza.compare(0, end_stanza.size(), text_buf, end_stanza.size()))
                     return;
             }
         }
     } else {
         // go to first trailer stanza
-        sgy.p_file().seekg(sgy.p_bin_hdr().num_of_trailer_stanza * CommonSegy::TEXT_HEADER_SIZE, ios_base::end);
+        sgy.p_file().seekg(sgy.p_bin_hdr().num_of_trailer_stanza * CommonSEGY::TEXT_HEADER_SIZE, ios_base::end);
         end_of_data = sgy.p_file().tellg();
         for (int32_t i = sgy.p_bin_hdr().num_of_trailer_stanza; i; --i) {
-            sgy.p_file().read(text_buf, CommonSegy::TEXT_HEADER_SIZE);
-            sgy.p_trlr_stnzs().push_back(string(text_buf, CommonSegy::TEXT_HEADER_SIZE));
+            sgy.p_file().read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
+            sgy.p_trlr_stnzs().push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
         }
     }
 }
 
-void ISegy::Impl::assign_bytes_per_sample()
+void ISEGY::Impl::assign_bytes_per_sample()
 {
     switch (sgy.p_bin_hdr().format_code) {
     case 1:
@@ -403,9 +403,9 @@ void ISegy::Impl::assign_bytes_per_sample()
     }
 }
 
-unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
+unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
 {
-    fill_buf_from_file(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+    fill_buf_from_file(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
     char const* buf = sgy.p_hdr_buf();
     unordered_map<string, Trace::Header::Value> hdr;
     if (tr_hdr_io_map.empty()) {
@@ -500,7 +500,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
         hdr["SOURCE_MEASUREMENT"] = mant * pow(10, read_i16(&buf));
         hdr["SOU_MEAS_UNIT"] = read_i16(&buf);
         if (sgy.p_bin_hdr().max_num_add_tr_headers) {
-            fill_buf_from_file(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+            fill_buf_from_file(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
             char const* buf = sgy.p_hdr_buf();
             hdr["TRC_SEQ_LINE"] = read_u64(&buf);
             hdr["TRC_SEQ_SGY"] = read_u64(&buf);
@@ -538,7 +538,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
                         throw Exception(__FILE__, __LINE__, "size of additioanal trace headers map should"
                                                             " be equal to max number of additional trace headers in binary header");
                     for (auto& i : sgy.p_add_tr_hdrs_map()) {
-                        fill_buf_from_file(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+                        fill_buf_from_file(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
                         for (auto& p : i.second) {
                             char const* pos = sgy.p_hdr_buf() + p.first;
                             switch (p.second.second) {
@@ -580,7 +580,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
                     }
                 } else {
                     add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num : sgy.p_bin_hdr().max_num_add_tr_headers;
-                    file_skip_bytes(add_trc_hdr_num * CommonSegy::TR_HEADER_SIZE);
+                    file_skip_bytes(add_trc_hdr_num * CommonSEGY::TR_HEADER_SIZE);
                 }
             }
         }
@@ -627,7 +627,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
             if (tr_hdr_io_map.size() < 2)
                 throw Exception(__FILE__, __LINE__, "size of trace header map vector is 1 but "
                                                     "number of additional trace header greater than 0");
-            fill_buf_from_file(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+            fill_buf_from_file(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
             char const* buf = sgy.p_hdr_buf();
             for (auto& p : tr_hdr_io_map[1]) {
                 char const* pos = buf + p.first;
@@ -673,7 +673,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
                         throw Exception(__FILE__, __LINE__, "size of additioanal trace headers map should"
                                                             " be equal to max number of additional trace headers in binary header");
                     for (auto& i : sgy.p_add_tr_hdrs_map()) {
-                        fill_buf_from_file(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+                        fill_buf_from_file(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
                         char const* buf = sgy.p_hdr_buf();
                         for (auto& p : i.second) {
                             char const* pos = buf + p.first;
@@ -717,7 +717,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
                 } else {
                     uint16_t add_trc_hdr_num = get<uint16_t>(hdr["ADD_TRC_HDR_NUM"]);
                     add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num : sgy.p_bin_hdr().max_num_add_tr_headers;
-                    file_skip_bytes(add_trc_hdr_num * CommonSegy::TR_HEADER_SIZE);
+                    file_skip_bytes(add_trc_hdr_num * CommonSEGY::TR_HEADER_SIZE);
                 }
             }
         }
@@ -725,7 +725,7 @@ unordered_map<string, Trace::Header::Value> ISegy::Impl::read_trc_header()
     return hdr;
 }
 
-Trace::Header ISegy::read_header()
+Trace::Header ISEGY::read_header()
 {
     unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trc_header();
     if (p_bin_hdr().fixed_tr_length || p_bin_hdr().SEGY_rev_major_ver == 0) {
@@ -742,7 +742,7 @@ Trace::Header ISegy::read_header()
     return Trace::Header(hdr);
 }
 
-valarray<double> ISegy::Impl::read_trc_smpls_fix()
+valarray<double> ISEGY::Impl::read_trc_smpls_fix()
 {
     fill_buf_from_file(sgy.p_samp_buf().data(), sgy.p_samp_buf().size());
     char const* buf = sgy.p_samp_buf().data();
@@ -752,7 +752,7 @@ valarray<double> ISegy::Impl::read_trc_smpls_fix()
     return result;
 }
 
-valarray<double> ISegy::Impl::read_trc_smpls_var(unordered_map<string, Trace::Header::Value>& hdr)
+valarray<double> ISEGY::Impl::read_trc_smpls_var(unordered_map<string, Trace::Header::Value>& hdr)
 {
     uint32_t samp_num;
     Trace::Header::Value v = hdr["SAMP_NUM"];
@@ -765,14 +765,14 @@ valarray<double> ISegy::Impl::read_trc_smpls_var(unordered_map<string, Trace::He
     return read_trc_smpls_fix();
 }
 
-Trace ISegy::read_trace()
+Trace ISEGY::read_trace()
 {
     unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trc_header();
     valarray<double> samples = pimpl->read_trc_smpls(hdr);
     return Trace(move(hdr), move(samples));
 }
 
-bool ISegy::has_next()
+bool ISEGY::has_next()
 {
     if (pimpl->curr_pos == pimpl->end_of_data)
         return false;
@@ -780,7 +780,7 @@ bool ISegy::has_next()
         return true;
 }
 
-void ISegy::Impl::check_tr_hdr_over()
+void ISEGY::Impl::check_tr_hdr_over()
 {
     for (auto& j : tr_hdr_io_map) {
         int first = 1, size = 0;
@@ -839,41 +839,41 @@ void ISegy::Impl::check_tr_hdr_over()
     }
 }
 
-vector<string> const& ISegy::text_headers()
+vector<string> const& ISEGY::text_headers()
 {
-    return CommonSegy::p_txt_hdrs();
+    return CommonSEGY::p_txt_hdrs();
 }
 
-vector<string> const& ISegy::trailer_stanzas()
+vector<string> const& ISEGY::trailer_stanzas()
 {
-    return CommonSegy::p_trlr_stnzs();
+    return CommonSEGY::p_trlr_stnzs();
 }
 
-CommonSegy::BinaryHeader const& ISegy::binary_header()
+CommonSEGY::BinaryHeader const& ISEGY::binary_header()
 {
-    return CommonSegy::p_bin_hdr();
+    return CommonSEGY::p_bin_hdr();
 }
 
-ISegy::ISegy(string name, vector<map<uint32_t, pair<string, TrHdrValueType>>> tr_hdr_over,
+ISEGY::ISEGY(string name, vector<map<uint32_t, pair<string, TrHdrValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
-    : CommonSegy(move(name), fstream::in | fstream::binary, {}, move(add_hdr_map))
+    : CommonSEGY(move(name), fstream::in | fstream::binary, {}, move(add_hdr_map))
     , pimpl(make_unique<Impl>(*this, false, move(tr_hdr_over)))
 {
 }
 
-ISegy::ISegy(string name, BinaryHeader bh,
+ISEGY::ISEGY(string name, BinaryHeader bh,
     vector<map<uint32_t, pair<string, TrHdrValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
-    : CommonSegy(move(name), fstream::in | fstream::binary, move(bh), move(add_hdr_map))
+    : CommonSEGY(move(name), fstream::in | fstream::binary, move(bh), move(add_hdr_map))
     , pimpl(make_unique<Impl>(*this, true, move(tr_hdr_over)))
 {
 }
 
-CommonSegy::BinaryHeader ISegy::read_binary_header(std::string file_name)
+CommonSEGY::BinaryHeader ISEGY::read_binary_header(std::string file_name)
 {
-    ISegy s(file_name);
+    ISEGY s(file_name);
     return s.binary_header();
 }
 
-ISegy::~ISegy() = default;
+ISEGY::~ISEGY() = default;
 } // namespace sedaman

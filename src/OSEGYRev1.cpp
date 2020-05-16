@@ -1,4 +1,4 @@
-#include "OSegyRev1.hpp"
+#include "OSEGYRev1.hpp"
 #include "Exception.hpp"
 #include <cstring>
 #include <functional>
@@ -17,21 +17,21 @@ using std::string;
 using std::vector;
 
 namespace sedaman {
-class OSegyRev1::Impl {
+class OSEGYRev1::Impl {
 public:
-    Impl(OSegyRev1& s, vector<string> txt_hdrs);
+    Impl(OSEGYRev1& s, vector<string> txt_hdrs);
     function<void(Trace& tr)> write_trace;
 
 private:
-    OSegyRev1& sgy;
+    OSEGYRev1& sgy;
     streampos first_trace_pos;
 };
 
-OSegyRev1::Impl::Impl(OSegyRev1& s, vector<string> txt_hdrs)
+OSEGYRev1::Impl::Impl(OSEGYRev1& s, vector<string> txt_hdrs)
     : sgy { s }
 {
     if (txt_hdrs.empty()) {
-        string txt_hdr = string(CommonSegy::default_text_header, CommonSegy::TEXT_HEADER_SIZE);
+        string txt_hdr = string(CommonSEGY::default_text_header, CommonSEGY::TEXT_HEADER_SIZE);
         string to_replace("SEG-Y_REV2.0");
         auto pos = txt_hdr.find(to_replace);
         // change revision
@@ -39,11 +39,11 @@ OSegyRev1::Impl::Impl(OSegyRev1& s, vector<string> txt_hdrs)
         txt_hdrs.push_back(move(txt_hdr));
     } else {
         for (string& s : txt_hdrs)
-            if (s.size() != CommonSegy::TEXT_HEADER_SIZE)
+            if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
                 throw Exception(__FILE__, __LINE__, "size of text header should be 3200 bytes");
         sgy.p_txt_hdrs() = txt_hdrs;
     }
-    sgy.p_file().write(txt_hdrs[0].c_str(), CommonSegy::TEXT_HEADER_SIZE);
+    sgy.p_file().write(txt_hdrs[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
     if (sgy.p_bin_hdr().format_code == 0)
         sgy.p_bin_hdr().format_code = 5;
     sgy.assign_raw_writers();
@@ -128,16 +128,16 @@ OSegyRev1::Impl::Impl(OSegyRev1& s, vector<string> txt_hdrs)
     }
 }
 
-void OSegyRev1::write_trace(Trace& tr)
+void OSEGYRev1::write_trace(Trace& tr)
 {
     pimpl->write_trace(tr);
 }
 
-OSegyRev1::OSegyRev1(string name, vector<string> ths, CommonSegy::BinaryHeader bh)
-    : OSegy(move(name), move(bh), {})
+OSEGYRev1::OSEGYRev1(string name, vector<string> ths, CommonSEGY::BinaryHeader bh)
+    : OSEGY(move(name), move(bh), {})
     , pimpl(make_unique<Impl>(*this, move(ths)))
 {
 }
 
-OSegyRev1::~OSegyRev1() = default;
+OSEGYRev1::~OSEGYRev1() = default;
 }

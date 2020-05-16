@@ -1,4 +1,4 @@
-#include "OSegy.hpp"
+#include "OSEGY.hpp"
 #include "Exception.hpp"
 #include "util.hpp"
 #include <cfloat>
@@ -25,9 +25,9 @@ using std::valarray;
 using std::vector;
 
 namespace sedaman {
-class OSegy::Impl {
+class OSEGY::Impl {
 public:
-    Impl(OSegy& s);
+    Impl(OSEGY& s);
     void assign_raw_writers();
     void assign_sample_writer();
     void assign_bytes_per_sample();
@@ -40,7 +40,7 @@ public:
     void write_trace_samples_var(Trace const& t);
 
 private:
-    OSegy& sgy;
+    OSEGY& sgy;
     function<void(char**, uint8_t)> write_u8;
     function<void(char**, uint8_t)> write_i8;
     function<void(char**, uint16_t)> write_u16;
@@ -57,12 +57,12 @@ private:
     function<void(char**, double)> write_IEEE_double;
 };
 
-OSegy::Impl::Impl(OSegy& s)
+OSEGY::Impl::Impl(OSEGY& s)
     : sgy { s }
 {
 }
 
-void OSegy::Impl::assign_raw_writers()
+void OSEGY::Impl::assign_raw_writers()
 {
     write_u8 = [](char** buf, uint8_t val) { write<uint8_t>(buf, val); };
     write_i8 = [](char** buf, int8_t val) { write<int8_t>(buf, val); };
@@ -144,7 +144,7 @@ void OSegy::Impl::assign_raw_writers()
     };
 }
 
-void OSegy::Impl::assign_bytes_per_sample()
+void OSEGY::Impl::assign_bytes_per_sample()
 {
     switch (sgy.p_bin_hdr().format_code) {
     case 1:
@@ -174,7 +174,7 @@ void OSegy::Impl::assign_bytes_per_sample()
     }
 }
 
-void OSegy::Impl::assign_sample_writer()
+void OSEGY::Impl::assign_sample_writer()
 {
     switch (sgy.p_bin_hdr().format_code) {
     case 1:
@@ -221,9 +221,9 @@ void OSegy::Impl::assign_sample_writer()
     }
 }
 
-void OSegy::Impl::write_bin_header()
+void OSEGY::Impl::write_bin_header()
 {
-    char buf[CommonSegy::BIN_HEADER_SIZE] = { 0 };
+    char buf[CommonSEGY::BIN_HEADER_SIZE] = { 0 };
     char* ptr = buf;
     write_i32(&ptr, sgy.p_bin_hdr().job_id);
     write_i32(&ptr, sgy.p_bin_hdr().line_num);
@@ -270,10 +270,10 @@ void OSegy::Impl::write_bin_header()
     write_u64(&ptr, sgy.p_bin_hdr().num_of_tr_in_file);
     write_u64(&ptr, sgy.p_bin_hdr().byte_off_of_first_tr);
     write_i32(&ptr, sgy.p_bin_hdr().num_of_trailer_stanza);
-    sgy.p_file().write(buf, CommonSegy::BIN_HEADER_SIZE);
+    sgy.p_file().write(buf, CommonSEGY::BIN_HEADER_SIZE);
 }
 
-void OSegy::Impl::write_trace_header(Trace::Header const& hdr)
+void OSEGY::Impl::write_trace_header(Trace::Header const& hdr)
 {
     char* buf = sgy.p_hdr_buf();
     optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
@@ -458,13 +458,13 @@ void OSegy::Impl::write_trace_header(Trace::Header const& hdr)
     write_i16(&buf, exp);
     tmp = hdr.get("SOU_MEAS_UNIT");
     write_i16(&buf, tmp ? get<int16_t>(*tmp) : 0);
-    sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+    sgy.p_file().write(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
 }
 
-void OSegy::Impl::write_additional_trace_headers(Trace::Header const& hdr)
+void OSEGY::Impl::write_additional_trace_headers(Trace::Header const& hdr)
 {
     char* buf = sgy.p_hdr_buf();
-    std::memset(buf, 0, CommonSegy::TR_HEADER_SIZE);
+    std::memset(buf, 0, CommonSEGY::TR_HEADER_SIZE);
     optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
     write_u64(&buf, tmp ? get<uint64_t>(*tmp) : 0);
     tmp = hdr.get("TRC_SEQ_SGY");
@@ -515,10 +515,10 @@ void OSegy::Impl::write_additional_trace_headers(Trace::Header const& hdr)
     write_u64(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("CDP_Y");
     write_u64(&buf, tmp ? get<double>(*tmp) : 0);
-    sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+    sgy.p_file().write(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
     // for each item in vector
     for (auto& p : sgy.p_add_tr_hdrs_map()) {
-        std::memset(sgy.p_hdr_buf(), 0, CommonSegy::TR_HEADER_SIZE);
+        std::memset(sgy.p_hdr_buf(), 0, CommonSEGY::TR_HEADER_SIZE);
         // for each item in map
         for (auto& i : p.second) {
             tmp = hdr.get(i.second.first);
@@ -561,27 +561,27 @@ void OSegy::Impl::write_additional_trace_headers(Trace::Header const& hdr)
         }
         // copy additional trace header name
         std::memcpy(sgy.p_hdr_buf() + 232, p.first.c_str(), p.first.size());
-        sgy.p_file().write(sgy.p_hdr_buf(), CommonSegy::TR_HEADER_SIZE);
+        sgy.p_file().write(sgy.p_hdr_buf(), CommonSEGY::TR_HEADER_SIZE);
     }
 }
 
-void OSegy::Impl::write_ext_text_headers()
+void OSEGY::Impl::write_ext_text_headers()
 {
     int hdrs_num = sgy.p_txt_hdrs().size() - 1;
     sgy.p_bin_hdr().ext_text_headers_num = hdrs_num;
     for (int i = 0; i < hdrs_num; ++i)
-        sgy.p_file().write(sgy.p_txt_hdrs()[i + 1].c_str(), CommonSegy::TEXT_HEADER_SIZE);
+        sgy.p_file().write(sgy.p_txt_hdrs()[i + 1].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
 }
 
-void OSegy::Impl::write_trailer_stanzas()
+void OSEGY::Impl::write_trailer_stanzas()
 {
     int stanzas_num = sgy.p_trlr_stnzs().size();
     sgy.p_bin_hdr().num_of_trailer_stanza = stanzas_num;
     for (int i = 0; i < stanzas_num; ++i)
-        sgy.p_file().write(sgy.p_trlr_stnzs()[i].c_str(), CommonSegy::TEXT_HEADER_SIZE);
+        sgy.p_file().write(sgy.p_trlr_stnzs()[i].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
 }
 
-void OSegy::Impl::write_trace_samples_var(Trace const& t)
+void OSEGY::Impl::write_trace_samples_var(Trace const& t)
 {
     Trace::Header::Value v = *t.header().get("SAMP_NUM");
     uint32_t samp_num;
@@ -595,7 +595,7 @@ void OSegy::Impl::write_trace_samples_var(Trace const& t)
     write_trace_samples(t);
 }
 
-void OSegy::Impl::write_trace_samples(Trace const& t)
+void OSEGY::Impl::write_trace_samples(Trace const& t)
 {
     char* buf = sgy.p_samp_buf().data();
     valarray<double> const& samples = t.samples();
@@ -604,35 +604,35 @@ void OSegy::Impl::write_trace_samples(Trace const& t)
     sgy.p_file().write(sgy.p_samp_buf().data(), sgy.p_samp_buf().size());
 }
 
-OSegy::OSegy(string name, CommonSegy::BinaryHeader bh,
+OSEGY::OSEGY(string name, CommonSEGY::BinaryHeader bh,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
-    : CommonSegy { move(name), fstream::out | fstream::binary, move(bh), move(add_hdr_map) }
+    : CommonSEGY { move(name), fstream::out | fstream::binary, move(bh), move(add_hdr_map) }
     , pimpl(make_unique<Impl>(*this))
 {
 }
 
-void OSegy::assign_raw_writers() { pimpl->assign_raw_writers(); }
-void OSegy::assign_sample_writer() { pimpl->assign_sample_writer(); }
-void OSegy::assign_bytes_per_sample() { pimpl->assign_bytes_per_sample(); }
-void OSegy::write_bin_header() { pimpl->write_bin_header(); }
-void OSegy::write_ext_text_headers() { pimpl->write_ext_text_headers(); }
-void OSegy::write_trailer_stanzas() { pimpl->write_trailer_stanzas(); }
-void OSegy::write_trace_header(Trace::Header const& hdr)
+void OSEGY::assign_raw_writers() { pimpl->assign_raw_writers(); }
+void OSEGY::assign_sample_writer() { pimpl->assign_sample_writer(); }
+void OSEGY::assign_bytes_per_sample() { pimpl->assign_bytes_per_sample(); }
+void OSEGY::write_bin_header() { pimpl->write_bin_header(); }
+void OSEGY::write_ext_text_headers() { pimpl->write_ext_text_headers(); }
+void OSEGY::write_trailer_stanzas() { pimpl->write_trailer_stanzas(); }
+void OSEGY::write_trace_header(Trace::Header const& hdr)
 {
     pimpl->write_trace_header(hdr);
 }
-void OSegy::write_additional_trace_headers(Trace::Header const& hdr)
+void OSEGY::write_additional_trace_headers(Trace::Header const& hdr)
 {
     pimpl->write_additional_trace_headers(hdr);
 }
-void OSegy::write_trace_samples(Trace const& t)
+void OSEGY::write_trace_samples(Trace const& t)
 {
     pimpl->write_trace_samples(t);
 }
-void OSegy::write_trace_samples_var(Trace const& t)
+void OSEGY::write_trace_samples_var(Trace const& t)
 {
     pimpl->write_trace_samples_var(t);
 }
 
-OSegy::~OSegy() = default;
+OSEGY::~OSEGY() = default;
 } // namespace sedaman

@@ -1,4 +1,4 @@
-#include "ISegd.hpp"
+#include "ISEGD.hpp"
 #include "util.hpp"
 #include <cmath>
 
@@ -8,21 +8,21 @@ using std::move;
 using std::string;
 
 namespace sedaman {
-class ISegd::Impl {
+class ISEGD::Impl {
 public:
-    Impl(ISegd& s);
-    ISegd& sgd;
+    Impl(ISEGD& s);
+    ISEGD& sgd;
 private:
     void read_gen_hdr();
 };
 
-ISegd::Impl::Impl(ISegd& s)
+ISEGD::Impl::Impl(ISEGD& s)
     : sgd(s)
 {
     read_gen_hdr();
 }
 
-void ISegd::Impl::read_gen_hdr()
+void ISEGD::Impl::read_gen_hdr()
 {
     sgd.p_file().read(sgd.p_gen_hdr_buf().data(), sgd.p_gen_hdr_buf().size());
     char const* buf = sgd.p_gen_hdr_buf().data();
@@ -51,13 +51,13 @@ void ISegd::Impl::read_gen_hdr()
     gh.external_hdr_blocks = from_bcd<int>(&buf, false, 2);
 }
 
-CommonSegd::GeneralHeader const& ISegd::general_header() { return p_general_header(); }
+CommonSEGD::GeneralHeader const& ISEGD::general_header() { return p_general_header(); }
 
-ISegd::ISegd(string name)
-    : CommonSegd(move(name), fstream::in)
+ISEGD::ISEGD(string name)
+    : CommonSEGD(move(name), fstream::in)
     , pimpl(make_unique<Impl>(*this))
 {
 }
 
-ISegd::~ISegd() = default;
+ISEGD::~ISEGD() = default;
 } //sedaman

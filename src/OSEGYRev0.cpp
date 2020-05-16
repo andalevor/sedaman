@@ -1,4 +1,4 @@
-#include "OSegyRev0.hpp"
+#include "OSEGYRev0.hpp"
 #include "Exception.hpp"
 #include <cstring>
 #include <functional>
@@ -16,30 +16,30 @@ using std::streampos;
 using std::string;
 
 namespace sedaman {
-class OSegyRev0::Impl {
+class OSEGYRev0::Impl {
 public:
-    Impl(OSegyRev0& s, string txt_hdr);
+    Impl(OSEGYRev0& s, string txt_hdr);
     function<void(Trace& tr)> write_trace;
 
 private:
-    OSegyRev0& sgy;
+    OSEGYRev0& sgy;
     streampos first_trace_pos;
 };
 
-OSegyRev0::Impl::Impl(OSegyRev0& s, string txt_hdr)
+OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
     : sgy { s }
 {
     if (txt_hdr.empty()) {
-        txt_hdr = string(CommonSegy::default_text_header, CommonSegy::TEXT_HEADER_SIZE);
+        txt_hdr = string(CommonSEGY::default_text_header, CommonSEGY::TEXT_HEADER_SIZE);
         string to_replace("SEG-Y_REV2.0");
         auto pos = txt_hdr.find(to_replace);
         // there are no revision field in text header in revision 0
         txt_hdr.replace(pos, to_replace.size(), string(' ', to_replace.size()));
-        CommonSegy::ascii_to_ebcdic(txt_hdr);
-    } else if (txt_hdr.size() != CommonSegy::TEXT_HEADER_SIZE) {
+        CommonSEGY::ascii_to_ebcdic(txt_hdr);
+    } else if (txt_hdr.size() != CommonSEGY::TEXT_HEADER_SIZE) {
         throw Exception(__FILE__, __LINE__, "size of text header should be 3200 bytes");
     }
-    sgy.p_file().write(txt_hdr.c_str(), CommonSegy::TEXT_HEADER_SIZE);
+    sgy.p_file().write(txt_hdr.c_str(), CommonSEGY::TEXT_HEADER_SIZE);
     sgy.p_txt_hdrs().push_back(move(txt_hdr));
     if (sgy.p_bin_hdr().format_code == 0)
         sgy.p_bin_hdr().format_code = 1;
@@ -86,16 +86,16 @@ OSegyRev0::Impl::Impl(OSegyRev0& s, string txt_hdr)
     }
 }
 
-void OSegyRev0::write_trace(Trace& tr)
+void OSEGYRev0::write_trace(Trace& tr)
 {
     pimpl->write_trace(tr);
 }
 
-OSegyRev0::OSegyRev0(string name, string th, CommonSegy::BinaryHeader bh)
-    : OSegy(move(name), move(bh), {})
+OSEGYRev0::OSEGYRev0(string name, string th, CommonSEGY::BinaryHeader bh)
+    : OSEGY(move(name), move(bh), {})
     , pimpl(make_unique<Impl>(*this, move(th)))
 {
 }
 
-OSegyRev0::~OSegyRev0() = default;
+OSEGYRev0::~OSEGYRev0() = default;
 }

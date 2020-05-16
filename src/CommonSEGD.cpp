@@ -1,4 +1,4 @@
-#include "CommonSegd.hpp"
+#include "CommonSEGD.hpp"
 #include "Exception.hpp"
 
 using std::fstream;
@@ -8,11 +8,11 @@ using std::string;
 using std::vector;
 
 namespace sedaman {
-class CommonSegd::Impl {
+class CommonSEGD::Impl {
 public:
     explicit Impl(string name)
         : file_name(move(name))
-        , gen_hdr_buf(CommonSegd::GeneralHeader::SIZE)
+        , gen_hdr_buf(CommonSEGD::GeneralHeader::SIZE)
     {
     }
     string file_name;
@@ -21,7 +21,7 @@ public:
     vector<char> gen_hdr_buf;
 };
 
-CommonSegd::CommonSegd(string name, fstream::openmode mode)
+CommonSEGD::CommonSEGD(string name, fstream::openmode mode)
     : pimpl(make_unique<Impl>(move(name)))
 {
     fstream fl;
@@ -54,14 +54,14 @@ static char const* bin_names[] = {
     "External header length"
 };
 
-char const* CommonSegd::GeneralHeader::name_as_string(Name n)
+char const* CommonSEGD::GeneralHeader::name_as_string(Name n)
 {
     return bin_names[static_cast<int>(n)];
 }
 
-CommonSegd::~CommonSegd() = default;
+CommonSEGD::~CommonSEGD() = default;
 
-std::fstream& CommonSegd::p_file() { return pimpl->file; }
-CommonSegd::GeneralHeader& CommonSegd::p_general_header() { return pimpl->gen_hdr; }
-vector<char>& CommonSegd::p_gen_hdr_buf() { return pimpl->gen_hdr_buf; }
+std::fstream& CommonSEGD::p_file() { return pimpl->file; }
+CommonSEGD::GeneralHeader& CommonSEGD::p_general_header() { return pimpl->gen_hdr; }
+vector<char>& CommonSEGD::p_gen_hdr_buf() { return pimpl->gen_hdr_buf; }
 } //sedaman

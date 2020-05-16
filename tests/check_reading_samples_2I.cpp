@@ -1,4 +1,4 @@
-#include "ISegy.hpp"
+#include "ISEGY.hpp"
 #include <deque>
 #include <exception>
 #include <iostream>
@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
         return 1;
     double sum_ref = 2;
     try {
-        sedaman::ISegy segy(argv[1]);
+        sedaman::ISEGY segy(argv[1]);
         std::deque<double> reference;
         bool first = true;
         while (segy.has_next()) {

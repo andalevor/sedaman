@@ -1,4 +1,4 @@
-#include "ISegy.hpp"
+#include "ISEGY.hpp"
 #include <iomanip>
 #include <iostream>
 
@@ -13,10 +13,10 @@ int main(int argc, char* argv[])
     if (argc < 2)
         return 1;
     try {
-        sedaman::ISegy segy(argv[1]);
+        sedaman::ISEGY segy(argv[1]);
         auto bin_hdr = segy.binary_header();
-        using name = sedaman::CommonSegy::BinaryHeader::Name;
-        auto name_as_string = sedaman::CommonSegy::BinaryHeader::name_as_string;
+        using name = sedaman::CommonSEGY::BinaryHeader::Name;
+        auto name_as_string = sedaman::CommonSEGY::BinaryHeader::name_as_string;
         print(bin_hdr.job_id, name_as_string(name::JOB_ID));
         print(bin_hdr.line_num, name_as_string(name::LINE_NUM));
         print(bin_hdr.reel_num, name_as_string(name::REEL_NUM));

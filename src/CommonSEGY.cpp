@@ -1,4 +1,4 @@
-#include "CommonSegy.hpp"
+#include "CommonSEGY.hpp"
 #include "Exception.hpp"
 
 using std::fstream;
@@ -12,7 +12,7 @@ using std::to_string;
 using std::vector;
 
 namespace sedaman {
-class CommonSegy::Impl {
+class CommonSEGY::Impl {
 public:
     Impl(string name, BinaryHeader bh,
         vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> m);
@@ -31,7 +31,7 @@ private:
     void check_add_tr_hdr_map();
 };
 
-CommonSegy::CommonSegy(string name, ios_base::openmode mode, BinaryHeader bh,
+CommonSEGY::CommonSEGY(string name, ios_base::openmode mode, BinaryHeader bh,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
     : pimpl { make_unique<Impl>(move(name), move(bh), move(add_hdr_map)) }
 {
@@ -41,7 +41,7 @@ CommonSegy::CommonSegy(string name, ios_base::openmode mode, BinaryHeader bh,
     pimpl->file = move(fl);
 }
 
-CommonSegy::Impl::Impl(string name, BinaryHeader bh,
+CommonSEGY::Impl::Impl(string name, BinaryHeader bh,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> m)
     : file_name { move(name) }
     , binary_header { move(bh) }
@@ -51,7 +51,7 @@ CommonSegy::Impl::Impl(string name, BinaryHeader bh,
     check_add_tr_hdr_map();
 }
 
-void CommonSegy::Impl::check_add_tr_hdr_map()
+void CommonSEGY::Impl::check_add_tr_hdr_map()
 {
     int first = 1, size = 0;
     uint32_t prev = 0;
@@ -115,17 +115,17 @@ void CommonSegy::Impl::check_add_tr_hdr_map()
     }
 }
 
-CommonSegy::~CommonSegy() = default;
+CommonSEGY::~CommonSEGY() = default;
 
-fstream& CommonSegy::p_file() { return pimpl->file; }
-vector<string>& CommonSegy::p_txt_hdrs() { return pimpl->text_headers; }
-CommonSegy::BinaryHeader& CommonSegy::p_bin_hdr() { return pimpl->binary_header; }
-vector<string>& CommonSegy::p_trlr_stnzs() { return pimpl->trailer_stanzas; }
-char* CommonSegy::p_hdr_buf() { return pimpl->hdr_buf; }
-vector<char>& CommonSegy::p_samp_buf() { return pimpl->samp_buf; }
-int& CommonSegy::p_bytes_per_sample() { return pimpl->bytes_per_sample; }
-int32_t& CommonSegy::p_samp_per_tr() { return pimpl->samp_per_tr; }
-vector<pair<string, map<uint32_t, pair<string, CommonSegy::TrHdrValueType>>>>& CommonSegy::p_add_tr_hdrs_map()
+fstream& CommonSEGY::p_file() { return pimpl->file; }
+vector<string>& CommonSEGY::p_txt_hdrs() { return pimpl->text_headers; }
+CommonSEGY::BinaryHeader& CommonSEGY::p_bin_hdr() { return pimpl->binary_header; }
+vector<string>& CommonSEGY::p_trlr_stnzs() { return pimpl->trailer_stanzas; }
+char* CommonSEGY::p_hdr_buf() { return pimpl->hdr_buf; }
+vector<char>& CommonSEGY::p_samp_buf() { return pimpl->samp_buf; }
+int& CommonSEGY::p_bytes_per_sample() { return pimpl->bytes_per_sample; }
+int32_t& CommonSEGY::p_samp_per_tr() { return pimpl->samp_per_tr; }
+vector<pair<string, map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>>>& CommonSEGY::p_add_tr_hdrs_map()
 {
     return pimpl->add_hdr_map;
 }
@@ -168,13 +168,13 @@ static uint8_t constexpr a2e[256] = {
     0x8c, 0x49, 0xcd, 0xce, 0xcb, 0xcf, 0xcc, 0xe1, 0x70, 0xdd, 0xde, 0xdb, 0xdc, 0x8d, 0x8e, 0xdf
 };
 
-void CommonSegy::ebcdic_to_ascii(string& ebcdic)
+void CommonSEGY::ebcdic_to_ascii(string& ebcdic)
 {
     for (auto from = ebcdic.begin(), end = ebcdic.end(); from != end; ++from)
         *from = e2a[static_cast<uint8_t>(*from)];
 }
 
-void CommonSegy::ascii_to_ebcdic(string& ascii)
+void CommonSEGY::ascii_to_ebcdic(string& ascii)
 {
     for (auto from = ascii.begin(), end = ascii.end(); from != end; ++from)
         *from = a2e[static_cast<uint8_t>(*from)];
@@ -227,12 +227,12 @@ static char const* bin_names[] = {
     "Number of data trailer stanza records"
 };
 
-char const* CommonSegy::BinaryHeader::name_as_string(Name n)
+char const* CommonSEGY::BinaryHeader::name_as_string(Name n)
 {
     return bin_names[static_cast<int>(n)];
 }
 
-map<string, string> CommonSegy::trace_header_description = {
+map<string, string> CommonSEGY::trace_header_description = {
     { "TRC_SEQ_LINE", "Trace sequence number within line." },
     { "TRC_SEQ_SGY", "Trace sequence number within SEGY file." },
     { "FFID", "Original field record number." },
@@ -328,7 +328,7 @@ map<string, string> CommonSegy::trace_header_description = {
     { "LAST_TRC_FLAG", "Last trace flag. 1 = in ensemble, 2 = in line, 4 = in file, 8 = in survey." },
 };
 
-char const* CommonSegy::default_text_header = "C 1 CLIENT                        COMPANY                       CREW NO         "
+char const* CommonSEGY::default_text_header = "C 1 CLIENT                        COMPANY                       CREW NO         "
                                               "C 2 LINE            AREA                        MAP ID                          "
                                               "C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER                  "
                                               "C 4 INSTRUMENT: MFG            MODEL            SERIAL NO                       "

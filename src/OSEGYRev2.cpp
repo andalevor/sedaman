@@ -1,4 +1,4 @@
-#include "OSegyRev2.hpp"
+#include "OSEGYRev2.hpp"
 #include "Exception.hpp"
 #include <cstring>
 #include <functional>
@@ -20,36 +20,36 @@ using std::string;
 using std::vector;
 
 namespace sedaman {
-class OSegyRev2::Impl {
+class OSEGYRev2::Impl {
 public:
-    Impl(OSegyRev2& s, vector<string> txt_hdrs, vector<string> trlr_stnzs);
+    Impl(OSEGYRev2& s, vector<string> txt_hdrs, vector<string> trlr_stnzs);
     function<void(Trace& tr)> write_trace;
 
 private:
     void set_min_hdrs(Trace& tr);
-    OSegyRev2& sgy;
+    OSEGYRev2& sgy;
     streampos first_trace_pos;
 };
 
-OSegyRev2::Impl::Impl(OSegyRev2& s, vector<string> txt_hdrs, vector<string> trlr_stnzs)
+OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs, vector<string> trlr_stnzs)
     : sgy { s }
 {
     if (txt_hdrs.empty()) {
-        string txt_hdr = string(CommonSegy::default_text_header, CommonSegy::TEXT_HEADER_SIZE);
+        string txt_hdr = string(CommonSEGY::default_text_header, CommonSEGY::TEXT_HEADER_SIZE);
         txt_hdrs.push_back(move(txt_hdr));
     } else {
         for (string& s : txt_hdrs)
-            if (s.size() != CommonSegy::TEXT_HEADER_SIZE)
+            if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
                 throw Exception(__FILE__, __LINE__, "size of text header should be 3200 bytes");
         sgy.p_txt_hdrs() = txt_hdrs;
     }
     if (!trlr_stnzs.empty()) {
         for (string& s : trlr_stnzs)
-            if (s.size() != CommonSegy::TEXT_HEADER_SIZE)
+            if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
                 throw Exception(__FILE__, __LINE__, "size of trailer stanzas should be 3200 bytes");
         sgy.p_trlr_stnzs() = trlr_stnzs;
     }
-    sgy.p_file().write(txt_hdrs[0].c_str(), CommonSegy::TEXT_HEADER_SIZE);
+    sgy.p_file().write(txt_hdrs[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
     if (sgy.p_bin_hdr().format_code == 0)
         sgy.p_bin_hdr().format_code = 5;
     sgy.assign_raw_writers();
@@ -118,7 +118,7 @@ OSegyRev2::Impl::Impl(OSegyRev2& s, vector<string> txt_hdrs, vector<string> trlr
     }
 }
 
-void OSegyRev2::Impl::set_min_hdrs(Trace& tr)
+void OSEGYRev2::Impl::set_min_hdrs(Trace& tr)
 {
     if (sgy.p_file().tellg() == first_trace_pos) {
         // throw exception if trace header does not has a samples number
@@ -146,20 +146,20 @@ void OSegyRev2::Impl::set_min_hdrs(Trace& tr)
     }
 }
 
-void OSegyRev2::write_trace(Trace& tr)
+void OSEGYRev2::write_trace(Trace& tr)
 {
     pimpl->write_trace(tr);
 }
 
-OSegyRev2::OSegyRev2(string name, vector<string> ths, CommonSegy::BinaryHeader bh,
+OSEGYRev2::OSEGYRev2(string name, vector<string> ths, CommonSEGY::BinaryHeader bh,
     vector<string> trlr_stnzs,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
-    : OSegy(move(name), move(bh), move(add_hdr_map))
+    : OSEGY(move(name), move(bh), move(add_hdr_map))
     , pimpl { make_unique<Impl>(*this, move(ths), move(trlr_stnzs)) }
 {
 }
 
-OSegyRev2::~OSegyRev2()
+OSEGYRev2::~OSEGYRev2()
 {
     p_file().seekg(0, ios_base::end);
     if (p_bin_hdr().num_of_trailer_stanza)

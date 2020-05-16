@@ -1,4 +1,4 @@
-#include "ISegd.hpp"
+#include "ISEGD.hpp"
 #include <iomanip>
 #include <iostream>
 
@@ -13,10 +13,10 @@ int main(int argc, char* argv[])
     if (argc < 2)
         return 1;
     try {
-        sedaman::ISegd segd(argv[1]);
+        sedaman::ISEGD segd(argv[1]);
         auto gen_hdr = segd.general_header();
-        using name = sedaman::CommonSegd::GeneralHeader::Name;
-        auto name_as_string = sedaman::CommonSegd::GeneralHeader::name_as_string;
+        using name = sedaman::CommonSEGD::GeneralHeader::Name;
+        auto name_as_string = sedaman::CommonSEGD::GeneralHeader::name_as_string;
         print(gen_hdr.file_number, name_as_string(name::FILE_NUMBER));
         print(gen_hdr.format_code, name_as_string(name::FORMAT_CODE));
         print(gen_hdr.gen_const, name_as_string(name::GENERAL_CONSTANTS));

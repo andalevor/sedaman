@@ -29,7 +29,7 @@ namespace sedaman {
 /// \see ISegy
 /// \see OSegy
 ///
-class CommonSegy {
+class CommonSEGY {
 public:
     ///
     /// \class bin_header
@@ -196,12 +196,12 @@ protected:
     /// \param bh Can be used to override binary header values. Usefull for OSegy.
     /// \param add_tr_hdrs_map Each item of vector is pair of headers name and map.
     ///
-    CommonSegy(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
+    CommonSEGY(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
         std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
     ///
     /// \brief destructor
     ///
-    virtual ~CommonSegy();
+    virtual ~CommonSEGY();
     ///
     /// \return Reference to file stream in pimpl;
     ///

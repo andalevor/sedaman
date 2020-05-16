@@ -1,4 +1,4 @@
-#include "ISegy.hpp"
+#include "ISEGY.hpp"
 #include <exception>
 #include <iostream>
 
@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
         return 1;
     int32_t val = 1;
     try {
-        sedaman::ISegy segy(argv[1]);
+        sedaman::ISEGY segy(argv[1]);
         while (segy.has_next()) {
             sedaman::Trace::Header hdr = segy.read_header();
             std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");

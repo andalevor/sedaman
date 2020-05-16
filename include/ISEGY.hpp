@@ -10,7 +10,7 @@
 #ifndef SEDAMAN_ISEGY_HPP
 #define SEDAMAN_ISEGY_HPP
 
-#include "CommonSegy.hpp"
+#include "CommonSEGY.hpp"
 #include "Trace.hpp"
 
 ///
@@ -23,14 +23,14 @@ namespace sedaman {
 /// \brief Class for SEGY reading.
 /// Defines methods to read information from SEGY files.
 ///
-class ISegy : CommonSegy {
+class ISEGY : CommonSEGY {
 public:
     ///
     /// \param file_name Name of SEGY file.
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
     ///
-    ISegy(std::string file_name, std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
+    ISEGY(std::string file_name, std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
         std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
     ///
     /// \param file_name Name of SEGY file.
@@ -38,7 +38,7 @@ public:
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
     ///
-    ISegy(std::string file_name, BinaryHeader binary_header,
+    ISEGY(std::string file_name, BinaryHeader binary_header,
         std::vector<std::map<uint32_t, std::pair<std::string, TrHdrValueType>>> tr_hdr_over = {},
         std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
     ///
@@ -48,7 +48,7 @@ public:
     /// \brief creates ISegy instance internally and returns binary header.
     /// Could be used to get binary header from file to override some values.
     ///
-    static CommonSegy::BinaryHeader read_binary_header(std::string file_name);
+    static CommonSEGY::BinaryHeader read_binary_header(std::string file_name);
     ///
     /// \fn text_header
     /// \brief segy text headers getter
@@ -66,7 +66,7 @@ public:
     /// \brief segy binary header getter
     /// \return binary header
     ///
-    CommonSegy::BinaryHeader const& binary_header();
+    CommonSEGY::BinaryHeader const& binary_header();
     ///
     /// \fn has_next
     /// \brief checks for next trace in file
@@ -85,7 +85,7 @@ public:
     /// \return Trace
     ///
     Trace read_trace();
-    virtual ~ISegy();
+    virtual ~ISEGY();
 
 private:
     class Impl;
