@@ -24,18 +24,22 @@ namespace sedaman {
 /// \class CommonSegd
 /// \brief Class with common SEGD parts.
 /// Holds common data and members for ISegd and OSegd classes.
-/// \see ISegd
-/// \see OSegd
+/// \see ISEGD
+/// \see OSEGD
 ///
 class CommonSEGD {
 public:
+    ///
+    /// \class GeneralHeader
+    /// \brief Class for first general header
+    ///
     class GeneralHeader {
     public:
-        static constexpr int SIZE = 32;
         int file_number;
         int format_code;
         long long gen_const;
         int year;
+        int add_gen_hdr_blocks;
         int day;
         int hour;
         int minute;
@@ -63,6 +67,7 @@ public:
             FORMAT_CODE,
             GENERAL_CONSTANTS,
             YEAR,
+            GENERAL_HEADER_BLOCKS,
             DAY,
             HOUR,
             MINUTE,
@@ -83,8 +88,726 @@ public:
         };
         static char const* name_as_string(Name n);
     };
+    ///
+    /// \class GeneralHeader
+    /// \brief Class for second general header
+    /// Mandatory from SEGD rev 1
+    ///
+    class GeneralHeader2 {
+    public:
+        uint32_t expanded_file_num;
+        uint16_t ext_ch_sets_per_scan_type;
+        uint32_t extended_hdr_blocks;
+        uint32_t external_hdr_blocks;
+        uint16_t extended_skew_blocks;
+        uint8_t segd_rev_major;
+        uint8_t segd_rev_minor;
+        uint32_t gen_trailer_num_of_blocks;
+        uint32_t ext_record_len;
+        uint16_t record_set_number;
+        uint16_t ext_num_add_blks_in_gen_hdr;
+        uint32_t dominant_sampling_int;
+        uint8_t gen_hdr_block_num;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            EXT_CH_SETS_PER_SCAN_TYPE,
+            EXTEDNDED_HEADER_BLOCKS,
+            EXTERNAL_HEADER_BLOCKS,
+            EXTENDED_SKEW_BLOCKS,
+            SEGD_REVISION_MAJOR,
+            SEGD_REVISION_MINOR,
+            GEN_TRAILER_NUMBER_OF_BLOCKS,
+            EXTENDED_RECORD_LENGTH,
+            RECORD_SET_NUMBER,
+            EXT_NUM_ADD_BLKS_IN_GEN_HDR,
+            DOMINANT_SAMPLING_INT,
+            GEN_HEADER_BLOCK_NUM
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeader
+    /// \brief Class for N-th general header
+    /// Optional from SEGD rev 1 till 2
+    ///
+    class GeneralHeaderN {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint8_t phase_control;
+        uint8_t type_vibrator;
+        int16_t phase_angle;
+        uint8_t gen_hdr_block_num;
+        uint8_t sou_set_num;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            PHASE_CONTROL,
+            TYPE_VIBRATOR,
+            PHASE_ANGLE,
+            GEN_HEADER_BLOCK_NUM,
+            SOURCE_SET_NUMBER
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeader
+    /// \brief Class for second general header
+    /// Mandatory from SEGD rev 3
+    ///
+    class GeneralHeader3 {
+    public:
+        uint64_t time_zero;
+        uint64_t record_size;
+        uint64_t data_size;
+        uint32_t header_size;
+        uint8_t extd_rec_mode;
+        uint8_t rel_time_mode;
+        uint8_t gen_hdr_block_num;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            TIME_ZERO,
+            RECORD_SIZE,
+            DATA_SIZE,
+            HEADER_SIZE,
+            EXTD_REC_MODE,
+            REL_TIME_MODE,
+            GEN_HEADER_BLOCK_NUM
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderVes
+    /// \brief Class for general header vessel\crew information
+    ///
+    class GeneralHeaderVes {
+    public:
+        char abbr_vessel_crew_name[3];
+        char vessel_crew_name[28];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            ABBR_VESSEL_OR_CREW_NAME,
+            VESSEL_OR_CREW_NAME,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderSur
+    /// \brief Class for general header for Survea Area Name
+    ///
+    class GeneralHeaderSur {
+    public:
+        char survey_area_name[31];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            SURVEY_ARE_NAME,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderCli
+    /// \brief Class for general header for Client Name
+    ///
+    class GeneralHeaderCli {
+    public:
+        char client_name[31];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            CLIENT_NAME,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderJob
+    /// \brief Class for general header for Job ID
+    ///
+    class GeneralHeaderJob {
+    public:
+        char abbr_job_id[5];
+        char job_id[26];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            ABBR_JOB_ID,
+            JOB_ID,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderLin
+    /// \brief Class for general header for Line ID
+    ///
+    class GeneralHeaderLin {
+    public:
+        char line_abbr[7];
+        char line_id[24];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            LINE_ABBR,
+            LINE_ID,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderVib
+    /// \brief Class for general header for Vibrator source information
+    ///
+    class GeneralHeaderVib {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint8_t phase_control;
+        uint8_t type_vibrator;
+        int16_t phase_angle;
+        uint8_t source_id;
+        uint8_t source_set_num;
+        uint8_t reshoot_idx;
+        uint8_t group_idx;
+        uint8_t depth_idx;
+        uint16_t offset_crossline;
+        uint16_t offset_inline;
+        uint16_t size;
+        uint16_t offset_depth;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            PHASE_CONTROL,
+            TYPE_VIBRATOR,
+            PHASE_ANGLE,
+            SOURCE_ID,
+            SOURCE_SET_NUM,
+            RESHOOT_INDEX,
+            GROUP_INDEX,
+            DEPTH_INDEX,
+            OFFSET_CROSSLINE,
+            OFFSET_INLINE,
+            SIZE,
+            OFFSET_DEPTH,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderExp
+    /// \brief Class for general header for Explosive source information
+    ///
+    class GeneralHeaderExp {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint16_t depth;
+        uint8_t charge_length;
+        uint8_t soil_type;
+        uint8_t source_id;
+        uint8_t source_set_num;
+        uint8_t reshoot_idx;
+        uint8_t group_idx;
+        uint8_t depth_idx;
+        uint16_t offset_crossline;
+        uint16_t offset_inline;
+        uint16_t size;
+        uint16_t offset_depth;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            DEPTH,
+            CHARGE_LENGTH,
+            SOIL_TYPE,
+            SOURCE_ID,
+            SOURCE_SET_NUM,
+            RESHOOT_INDEX,
+            GROUP_INDEX,
+            DEPTH_INDEX,
+            OFFSET_CROSSLINE,
+            OFFSET_INLINE,
+            SIZE,
+            OFFSET_DEPTH,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderAir
+    /// \brief Class for general header for Airgun source information
+    ///
+    class GeneralHeaderAir {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint16_t depth;
+        uint16_t air_pressure;
+        uint8_t source_id;
+        uint8_t source_set_num;
+        uint8_t reshoot_idx;
+        uint8_t group_idx;
+        uint8_t depth_idx;
+        uint16_t offset_crossline;
+        uint16_t offset_inline;
+        uint16_t size;
+        uint16_t offset_depth;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            DEPTH,
+            AIR_PRESSURE,
+            SOURCE_ID,
+            SOURCE_SET_NUM,
+            RESHOOT_INDEX,
+            GROUP_INDEX,
+            DEPTH_INDEX,
+            OFFSET_CROSSLINE,
+            OFFSET_INLINE,
+            SIZE,
+            OFFSET_DEPTH,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderWat
+    /// \brief Class for general header for Watergun source information
+    ///
+    class GeneralHeaderWat {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint16_t depth;
+        uint16_t air_pressure;
+        uint8_t source_id;
+        uint8_t source_set_num;
+        uint8_t reshoot_idx;
+        uint8_t group_idx;
+        uint8_t depth_idx;
+        uint16_t offset_crossline;
+        uint16_t offset_inline;
+        uint16_t size;
+        uint16_t offset_depth;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            DEPTH,
+            AIR_PRESSURE,
+            SOURCE_ID,
+            SOURCE_SET_NUM,
+            RESHOOT_INDEX,
+            GROUP_INDEX,
+            DEPTH_INDEX,
+            OFFSET_CROSSLINE,
+            OFFSET_INLINE,
+            SIZE,
+            OFFSET_DEPTH,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderEle
+    /// \brief Class for general header for Electromagnetic source information
+    ///
+    class GeneralHeaderEle {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint8_t source_type;
+        uint32_t moment;
+        uint8_t source_id;
+        uint8_t source_set_num;
+        uint8_t reshoot_idx;
+        uint8_t group_idx;
+        uint8_t depth_idx;
+        uint16_t offset_crossline;
+        uint16_t offset_inline;
+        uint16_t size;
+        uint16_t offset_depth;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            SOURCE_TYPE,
+            MOMENT,
+            SOURCE_ID,
+            SOURCE_SET_NUM,
+            RESHOOT_INDEX,
+            GROUP_INDEX,
+            DEPTH_INDEX,
+            OFFSET_CROSSLINE,
+            OFFSET_INLINE,
+            SIZE,
+            OFFSET_DEPTH,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderOth
+    /// \brief Class for general header for Other source information
+    ///
+    class GeneralHeaderOth {
+    public:
+        uint32_t expanded_file_number;
+        double sou_line_num;
+        double sou_point_num;
+        uint8_t sou_point_index;
+        uint8_t source_id;
+        uint8_t source_set_num;
+        uint8_t reshoot_idx;
+        uint8_t group_idx;
+        uint8_t depth_idx;
+        uint16_t offset_crossline;
+        uint16_t offset_inline;
+        uint16_t size;
+        uint16_t offset_depth;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EXPANDED_FILE_NUMBER,
+            SOURCE_LINE_NUMBER,
+            SOURCE_POINT_NUMBER,
+            SOURCE_POINT_INDEX,
+            SOURCE_ID,
+            SOURCE_SET_NUM,
+            RESHOOT_INDEX,
+            GROUP_INDEX,
+            DEPTH_INDEX,
+            OFFSET_CROSSLINE,
+            OFFSET_INLINE,
+            SIZE,
+            OFFSET_DEPTH,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderAdd
+    /// \brief Class for general header for Additional source information
+    ///
+    class GeneralHeaderAdd {
+    public:
+        uint64_t time;
+        uint8_t source_status;
+        uint8_t source_id;
+        uint8_t source_moving;
+        char error_description[20];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            TIME,
+            SOURCCE_STATUS,
+            SOURCE_ID,
+            SOURCE_MOVING,
+            ERROR_DESCRIPTION,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderSaux
+    /// \brief Class for general header for Source Auxiliary information
+    ///
+    class GeneralHeaderSaux {
+    public:
+        uint8_t source_id;
+        uint8_t scan_type_num_1;
+        uint16_t ch_set_num_1;
+        uint32_t trace_num_1;
+        uint8_t scan_type_num_2;
+        uint16_t ch_set_num_2;
+        uint32_t trace_num_2;
+        uint8_t scan_type_num_3;
+        uint16_t ch_set_num_3;
+        uint32_t trace_num_3;
+        uint8_t scan_type_num_4;
+        uint16_t ch_set_num_4;
+        uint32_t trace_num_4;
+        uint8_t scan_type_num_5;
+        uint16_t ch_set_num_5;
+        uint32_t trace_num_5;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            SOURCE_ID,
+            SCAN_TYPE_NUM_1,
+            CH_SET_NUM_1,
+            TRACE_NUM_1,
+            SCAN_TYPE_NUM_2,
+            CH_SET_NUM_2,
+            TRACE_NUM_2,
+            SCAN_TYPE_NUM_3,
+            CH_SET_NUM_3,
+            TRACE_NUM_3,
+            SCAN_TYPE_NUM_4,
+            CH_SET_NUM_4,
+            TRACE_NUM_4,
+            SCAN_TYPE_NUM_5,
+            CH_SET_NUM_5,
+            TRACE_NUM_5,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderCoord
+    /// \brief Class for general header for coordinate reference system identification
+    ///
+    class GeneralHeaderCoord {
+    public:
+        char crs[31];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            COORD_REF_SYS,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderPos1
+    /// \brief Class for general header for position blocks 1 identification
+    ///
+    class GeneralHeaderPos1 {
+    public:
+        uint64_t time_of_position;
+        uint64_t time_of_measurement;
+        uint32_t vert_error;
+        uint32_t hor_error_semi_major;
+        uint32_t hor_error_semi_minor;
+        uint16_t hor_error_orientation;
+        uint8_t position_type;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            TIME_OF_POSITION,
+            TIME_OF_MEASUREMENT,
+            VERTICAL_ERROR,
+            HOR_ERR_SEMI_MAJOR,
+            HOR_ERR_SEMI_MINOR,
+            HOR_ERR_ORIENTATION,
+            POSITION_TYPE,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderPos2
+    /// \brief Class for general header for position blocks 2 identification
+    ///
+    class GeneralHeaderPos2 {
+    public:
+        uint64_t crs_a_coord1;
+        uint64_t crs_a_coord2;
+        uint64_t crs_a_coord3;
+        uint16_t crs_a_crsref;
+        uint8_t pos1_valid;
+        uint8_t pos1_quality;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            CRS_A_COORD1,
+            CRS_A_COORD2,
+            CRS_A_COORD3,
+            CRS_A_CRSREF,
+            POS1_VALID,
+            POS1_QUALITY,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderPos3
+    /// \brief Class for general header for position blocks 3 identification
+    ///
+    class GeneralHeaderPos3 {
+    public:
+        uint64_t crs_b_coord1;
+        uint64_t crs_b_coord2;
+        uint64_t crs_b_coord3;
+        uint16_t crs_b_crsref;
+        uint8_t pos2_valid;
+        uint8_t pos2_quality;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            CRS_B_COORD1,
+            CRS_B_COORD2,
+            CRS_B_COORD3,
+            CRS_B_CRSREF,
+            POS2_VALID,
+            POS2_QUALITY,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderRel
+    /// \brief Class for general header for relative position identification
+    ///
+    class GeneralHeaderRel {
+    public:
+        uint32_t offset_east;
+        uint32_t offset_north;
+        uint32_t offset_vert;
+        char description[19];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            OFFSET_EAST,
+            OFFSET_NORTH,
+            OFFSET_VERT,
+            DESCRIPTION,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    class ChannelSetHeader {
+    public:
+        int scan_type_number;
+        int channel_set_number;
+        int32_t channel_set_start_time;
+        int32_t channel_set_end_time;
+        int descale_multiplier;
+        int number_of_channels;
+        int channel_type;
+        int samples_per_channel;
+        int channel_gain;
+        int alias_filter_freq;
+        int alias_filter_slope;
+        int low_cut_filter_freq;
+        int low_cut_filter_slope;
+        int first_notch_filter;
+        int second_notch_filter;
+        int third_notch_filter;
+    };
 
 protected:
+    static constexpr int GEN_HDR_SIZE = 32;
     ///
     /// \param file_name Name of file.
     /// \param mode Choose input or output.
@@ -101,10 +824,120 @@ protected:
     ///
     GeneralHeader& p_general_header();
     ///
+    /// \brief p_general_header general header 2 getter
+    /// \return reference to general header
+    ///
+    GeneralHeader2& p_general_header2();
+    ///
+    /// \brief p_general_header general header N getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderN& p_general_headerN();
+    ///
+    /// \brief p_general_header general header 3 getter
+    /// \return reference to general header
+    ///
+    GeneralHeader3& p_general_header3();
+    ///
+    /// \brief p_general_header general header vessel crew getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderVes& p_general_header_ves();
+    ///
+    /// \brief p_general_header general header survey area name getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderSur& p_general_header_sur();
+    ///
+    /// \brief p_general_header general header client name getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderCli& p_general_header_cli();
+    ///
+    /// \brief p_general_header general header client name getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderJob& p_general_header_job();
+    ///
+    /// \brief p_general_header general header line ID getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderLin& p_general_header_lin();
+    ///
+    /// \brief p_general_header general header vibrator source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderVib& p_general_header_vib();
+    ///
+    /// \brief p_general_header general header explosive source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderExp& p_general_header_exp();
+    ///
+    /// \brief p_general_header general header airgun source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderAir& p_general_header_air();
+    ///
+    /// \brief p_general_header general header watergun source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderWat& p_general_header_wat();
+    ///
+    /// \brief p_general_header general header electromagnetic source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderEle& p_general_header_ele();
+    ///
+    /// \brief p_general_header general header other source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderOth& p_general_header_oth();
+    ///
+    /// \brief p_general_header general header additional source information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderAdd& p_general_header_add();
+    ///
+    /// \brief p_general_header general header source auxiliary information getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderSaux& p_general_header_saux();
+    ///
+    /// \brief p_general_header general header coordinate reference identification getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderCoord& p_general_header_coord();
+    ///
+    /// \brief p_general_header general header positional block 1 getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderPos1& p_general_header_pos1();
+    ///
+    /// \brief p_general_header general header positional block 2 getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderPos2& p_general_header_pos2();
+    ///
+    /// \brief p_general_header general header positional block 3 getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderPos3& p_general_header_pos3();
+    ///
+    /// \brief p_general_header general header relative position block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderRel& p_general_header_rel();
+    ///
     /// \brief p_gen_hdr_buf access to a buffer for general header
     /// \return reference to buffer
     ///
     std::vector<char>& p_gen_hdr_buf();
+    ///
+    /// \brief p_ch_sets access to a channel sets for scan types
+    /// \return
+    ///
+    std::vector<std::vector<ChannelSetHeader>>& p_ch_sets();
     virtual ~CommonSEGD();
 
 private:

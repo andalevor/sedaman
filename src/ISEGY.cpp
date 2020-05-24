@@ -177,9 +177,9 @@ void ISEGY::Impl::assign_raw_readers()
     case 0x01020304:
         read_u16 = [](char const** buf) { return read<uint16_t>(buf); };
         read_i16 = [](char const** buf) { return read<int16_t>(buf); };
-        read_u24 = [](char const** buf) { return read<uint16_t>(buf) | read<uint8_t>(buf) << 16; };
+        read_u24 = [](char const** buf) { return read<uint16_t>(buf) << 8 | read<uint8_t>(buf); };
         read_i24 = [](char const** buf) {
-            uint32_t result = read<uint16_t>(buf) | read<uint8_t>(buf) << 16;
+            uint32_t result = read<uint16_t>(buf) << 8 | read<uint8_t>(buf);
             return result & 0x800000 ? result | 0xff000000 : result;
         };
         read_u32 = [](char const** buf) { return read<uint32_t>(buf); };
@@ -191,9 +191,9 @@ void ISEGY::Impl::assign_raw_readers()
     case 0x04030201:
         read_u16 = [](char const** buf) { return swap(read<uint16_t>(buf)); };
         read_i16 = [](char const** buf) { return swap(read<int16_t>(buf)); };
-        read_u24 = [](char const** buf) { return swap(read<uint16_t>(buf) | read<uint8_t>(buf) << 16); };
+        read_u24 = [](char const** buf) { return swap(read<uint16_t>(buf)) | read<uint8_t>(buf) << 16; };
         read_i24 = [](char const** buf) {
-            uint32_t result = swap(read<uint16_t>(buf) | read<uint8_t>(buf) << 16);
+            uint32_t result = swap(read<uint16_t>(buf)) | read<uint8_t>(buf) << 16;
             return result & 0x800000 ? result | 0xff000000 : result;
         };
         read_u32 = [](char const** buf) { return swap(read<uint32_t>(buf)); };
