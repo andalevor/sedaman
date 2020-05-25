@@ -91,6 +91,12 @@ private:
     void read_position2_hdr(char const* buf);
     void read_position3_hdr(char const* buf);
     void read_relative_position_hdr(char const* buf);
+    void read_sensor_info_hdr(char const* buf);
+    void read_sensor_calibration_hdr(char const* buf);
+    void read_time_drift_hdr(char const* buf);
+    void read_electromagnetic_src_recv_hdr(char const* buf);
+    void read_orientation_hdr(char const* buf);
+    void read_measurement_hdr(char const* buf);
 };
 
 ISEGD::Impl::Impl(ISEGD& s)
@@ -112,9 +118,10 @@ ISEGD::Impl::Impl(ISEGD& s)
     //while (curr_pos != end_of_data) {
     read_general_headers();
     // read header for each scan type
-    //    for (int i = sgd.general_header().scan_types_per_record; i; --i) {
+    // uint16_t ch_sets_per_scan_type_num = sgd.p_general_header().channel_sets_per_scan_type == 0xff ? sgd.p_general_header2().ext_ch_sets_per_scan_type : sgd.p_general_header().channel_sets_per_scan_type;
+    //    for (int i = sgd.p_general_header().scan_types_per_record; i; --i) {
     //        sgd.p_ch_sets().push_back({});
-    //        for (int j = sgd.general_header().channel_sets_per_scan_type; j; --j) {
+    //        for (int j = ch_sets_per_scan_type_num; j; --j) {
     //            sgd.p_ch_sets()[i].push_back(read_ch_set_hdr());
     //        }
     //    }
@@ -141,7 +148,8 @@ void ISEGD::Impl::read_general_headers()
             file_skip_bytes(CommonSEGD::GEN_HDR_SIZE * (sgd.p_general_header().add_gen_hdr_blocks - 1));
         } else {
             read_gen_hdr2_and_3(buf);
-            for (uint16_t i = gh2.ext_num_add_blks_in_gen_hdr - 2; i; --i) {
+            uint16_t add_blks_num = sgd.p_general_header().add_gen_hdr_blocks == 0xf ? gh2.ext_num_add_blks_in_gen_hdr : sgd.p_general_header().add_gen_hdr_blocks;
+            for (uint16_t i = add_blks_num - 2; i; --i) {
                 fill_buf_from_file(sgd.p_gen_hdr_buf().data(), sgd.p_gen_hdr_buf().size());
                 char const* buf = sgd.p_gen_hdr_buf().data();
                 read_rev3_add_gen_hdr_blks(buf);
@@ -288,12 +296,20 @@ void ISEGD::Impl::read_rev3_add_gen_hdr_blks(char const* buf)
         add_gen_hdr_blks_map[SOU_AUX_CHAN_REF] = true;
         break;
     case SENSOR_INFO_HDR_EXT_BLK:
+        read_sensor_info_hdr(buf);
+        add_gen_hdr_blks_map[SENSOR_INFO_HDR_EXT_BLK] = true;
         break;
     case SENSOR_CALIBRATION_BLK:
+        read_sensor_calibration_hdr(buf);
+        add_gen_hdr_blks_map[SENSOR_CALIBRATION_BLK] = true;
         break;
     case TIME_DRIFT_BLK:
+        read_time_drift_hdr(buf);
+        add_gen_hdr_blks_map[TIME_DRIFT_BLK] = true;
         break;
     case ELECTROMAG_SRC_REC_DESC_BLK:
+        read_electromagnetic_src_recv_hdr(buf);
+        add_gen_hdr_blks_map[ELECTROMAG_SRC_REC_DESC_BLK] = true;
         break;
     case POSITION_BLK1:
         read_position1_hdr(buf);
@@ -316,8 +332,12 @@ void ISEGD::Impl::read_rev3_add_gen_hdr_blks(char const* buf)
         add_gen_hdr_blks_map[RELATIVE_POS_BLK] = true;
         break;
     case ORIENT_HDR_BLK:
+        read_orientation_hdr(buf);
+        add_gen_hdr_blks_map[ORIENT_HDR_BLK] = true;
         break;
     case MEASUREMENT_BLK:
+        read_measurement_hdr(buf);
+        add_gen_hdr_blks_map[MEASUREMENT_BLK] = true;
         break;
     }
 }
@@ -595,6 +615,88 @@ void ISEGD::Impl::read_relative_position_hdr(char const* buf)
     ghR.gen_hdr_block_type = *buf++;
 }
 
+void ISEGD::Impl::read_sensor_info_hdr(char const* buf)
+{
+    GeneralHeaderSen& ghS = sgd.p_general_header_sen();
+    ghS.instrument_test_time = read_u64(&buf);
+    ghS.sensor_sensitivity = read_u32(&buf);
+    ghS.instr_test_result = *buf++;
+    memcpy(ghS.serial_number, buf, sizeof(ghS.serial_number));
+    buf += sizeof(ghS.serial_number);
+    ghS.gen_hdr_block_type = *buf++;
+}
+
+void ISEGD::Impl::read_sensor_calibration_hdr(char const* buf)
+{
+    GeneralHeaderSCa& ghS = sgd.p_general_header_sca();
+    ghS.freq1 = read_u32(&buf);
+    ghS.amp1 = read_u32(&buf);
+    ghS.phase1 = read_u32(&buf);
+    ghS.freq2 = read_u32(&buf);
+    ghS.amp2 = read_u32(&buf);
+    ghS.phase2 = read_u32(&buf);
+    ghS.calib_applied = *buf++;
+    buf += 6;
+    ghS.gen_hdr_block_type = *buf++;
+}
+
+void ISEGD::Impl::read_time_drift_hdr(char const* buf)
+{
+    GeneralHeaderTim& ghT = sgd.p_general_header_tim();
+    ghT.time_of_depl = read_u64(&buf);
+    ghT.time_of_retr = read_u64(&buf);
+    ghT.timer_offset_depl = read_u32(&buf);
+    ghT.time_offset_retr = read_u32(&buf);
+    ghT.timedrift_corr = *buf++;
+    ghT.corr_method = *buf++;
+    buf += 5;
+    ghT.gen_hdr_block_type = *buf++;
+}
+
+void ISEGD::Impl::read_electromagnetic_src_recv_hdr(char const* buf)
+{
+    GeneralHeaderElm& ghE = sgd.p_general_header_elm();
+    ghE.equip_dim_x = read_u24(&buf);
+    ghE.equip_dim_y = read_u24(&buf);
+    ghE.equip_dim_z = read_u24(&buf);
+    ghE.pos_term = *buf++;
+    ghE.equip_offset_x = read_u24(&buf);
+    ghE.equip_offset_y = read_u24(&buf);
+    ghE.equip_offset_z = read_u24(&buf);
+    buf += 12;
+    ghE.gen_hdr_block_type = *buf++;
+}
+
+void ISEGD::Impl::read_orientation_hdr(char const* buf)
+{
+    GeneralHeaderOri& ghO = sgd.p_general_header_ori();
+    ghO.rot_x = read_u32(&buf);
+    ghO.rot_y = read_u32(&buf);
+    ghO.rot_z = read_u32(&buf);
+    ghO.ref_orientation = read_u32(&buf);
+    ghO.time_stamp = read_u64(&buf);
+    ghO.ori_type = *buf++;
+    ghO.ref_orient_valid = *buf++;
+    ghO.rot_applied = *buf++;
+    ghO.rot_north_applied = *buf++;
+    buf += 3;
+    ghO.gen_hdr_block_type = *buf++;
+}
+
+void ISEGD::Impl::read_measurement_hdr(char const* buf)
+{
+    GeneralHeaderMeas& ghM = sgd.p_general_header_meas();
+    ghM.timestamp = read_u64(&buf);
+    ghM.measurement_value = read_u32(&buf);
+    ghM.maximum_value = read_u32(&buf);
+    ghM.minimum_value = read_u32(&buf);
+    ghM.quantity_class = read_u16(&buf);
+    ghM.unit_of_measure = read_u16(&buf);
+    ghM.measurement_description = read_u16(&buf);
+    buf += 5;
+    ghM.gen_hdr_block_type = *buf++;
+}
+
 CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
 {
     fill_buf_from_file(sgd.p_gen_hdr_buf().data(), sgd.p_gen_hdr_buf().size());
@@ -604,8 +706,7 @@ CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
     csh.channel_set_number = from_bcd<int>(&buf, false, 2);
     csh.channel_set_start_time = read_u16(&buf) * 2;
     csh.channel_set_end_time = read_u16(&buf) * 2;
-    ++buf;
-    csh.descale_multiplier = *buf++ / pow(2, 2);
+    csh.descale_multiplier = swap(read_u16(&buf)) / pow(2, 10);
     csh.number_of_channels = from_bcd<int>(&buf, false, 4);
     csh.channel_type = from_bcd<int>(&buf, false, 1);
     ++buf;

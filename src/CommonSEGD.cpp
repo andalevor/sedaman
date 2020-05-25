@@ -40,6 +40,12 @@ public:
     GeneralHeaderPos2 gen_hdr_pos2;
     GeneralHeaderPos3 gen_hdr_pos3;
     GeneralHeaderRel gen_hdr_rel;
+    GeneralHeaderSen gen_hdr_sen;
+    GeneralHeaderSCa gen_hdr_sca;
+    GeneralHeaderTim gen_hdr_tim;
+    GeneralHeaderElm gen_hdr_elm;
+    GeneralHeaderOri gen_hdr_ori;
+    GeneralHeaderMeas gen_hdr_meas;
     vector<char> gen_hdr_buf;
     vector<vector<ChannelSetHeader>> ch_sets;
 };
@@ -441,6 +447,99 @@ char const* CommonSEGD::GeneralHeaderRel::name_as_string(Name n)
     return ghRel_bin_names[static_cast<int>(n)];
 }
 
+static char const* ghSen_bin_names[] = {
+    "Instrument Test Time",
+    "Sensor Sensitivity",
+    "Instr Test Result",
+    "Serial Number",
+    "General header type"
+};
+
+char const* CommonSEGD::GeneralHeaderSen::name_as_string(Name n)
+{
+    return ghSen_bin_names[static_cast<int>(n)];
+}
+
+static char const* ghSCa_bin_names[] = {
+    "Frequency 1",
+    "Amplitude 1",
+    "Phase 1",
+    "Frequency 2",
+    "Amplitude 2",
+    "Phase 2",
+    "Calibration applied",
+    "General header type"
+};
+
+char const* CommonSEGD::GeneralHeaderSCa::name_as_string(Name n)
+{
+    return ghSCa_bin_names[static_cast<int>(n)];
+}
+
+static char const* ghTim_bin_names[] = {
+    "Time of deployment",
+    "Time of retrieval",
+    "Timer Offset Deployment",
+    "Time Offset Retrieval",
+    "Timedrift corrected",
+    "Correction method",
+    "General header type"
+};
+
+char const* CommonSEGD::GeneralHeaderTim::name_as_string(Name n)
+{
+    return ghTim_bin_names[static_cast<int>(n)];
+}
+
+static char const* ghElm_bin_names[] = {
+    "Equipment Dimension X",
+    "Equipment Dimension Y",
+    "Equipment Dimension Z",
+    "Positive terminal",
+    "Equipment Offset X",
+    "Equipment Offset Y",
+    "Equipment Offset Z",
+    "General header type"
+};
+
+char const* CommonSEGD::GeneralHeaderElm::name_as_string(Name n)
+{
+    return ghElm_bin_names[static_cast<int>(n)];
+}
+
+static char const* ghOri_bin_names[] = {
+    "Rotation x axis",
+    "Rotation Y axis",
+    "Rotation Z axis",
+    "Reference Orientation",
+    "Time Stamp",
+    "Orientation Type",
+    "Ref Orient Valid",
+    "Rot North Applied",
+    "General header type"
+};
+
+char const* CommonSEGD::GeneralHeaderOri::name_as_string(Name n)
+{
+    return ghOri_bin_names[static_cast<int>(n)];
+}
+
+static char const* ghMeas_bin_names[] = {
+    "Timestamp",
+    "Measurement Value",
+    "Maximum Value",
+    "Minimum Value",
+    "Quantity Class",
+    "Unit Of Measure",
+    "Measurement Description",
+    "General header type"
+};
+
+char const* CommonSEGD::GeneralHeaderMeas::name_as_string(Name n)
+{
+    return ghMeas_bin_names[static_cast<int>(n)];
+}
+
 CommonSEGD::~CommonSEGD() = default;
 
 fstream& CommonSEGD::p_file() { return pimpl->file; }
@@ -466,6 +565,12 @@ CommonSEGD::GeneralHeaderPos1& CommonSEGD::p_general_header_pos1() { return pimp
 CommonSEGD::GeneralHeaderPos2& CommonSEGD::p_general_header_pos2() { return pimpl->gen_hdr_pos2; }
 CommonSEGD::GeneralHeaderPos3& CommonSEGD::p_general_header_pos3() { return pimpl->gen_hdr_pos3; }
 CommonSEGD::GeneralHeaderRel& CommonSEGD::p_general_header_rel() { return pimpl->gen_hdr_rel; }
+CommonSEGD::GeneralHeaderSen& CommonSEGD::p_general_header_sen() { return pimpl->gen_hdr_sen; }
+CommonSEGD::GeneralHeaderSCa& CommonSEGD::p_general_header_sca() { return pimpl->gen_hdr_sca; }
+CommonSEGD::GeneralHeaderTim& CommonSEGD::p_general_header_tim() { return pimpl->gen_hdr_tim; }
+CommonSEGD::GeneralHeaderElm& CommonSEGD::p_general_header_elm() { return pimpl->gen_hdr_elm; }
+CommonSEGD::GeneralHeaderOri& CommonSEGD::p_general_header_ori() { return pimpl->gen_hdr_ori; }
+CommonSEGD::GeneralHeaderMeas& CommonSEGD::p_general_header_meas() { return pimpl->gen_hdr_meas; }
 vector<char>& CommonSEGD::p_gen_hdr_buf() { return pimpl->gen_hdr_buf; }
 vector<vector<CommonSEGD::ChannelSetHeader>>& CommonSEGD::p_ch_sets() { return pimpl->ch_sets; }
 } //sedaman

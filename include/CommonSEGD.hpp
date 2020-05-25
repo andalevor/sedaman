@@ -786,6 +786,189 @@ public:
         };
         static char const* name_as_string(Name n);
     };
+    ///
+    /// \class GeneralHeaderSen
+    /// \brief Class for general header for sensor info
+    ///
+    class GeneralHeaderSen {
+    public:
+        uint64_t instrument_test_time;
+        uint32_t sensor_sensitivity;
+        uint8_t instr_test_result;
+        char serial_number[28];
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            INSTRUMENT_TEST_TIME,
+            SENSOR_SENSITIVITY,
+            INSTR_TEST_RESULT,
+            SERIAL_NUMBER,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderSCa
+    /// \brief Class for general header for sensor calibration
+    ///
+    class GeneralHeaderSCa {
+    public:
+        uint32_t freq1;
+        uint32_t amp1;
+        uint32_t phase1;
+        uint32_t freq2;
+        uint32_t amp2;
+        uint32_t phase2;
+        uint8_t calib_applied;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            FREQUENCY_1,
+            AMPLITUDE_1,
+            PHASE_1,
+            FREQUENCY_2,
+            AMPLITUDE_2,
+            PHASE_2,
+            ALIBRATION_APPLIED,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderTim
+    /// \brief Class for general header for time drift
+    ///
+    class GeneralHeaderTim {
+    public:
+        uint64_t time_of_depl;
+        uint64_t time_of_retr;
+        uint32_t timer_offset_depl;
+        uint32_t time_offset_retr;
+        uint8_t timedrift_corr;
+        uint8_t corr_method;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            TIME_OF_DEPLOYMENT,
+            TIME_OF_RETRIEVAL,
+            TIMER_OFFSET_DEPLOYMENT,
+            TIME_OFFSET_RETRIEVAL,
+            TIMEDRIFT_CORRECTED,
+            CORRECTION_METHOD,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderElm
+    /// \brief Class for general header for electomagnetic src/recv desc block
+    ///
+    class GeneralHeaderElm {
+    public:
+        uint32_t equip_dim_x;
+        uint32_t equip_dim_y;
+        uint32_t equip_dim_z;
+        uint8_t pos_term;
+        uint32_t equip_offset_x;
+        uint32_t equip_offset_y;
+        uint32_t equip_offset_z;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            EQUIPMENT_DIMENTION_X,
+            EQUIPMENT_DIMENTION_Y,
+            EQUIPMENT_DIMENTION_Z,
+            POSITIVE_TERMINAL,
+            EQUIPMENT_OFFSET_X,
+            EQUIPMENT_OFFSET_Y,
+            EQUIPMENT_OFFSET_Z,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderOri
+    /// \brief Class for general header for orientation block
+    ///
+    class GeneralHeaderOri {
+    public:
+        uint32_t rot_x;
+        uint32_t rot_y;
+        uint32_t rot_z;
+        uint32_t ref_orientation;
+        uint64_t time_stamp;
+        uint8_t ori_type;
+        uint8_t ref_orient_valid;
+        uint8_t rot_applied;
+        uint8_t rot_north_applied;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            ROTATION_X_AXIS,
+            ROTATION_Y_AXIS,
+            ROTATION_Z_AXIS,
+            REFERENCE_ORIENT,
+            TIME_STAMP,
+            ORIENT_TYPE,
+            REF_ORIENT_VALID,
+            ROTATION_APPLIED,
+            ROT_NORTH,
+            APPLIED,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
+    ///
+    /// \class GeneralHeaderMeas
+    /// \brief Class for general header for measurement block
+    ///
+    class GeneralHeaderMeas {
+    public:
+        uint64_t timestamp;
+        uint32_t measurement_value;
+        uint32_t maximum_value;
+        uint32_t minimum_value;
+        uint16_t quantity_class;
+        uint16_t unit_of_measure;
+        uint16_t measurement_description;
+        uint8_t gen_hdr_block_type;
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            TIMESTAMP,
+            MEASUREMENT_VALUE,
+            MAXIMUM_VALUE,
+            MINIMUM_VALUE,
+            QUANTITY_CLASS,
+            UNIT_OF_MEASURE,
+            MEASUREMENT_DESCRIPTION,
+            GEN_HEADER_TYPE
+        };
+        static char const* name_as_string(Name n);
+    };
     class ChannelSetHeader {
     public:
         int scan_type_number;
@@ -808,6 +991,8 @@ public:
 
 protected:
     static constexpr int GEN_HDR_SIZE = 32;
+    static constexpr int CH_SET_HDR_SIZE = 32;
+    static constexpr int CH_SET_HDR_R3_SIZE = 96;
     ///
     /// \param file_name Name of file.
     /// \param mode Choose input or output.
@@ -928,6 +1113,36 @@ protected:
     /// \return reference to general header
     ///
     GeneralHeaderRel& p_general_header_rel();
+    ///
+    /// \brief p_general_header general header sensor info block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderSen& p_general_header_sen();
+    ///
+    /// \brief p_general_header general header sensor calibration block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderSCa& p_general_header_sca();
+    ///
+    /// \brief p_general_header general header time drifter block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderTim& p_general_header_tim();
+    ///
+    /// \brief p_general_header general header electromagnetoic src/recv desc block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderElm& p_general_header_elm();
+    ///
+    /// \brief p_general_header general header orientation block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderOri& p_general_header_ori();
+    ///
+    /// \brief p_general_header general header measurement block getter
+    /// \return reference to general header
+    ///
+    GeneralHeaderMeas& p_general_header_meas();
     ///
     /// \brief p_gen_hdr_buf access to a buffer for general header
     /// \return reference to buffer
