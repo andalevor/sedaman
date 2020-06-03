@@ -1,6 +1,6 @@
 ///
-/// \file OSegy.hpp
-/// \brief header file with OSegy class declaration
+/// \file OSEGY.hpp
+/// \brief header file with OSEGY class declaration
 ///
 /// \author andalevor
 ///
@@ -19,11 +19,11 @@
 ///
 namespace sedaman {
 ///
-/// \class OSegy
+/// \class OSEGY
 /// \brief Abstract class for SEGY writing.
 /// Declares common methods for all revisions to write information to SEGY files.
 ///
-class OSEGY : protected CommonSEGY {
+class OSEGY {
 public:
     ///
     /// \param file_name Name of SEGY file.
@@ -31,7 +31,7 @@ public:
     /// \throws sedaman::Exception
     ///
     OSEGY(std::string file_name, CommonSEGY::BinaryHeader bin_header,
-        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
+        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_tr_hdrs_map);
     ///
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.
@@ -40,6 +40,7 @@ public:
     virtual ~OSEGY();
 
 protected:
+    CommonSEGY& common();
     void assign_raw_writers();
     void assign_sample_writer();
     void assign_bytes_per_sample();
@@ -48,7 +49,7 @@ protected:
     void write_trailer_stanzas();
     void write_trace_header(Trace::Header const& hdr);
     void write_additional_trace_headers(Trace::Header const& hdr);
-    void write_trace_samples(Trace const& t);
+    void write_trace_samples_fix(Trace const& t);
     void write_trace_samples_var(Trace const& t);
 
 private:

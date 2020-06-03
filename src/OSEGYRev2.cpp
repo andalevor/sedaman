@@ -41,39 +41,39 @@ OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs, vector<string> trlr
         for (string& s : txt_hdrs)
             if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
                 throw Exception(__FILE__, __LINE__, "size of text header should be 3200 bytes");
-        sgy.p_txt_hdrs() = txt_hdrs;
+        sgy.common().text_headers = move(txt_hdrs);
     }
     if (!trlr_stnzs.empty()) {
         for (string& s : trlr_stnzs)
             if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
                 throw Exception(__FILE__, __LINE__, "size of trailer stanzas should be 3200 bytes");
-        sgy.p_trlr_stnzs() = trlr_stnzs;
+        sgy.common().trailer_stanzas = move(trlr_stnzs);
     }
-    sgy.p_file().write(txt_hdrs[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
-    if (sgy.p_bin_hdr().format_code == 0)
-        sgy.p_bin_hdr().format_code = 5;
+    sgy.common().file.write(txt_hdrs[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
+    if (sgy.common().binary_header.format_code == 0)
+        sgy.common().binary_header.format_code = 5;
     sgy.assign_raw_writers();
     sgy.write_bin_header();
     sgy.write_ext_text_headers();
     sgy.assign_sample_writer();
     sgy.assign_bytes_per_sample();
-    BinaryHeader zero = {};
-    if (memcmp(&sgy.p_bin_hdr(), &zero, sizeof(BinaryHeader))) {
-        if (sgy.p_bin_hdr().fixed_tr_length) {
-            sgy.p_samp_buf().resize(sgy.p_bin_hdr().samp_per_tr * sgy.p_bytes_per_sample());
-            if (sgy.p_bin_hdr().max_num_add_tr_headers)
+    CommonSEGY::BinaryHeader zero = {};
+    if (memcmp(&sgy.common().binary_header, &zero, sizeof(CommonSEGY::BinaryHeader))) {
+        if (sgy.common().binary_header.fixed_tr_length) {
+            sgy.common().samp_buf.resize(sgy.common().binary_header.samp_per_tr * sgy.common().bytes_per_sample);
+            if (sgy.common().binary_header.max_num_add_tr_headers)
                 write_trace = [this](Trace& tr) {
                     sgy.write_trace_header(tr.header());
                     sgy.write_additional_trace_headers(tr.header());
-                    sgy.write_trace_samples(tr);
+                    sgy.write_trace_samples_fix(tr);
                 };
             else
                 write_trace = [this](Trace& tr) {
                     sgy.write_trace_header(tr.header());
-                    sgy.write_trace_samples(tr);
+                    sgy.write_trace_samples_fix(tr);
                 };
         } else {
-            if (sgy.p_bin_hdr().max_num_add_tr_headers)
+            if (sgy.common().binary_header.max_num_add_tr_headers)
                 write_trace = [this](Trace& tr) {
                     sgy.write_trace_header(tr.header());
                     sgy.write_additional_trace_headers(tr.header());
@@ -86,22 +86,22 @@ OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs, vector<string> trlr
                 };
         }
     } else {
-        if (sgy.p_bin_hdr().fixed_tr_length) {
-            if (sgy.p_bin_hdr().max_num_add_tr_headers)
+        if (sgy.common().binary_header.fixed_tr_length) {
+            if (sgy.common().binary_header.max_num_add_tr_headers)
                 write_trace = [this](Trace& tr) {
                     set_min_hdrs(tr);
                     sgy.write_trace_header(tr.header());
                     sgy.write_additional_trace_headers(tr.header());
-                    sgy.write_trace_samples(tr);
+                    sgy.write_trace_samples_fix(tr);
                 };
             else
                 write_trace = [this](Trace& tr) {
                     set_min_hdrs(tr);
                     sgy.write_trace_header(tr.header());
-                    sgy.write_trace_samples(tr);
+                    sgy.write_trace_samples_fix(tr);
                 };
         } else {
-            if (sgy.p_bin_hdr().max_num_add_tr_headers)
+            if (sgy.common().binary_header.max_num_add_tr_headers)
                 write_trace = [this](Trace& tr) {
                     set_min_hdrs(tr);
                     sgy.write_trace_header(tr.header());
@@ -120,7 +120,7 @@ OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs, vector<string> trlr
 
 void OSEGYRev2::Impl::set_min_hdrs(Trace& tr)
 {
-    if (sgy.p_file().tellg() == first_trace_pos) {
+    if (sgy.common().file.tellg() == first_trace_pos) {
         // throw exception if trace header does not has a samples number
         Trace::Header::Value v = *tr.header().get("SAMP_NUM");
         uint32_t samp_num;
@@ -131,7 +131,7 @@ void OSEGYRev2::Impl::set_min_hdrs(Trace& tr)
         if (samp_num > INT16_MAX)
             throw Exception(__FILE__, __LINE__, "the number of samples is too much for revision 0");
         else
-            sgy.p_bin_hdr().samp_per_tr = samp_num;
+            sgy.common().binary_header.samp_per_tr = samp_num;
         v = *tr.header().get("SAMP_INT");
         double samp_int;
         if (holds_alternative<int16_t>(v))
@@ -141,8 +141,8 @@ void OSEGYRev2::Impl::set_min_hdrs(Trace& tr)
         if (samp_int > INT16_MAX || !static_cast<int16_t>(samp_int))
             throw Exception(__FILE__, __LINE__, "the sample interval can not be written to rev0");
         else
-            sgy.p_bin_hdr().samp_int = samp_int;
-        sgy.p_samp_buf().resize(samp_num * sgy.p_bytes_per_sample());
+            sgy.common().binary_header.samp_int = samp_int;
+        sgy.common().samp_buf.resize(samp_num * sgy.common().bytes_per_sample);
     }
 }
 
@@ -153,7 +153,7 @@ void OSEGYRev2::write_trace(Trace& tr)
 
 OSEGYRev2::OSEGYRev2(string name, vector<string> ths, CommonSEGY::BinaryHeader bh,
     vector<string> trlr_stnzs,
-    vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
+    vector<pair<string, map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>>> add_hdr_map)
     : OSEGY(move(name), move(bh), move(add_hdr_map))
     , pimpl { make_unique<Impl>(*this, move(ths), move(trlr_stnzs)) }
 {
@@ -161,8 +161,8 @@ OSEGYRev2::OSEGYRev2(string name, vector<string> ths, CommonSEGY::BinaryHeader b
 
 OSEGYRev2::~OSEGYRev2()
 {
-    p_file().seekg(0, ios_base::end);
-    if (p_bin_hdr().num_of_trailer_stanza)
+    common().file.seekg(0, ios_base::end);
+    if (common().binary_header.num_of_trailer_stanza)
         write_trailer_stanzas();
 }
 }

@@ -1,6 +1,6 @@
 ///
-/// \file CommonSegy.hpp
-/// \brief header file with CommonSegy class declaration
+/// \file CommonSEGY.hpp
+/// \brief header file with CommonSEGY class declaration
 ///
 /// \author andalevor
 ///
@@ -10,10 +10,8 @@
 #ifndef SEDAMAN_COMMON_SEGY_HPP
 #define SEDAMAN_COMMON_SEGY_HPP
 
-#include <cstdint>
 #include <fstream>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -23,16 +21,16 @@
 ///
 namespace sedaman {
 ///
-/// \class CommonSegy
+/// \class CommonSEGY
 /// \brief Class with common SEGY parts.
-/// Holds common data and members for ISegy and OSegy classes.
-/// \see ISegy
-/// \see OSegy
+/// Holds common data and members for ISEGY and OSEGY classes.
+/// \see ISEGY
+/// \see OSEGY
 ///
 class CommonSEGY {
 public:
     ///
-    /// \class bin_header
+    /// \class BinaryHeader
     /// \brief SEGY binary header storage class.
     ///
     class BinaryHeader {
@@ -133,7 +131,7 @@ public:
             NUM_OF_TRAILER_STANZA
         };
         static char const* name_as_string(Name n);
-    };
+    } binary_header;
     ///
     /// \enum
     /// \brief Enumiration to set type of additional trace header values.
@@ -188,8 +186,6 @@ public:
     /// \brief Can be used to browse headers or get there description.
     ///
     static std::map<std::string, std::string> trace_header_description;
-
-protected:
     ///
     /// \param file_name Name of SEGY file.
     /// \param mode Used to switch between input and output
@@ -198,50 +194,15 @@ protected:
     ///
     CommonSEGY(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
         std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
-    ///
-    /// \brief destructor
-    ///
-    virtual ~CommonSEGY();
-    ///
-    /// \return Reference to file stream in pimpl;
-    ///
-    std::fstream& p_file();
-    ///
-    /// \return Reference to text header in pimpl;
-    ///
-    std::vector<std::string>& p_txt_hdrs();
-    ///
-    /// \return Reference to binary header in pimpl;
-    ///
-    BinaryHeader& p_bin_hdr();
-    ///
-    /// \return Reference to trailer stanzas in pimpl;
-    ///
-    std::vector<std::string>& p_trlr_stnzs();
-    ///
-    /// \return Pointer to trace header buffer in pimpl;
-    ///
-    char* p_hdr_buf();
-    ///
-    /// \return Reference to trace samples buffer in pimpl;
-    ///
-    std::vector<char>& p_samp_buf();
-    ///
-    /// \return Reference to bytes per sample number in pimpl;
-    ///
-    int& p_bytes_per_sample();
-    ///
-    /// \return Reference to sample per trace number in pimpl;
-    ///
-    int32_t& p_samp_per_tr();
-    ///
-    /// \return Reference to additional trace header map in pimpl;
-    ///
-    std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>>& p_add_tr_hdrs_map();
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> pimpl;
+    std::string file_name;
+    std::fstream file;
+    std::vector<std::string> text_headers;
+    std::vector<std::string> trailer_stanzas;
+    std::vector<char> samp_buf;
+    char hdr_buf[TR_HEADER_SIZE];
+    int bytes_per_sample;
+    int32_t samp_per_tr;
+    std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdr_map;
 };
 } // namespace sedaman
 

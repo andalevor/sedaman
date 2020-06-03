@@ -1,6 +1,6 @@
 ///
-/// \file CommonSegd.hpp
-/// \brief header file with CommonSegd class declaration
+/// \file CommonSEGD.hpp
+/// \brief header file with CommonSEGD class declaration
 ///
 /// \author andalevor
 ///
@@ -21,9 +21,9 @@
 ///
 namespace sedaman {
 ///
-/// \class CommonSegd
+/// \class CommonSEGD
 /// \brief Class with common SEGD parts.
-/// Holds common data and members for ISegd and OSegd classes.
+/// Holds common data and members for ISEGD and OSEGD classes.
 /// \see ISEGD
 /// \see OSEGD
 ///
@@ -87,7 +87,7 @@ public:
             EXTERNAL_HEADER_BLOCKS
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header;
     ///
     /// \class GeneralHeader
     /// \brief Class for second general header
@@ -129,7 +129,7 @@ public:
             GEN_HEADER_BLOCK_NUM
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header2;
     ///
     /// \class GeneralHeader
     /// \brief Class for N-th general header
@@ -163,7 +163,7 @@ public:
             SOURCE_SET_NUMBER
         };
         static char const* name_as_string(Name n);
-    };
+    } general_headerN;
     ///
     /// \class GeneralHeader
     /// \brief Class for second general header
@@ -193,7 +193,7 @@ public:
             GEN_HEADER_BLOCK_NUM
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header3;
     ///
     /// \class GeneralHeaderVes
     /// \brief Class for general header vessel\crew information
@@ -214,7 +214,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_ves;
     ///
     /// \class GeneralHeaderSur
     /// \brief Class for general header for Survea Area Name
@@ -233,7 +233,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_sur;
     ///
     /// \class GeneralHeaderCli
     /// \brief Class for general header for Client Name
@@ -252,7 +252,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_cli;
     ///
     /// \class GeneralHeaderJob
     /// \brief Class for general header for Job ID
@@ -273,7 +273,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_job;
     ///
     /// \class GeneralHeaderLin
     /// \brief Class for general header for Line ID
@@ -294,7 +294,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_lin;
     ///
     /// \class GeneralHeaderVib
     /// \brief Class for general header for Vibrator source information
@@ -343,7 +343,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_vib;
     ///
     /// \class GeneralHeaderExp
     /// \brief Class for general header for Explosive source information
@@ -392,7 +392,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_exp;
     ///
     /// \class GeneralHeaderAir
     /// \brief Class for general header for Airgun source information
@@ -439,7 +439,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_air;
     ///
     /// \class GeneralHeaderWat
     /// \brief Class for general header for Watergun source information
@@ -486,7 +486,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_wat;
     ///
     /// \class GeneralHeaderEle
     /// \brief Class for general header for Electromagnetic source information
@@ -533,7 +533,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_ele;
     ///
     /// \class GeneralHeaderOth
     /// \brief Class for general header for Other source information
@@ -576,7 +576,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_oth;
     ///
     /// \class GeneralHeaderAdd
     /// \brief Class for general header for Additional source information
@@ -603,7 +603,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_add;
     ///
     /// \class GeneralHeaderSaux
     /// \brief Class for general header for Source Auxiliary information
@@ -652,7 +652,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_saux;
     ///
     /// \class GeneralHeaderCoord
     /// \brief Class for general header for coordinate reference system identification
@@ -671,7 +671,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_coord;
     ///
     /// \class GeneralHeaderPos1
     /// \brief Class for general header for position blocks 1 identification
@@ -702,7 +702,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_pos1;
     ///
     /// \class GeneralHeaderPos2
     /// \brief Class for general header for position blocks 2 identification
@@ -731,7 +731,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_pos2;
     ///
     /// \class GeneralHeaderPos3
     /// \brief Class for general header for position blocks 3 identification
@@ -760,7 +760,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_pos3;
     ///
     /// \class GeneralHeaderRel
     /// \brief Class for general header for relative position identification
@@ -785,7 +785,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_rel;
     ///
     /// \class GeneralHeaderSen
     /// \brief Class for general header for sensor info
@@ -810,7 +810,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_sen;
     ///
     /// \class GeneralHeaderSCa
     /// \brief Class for general header for sensor calibration
@@ -841,7 +841,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_sca;
     ///
     /// \class GeneralHeaderTim
     /// \brief Class for general header for time drift
@@ -870,12 +870,12 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_tim;
     ///
-    /// \class GeneralHeaderElm
+    /// \class GeneralHeaderElSR
     /// \brief Class for general header for electomagnetic src/recv desc block
     ///
-    class GeneralHeaderElm {
+    class GeneralHeaderElSR {
     public:
         uint32_t equip_dim_x;
         uint32_t equip_dim_y;
@@ -901,7 +901,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_elsr;
     ///
     /// \class GeneralHeaderOri
     /// \brief Class for general header for orientation block
@@ -937,7 +937,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_ori;
     ///
     /// \class GeneralHeaderMeas
     /// \brief Class for general header for measurement block
@@ -968,7 +968,7 @@ public:
             GEN_HEADER_TYPE
         };
         static char const* name_as_string(Name n);
-    };
+    } general_header_meas;
     class ChannelSetHeader {
     public:
         int scan_type_number;
@@ -988,8 +988,6 @@ public:
         int second_notch_filter;
         int third_notch_filter;
     };
-
-protected:
     static constexpr int GEN_HDR_SIZE = 32;
     static constexpr int CH_SET_HDR_SIZE = 32;
     static constexpr int CH_SET_HDR_R3_SIZE = 96;
@@ -998,166 +996,10 @@ protected:
     /// \param mode Choose input or output.
     ///
     CommonSEGD(std::string file_name, std::fstream::openmode mode);
-    ///
-    /// \brief p_file file handler getter
-    /// \return reference to a file handler
-    ///
-    std::fstream& p_file();
-    ///
-    /// \brief p_general_header general header getter
-    /// \return reference to general header
-    ///
-    GeneralHeader& p_general_header();
-    ///
-    /// \brief p_general_header general header 2 getter
-    /// \return reference to general header
-    ///
-    GeneralHeader2& p_general_header2();
-    ///
-    /// \brief p_general_header general header N getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderN& p_general_headerN();
-    ///
-    /// \brief p_general_header general header 3 getter
-    /// \return reference to general header
-    ///
-    GeneralHeader3& p_general_header3();
-    ///
-    /// \brief p_general_header general header vessel crew getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderVes& p_general_header_ves();
-    ///
-    /// \brief p_general_header general header survey area name getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderSur& p_general_header_sur();
-    ///
-    /// \brief p_general_header general header client name getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderCli& p_general_header_cli();
-    ///
-    /// \brief p_general_header general header client name getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderJob& p_general_header_job();
-    ///
-    /// \brief p_general_header general header line ID getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderLin& p_general_header_lin();
-    ///
-    /// \brief p_general_header general header vibrator source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderVib& p_general_header_vib();
-    ///
-    /// \brief p_general_header general header explosive source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderExp& p_general_header_exp();
-    ///
-    /// \brief p_general_header general header airgun source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderAir& p_general_header_air();
-    ///
-    /// \brief p_general_header general header watergun source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderWat& p_general_header_wat();
-    ///
-    /// \brief p_general_header general header electromagnetic source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderEle& p_general_header_ele();
-    ///
-    /// \brief p_general_header general header other source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderOth& p_general_header_oth();
-    ///
-    /// \brief p_general_header general header additional source information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderAdd& p_general_header_add();
-    ///
-    /// \brief p_general_header general header source auxiliary information getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderSaux& p_general_header_saux();
-    ///
-    /// \brief p_general_header general header coordinate reference identification getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderCoord& p_general_header_coord();
-    ///
-    /// \brief p_general_header general header positional block 1 getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderPos1& p_general_header_pos1();
-    ///
-    /// \brief p_general_header general header positional block 2 getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderPos2& p_general_header_pos2();
-    ///
-    /// \brief p_general_header general header positional block 3 getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderPos3& p_general_header_pos3();
-    ///
-    /// \brief p_general_header general header relative position block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderRel& p_general_header_rel();
-    ///
-    /// \brief p_general_header general header sensor info block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderSen& p_general_header_sen();
-    ///
-    /// \brief p_general_header general header sensor calibration block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderSCa& p_general_header_sca();
-    ///
-    /// \brief p_general_header general header time drifter block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderTim& p_general_header_tim();
-    ///
-    /// \brief p_general_header general header electromagnetoic src/recv desc block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderElm& p_general_header_elm();
-    ///
-    /// \brief p_general_header general header orientation block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderOri& p_general_header_ori();
-    ///
-    /// \brief p_general_header general header measurement block getter
-    /// \return reference to general header
-    ///
-    GeneralHeaderMeas& p_general_header_meas();
-    ///
-    /// \brief p_gen_hdr_buf access to a buffer for general header
-    /// \return reference to buffer
-    ///
-    std::vector<char>& p_gen_hdr_buf();
-    ///
-    /// \brief p_ch_sets access to a channel sets for scan types
-    /// \return
-    ///
-    std::vector<std::vector<ChannelSetHeader>>& p_ch_sets();
-    virtual ~CommonSEGD();
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> pimpl;
+    std::string file_name;
+    std::fstream file;
+    std::vector<char> gen_hdr_buf;
+    std::vector<std::vector<ChannelSetHeader>> ch_sets;
 };
 } // namespace sedaman
 

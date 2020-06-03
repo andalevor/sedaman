@@ -1,6 +1,6 @@
 ///
-/// \file OSegyRev1.hpp
-/// \brief header file with OSegyRev1 class declaration
+/// \file OSEGYRev1.hpp
+/// \brief header file with OSEGYRev1 class declaration
 ///
 /// \author andalevor
 ///
@@ -18,7 +18,7 @@
 ///
 namespace sedaman {
 ///
-/// \class OSegyRev1
+/// \class OSEGYRev1
 /// \brief Class for SEGY reading.
 /// Defines methods to write information from SEGY files.
 ///

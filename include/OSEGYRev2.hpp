@@ -1,6 +1,6 @@
 ///
-/// \file OSegyRev2.hpp
-/// \brief header file with OSegyRev1 class declaration
+/// \file OSEGYRev2.hpp
+/// \brief header file with OSEGYRev1 class declaration
 ///
 /// \author andalevor
 ///
@@ -18,7 +18,7 @@
 ///
 namespace sedaman {
 ///
-/// \class OSegyRev2
+/// \class OSEGYRev2
 /// \brief Class for SEGY reading.
 /// Defines methods to write information from SEGY files.
 ///
@@ -45,7 +45,7 @@ public:
     OSEGYRev2(std::string file_name, std::vector<std::string> text_headers = {},
         CommonSEGY::BinaryHeader bin_header = {},
         std::vector<std::string> trailer_stanzas = {},
-        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_hdr_map = {});
+        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map = {});
     ///
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.

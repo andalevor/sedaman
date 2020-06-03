@@ -39,24 +39,24 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
     } else if (txt_hdr.size() != CommonSEGY::TEXT_HEADER_SIZE) {
         throw Exception(__FILE__, __LINE__, "size of text header should be 3200 bytes");
     }
-    sgy.p_file().write(txt_hdr.c_str(), CommonSEGY::TEXT_HEADER_SIZE);
-    sgy.p_txt_hdrs().push_back(move(txt_hdr));
-    if (sgy.p_bin_hdr().format_code == 0)
-        sgy.p_bin_hdr().format_code = 1;
+    sgy.common().file.write(txt_hdr.c_str(), CommonSEGY::TEXT_HEADER_SIZE);
+    sgy.common().text_headers.push_back(move(txt_hdr));
+    if (sgy.common().binary_header.format_code == 0)
+        sgy.common().binary_header.format_code = 1;
     sgy.assign_raw_writers();
     sgy.write_bin_header();
     sgy.assign_sample_writer();
     sgy.assign_bytes_per_sample();
-    BinaryHeader zero = {};
-    if (memcmp(&sgy.p_bin_hdr(), &zero, sizeof(BinaryHeader))) {
-        sgy.p_samp_buf().resize(sgy.p_bin_hdr().samp_per_tr * sgy.p_bytes_per_sample());
+    CommonSEGY::BinaryHeader zero = {};
+    if (memcmp(&sgy.common().binary_header, &zero, sizeof(CommonSEGY::BinaryHeader))) {
+        sgy.common().samp_buf.resize(sgy.common().binary_header.samp_per_tr * sgy.common().bytes_per_sample);
         write_trace = [this](Trace& tr) {
             sgy.write_trace_header(tr.header());
-            sgy.write_trace_samples(tr);
+            sgy.write_trace_samples_fix(tr);
         };
     } else {
         write_trace = [this](Trace& tr) {
-            if (sgy.p_file().tellg() == first_trace_pos) {
+            if (sgy.common().file.tellg() == first_trace_pos) {
                 // throw exception if trace header does not has a samples number
                 Trace::Header::Value v = *tr.header().get("SAMP_NUM");
                 uint32_t samp_num;
@@ -67,7 +67,7 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
                 if (samp_num > INT16_MAX)
                     throw Exception(__FILE__, __LINE__, "the number of samples is too much for revision 0");
                 else
-                    sgy.p_bin_hdr().samp_per_tr = samp_num;
+                    sgy.common().binary_header.samp_per_tr = samp_num;
                 v = *tr.header().get("SAMP_INT");
                 double samp_int;
                 if (holds_alternative<int16_t>(v))
@@ -77,11 +77,11 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
                 if (samp_int > INT16_MAX || !static_cast<int16_t>(samp_int))
                     throw Exception(__FILE__, __LINE__, "the sample interval can not be written to rev0");
                 else
-                    sgy.p_bin_hdr().samp_int = samp_int;
-                sgy.p_samp_buf().resize(samp_num * sgy.p_bytes_per_sample());
+                    sgy.common().binary_header.samp_int = samp_int;
+                sgy.common().samp_buf.resize(samp_num * sgy.common().bytes_per_sample);
             }
             sgy.write_trace_header(tr.header());
-            sgy.write_trace_samples(tr);
+            sgy.write_trace_samples_fix(tr);
         };
     }
 }

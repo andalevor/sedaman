@@ -2,61 +2,19 @@
 #include "Exception.hpp"
 
 using std::fstream;
-using std::make_unique;
 using std::move;
 using std::string;
 using std::vector;
 
 namespace sedaman {
-class CommonSEGD::Impl {
-public:
-    explicit Impl(string name)
-        : file_name(move(name))
-        , gen_hdr2({})
-        , gen_hdr_buf(CommonSEGD::GEN_HDR_SIZE)
-    {
-    }
-    string file_name;
-    fstream file;
-    GeneralHeader gen_hdr;
-    GeneralHeader2 gen_hdr2;
-    GeneralHeaderN gen_hdrN;
-    GeneralHeader3 gen_hdr3;
-    GeneralHeaderVes gen_hdr_ves;
-    GeneralHeaderSur gen_hdr_sur;
-    GeneralHeaderCli gen_hdr_cli;
-    GeneralHeaderJob gen_hdr_job;
-    GeneralHeaderLin gen_hdr_lin;
-    GeneralHeaderVib gen_hdr_vib;
-    GeneralHeaderExp gen_hdr_exp;
-    GeneralHeaderAir gen_hdr_air;
-    GeneralHeaderWat gen_hdr_wat;
-    GeneralHeaderEle gen_hdr_ele;
-    GeneralHeaderOth gen_hdr_oth;
-    GeneralHeaderAdd gen_hdr_add;
-    GeneralHeaderSaux gen_hdr_saux;
-    GeneralHeaderCoord gen_hdr_coord;
-    GeneralHeaderPos1 gen_hdr_pos1;
-    GeneralHeaderPos2 gen_hdr_pos2;
-    GeneralHeaderPos3 gen_hdr_pos3;
-    GeneralHeaderRel gen_hdr_rel;
-    GeneralHeaderSen gen_hdr_sen;
-    GeneralHeaderSCa gen_hdr_sca;
-    GeneralHeaderTim gen_hdr_tim;
-    GeneralHeaderElm gen_hdr_elm;
-    GeneralHeaderOri gen_hdr_ori;
-    GeneralHeaderMeas gen_hdr_meas;
-    vector<char> gen_hdr_buf;
-    vector<vector<ChannelSetHeader>> ch_sets;
-};
-
 CommonSEGD::CommonSEGD(string name, fstream::openmode mode)
-    : pimpl(make_unique<Impl>(move(name)))
+    : file_name(move(name))
+    , gen_hdr_buf(vector<char>(CommonSEGD::GEN_HDR_SIZE))
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
-    fl.open(pimpl->file_name, mode);
-    pimpl->file = move(fl);
+    fl.open(file_name, mode);
+    file = move(fl);
 }
 
 static char const* gh1_bin_names[] = {
@@ -539,38 +497,4 @@ char const* CommonSEGD::GeneralHeaderMeas::name_as_string(Name n)
 {
     return ghMeas_bin_names[static_cast<int>(n)];
 }
-
-CommonSEGD::~CommonSEGD() = default;
-
-fstream& CommonSEGD::p_file() { return pimpl->file; }
-CommonSEGD::GeneralHeader& CommonSEGD::p_general_header() { return pimpl->gen_hdr; }
-CommonSEGD::GeneralHeader2& CommonSEGD::p_general_header2() { return pimpl->gen_hdr2; }
-CommonSEGD::GeneralHeaderN& CommonSEGD::p_general_headerN() { return pimpl->gen_hdrN; }
-CommonSEGD::GeneralHeader3& CommonSEGD::p_general_header3() { return pimpl->gen_hdr3; }
-CommonSEGD::GeneralHeaderVes& CommonSEGD::p_general_header_ves() { return pimpl->gen_hdr_ves; }
-CommonSEGD::GeneralHeaderSur& CommonSEGD::p_general_header_sur() { return pimpl->gen_hdr_sur; }
-CommonSEGD::GeneralHeaderCli& CommonSEGD::p_general_header_cli() { return pimpl->gen_hdr_cli; }
-CommonSEGD::GeneralHeaderJob& CommonSEGD::p_general_header_job() { return pimpl->gen_hdr_job; }
-CommonSEGD::GeneralHeaderLin& CommonSEGD::p_general_header_lin() { return pimpl->gen_hdr_lin; }
-CommonSEGD::GeneralHeaderVib& CommonSEGD::p_general_header_vib() { return pimpl->gen_hdr_vib; }
-CommonSEGD::GeneralHeaderExp& CommonSEGD::p_general_header_exp() { return pimpl->gen_hdr_exp; }
-CommonSEGD::GeneralHeaderAir& CommonSEGD::p_general_header_air() { return pimpl->gen_hdr_air; }
-CommonSEGD::GeneralHeaderWat& CommonSEGD::p_general_header_wat() { return pimpl->gen_hdr_wat; }
-CommonSEGD::GeneralHeaderEle& CommonSEGD::p_general_header_ele() { return pimpl->gen_hdr_ele; }
-CommonSEGD::GeneralHeaderOth& CommonSEGD::p_general_header_oth() { return pimpl->gen_hdr_oth; }
-CommonSEGD::GeneralHeaderAdd& CommonSEGD::p_general_header_add() { return pimpl->gen_hdr_add; }
-CommonSEGD::GeneralHeaderSaux& CommonSEGD::p_general_header_saux() { return pimpl->gen_hdr_saux; }
-CommonSEGD::GeneralHeaderCoord& CommonSEGD::p_general_header_coord() { return pimpl->gen_hdr_coord; }
-CommonSEGD::GeneralHeaderPos1& CommonSEGD::p_general_header_pos1() { return pimpl->gen_hdr_pos1; }
-CommonSEGD::GeneralHeaderPos2& CommonSEGD::p_general_header_pos2() { return pimpl->gen_hdr_pos2; }
-CommonSEGD::GeneralHeaderPos3& CommonSEGD::p_general_header_pos3() { return pimpl->gen_hdr_pos3; }
-CommonSEGD::GeneralHeaderRel& CommonSEGD::p_general_header_rel() { return pimpl->gen_hdr_rel; }
-CommonSEGD::GeneralHeaderSen& CommonSEGD::p_general_header_sen() { return pimpl->gen_hdr_sen; }
-CommonSEGD::GeneralHeaderSCa& CommonSEGD::p_general_header_sca() { return pimpl->gen_hdr_sca; }
-CommonSEGD::GeneralHeaderTim& CommonSEGD::p_general_header_tim() { return pimpl->gen_hdr_tim; }
-CommonSEGD::GeneralHeaderElm& CommonSEGD::p_general_header_elm() { return pimpl->gen_hdr_elm; }
-CommonSEGD::GeneralHeaderOri& CommonSEGD::p_general_header_ori() { return pimpl->gen_hdr_ori; }
-CommonSEGD::GeneralHeaderMeas& CommonSEGD::p_general_header_meas() { return pimpl->gen_hdr_meas; }
-vector<char>& CommonSEGD::p_gen_hdr_buf() { return pimpl->gen_hdr_buf; }
-vector<vector<CommonSEGD::ChannelSetHeader>>& CommonSEGD::p_ch_sets() { return pimpl->ch_sets; }
 } //sedaman

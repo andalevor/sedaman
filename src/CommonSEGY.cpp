@@ -3,7 +3,6 @@
 
 using std::fstream;
 using std::ios_base;
-using std::make_unique;
 using std::map;
 using std::move;
 using std::pair;
@@ -12,53 +11,30 @@ using std::to_string;
 using std::vector;
 
 namespace sedaman {
-class CommonSEGY::Impl {
-public:
-    Impl(string name, BinaryHeader bh,
-        vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> m);
-    string file_name;
-    fstream file;
-    vector<string> text_headers;
-    vector<string> trailer_stanzas;
-    BinaryHeader binary_header;
-    vector<char> samp_buf;
-    char hdr_buf[TR_HEADER_SIZE];
-    int bytes_per_sample;
-    int32_t samp_per_tr;
-    vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map;
 
-private:
-    void check_add_tr_hdr_map();
-};
+static void check_add_tr_hdr_map(CommonSEGY* com);
 
 CommonSEGY::CommonSEGY(string name, ios_base::openmode mode, BinaryHeader bh,
     vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
-    : pimpl { make_unique<Impl>(move(name), move(bh), move(add_hdr_map)) }
+    : binary_header(move(bh))
+    , file_name(move(name))
+    , add_tr_hdr_map(move(add_hdr_map))
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
-    fl.open(pimpl->file_name, mode);
-    pimpl->file = move(fl);
+    fl.open(file_name, mode);
+    file = move(fl);
+    check_add_tr_hdr_map(this);
 }
 
-CommonSEGY::Impl::Impl(string name, BinaryHeader bh,
-    vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> m)
-    : file_name { move(name) }
-    , binary_header { move(bh) }
-    , hdr_buf {}
-    , add_hdr_map { move(m) }
-{
-    check_add_tr_hdr_map();
-}
-
-void CommonSEGY::Impl::check_add_tr_hdr_map()
+void check_add_tr_hdr_map(CommonSEGY* com)
 {
     int first = 1, size = 0;
     uint32_t prev = 0;
-    if (binary_header.max_num_add_tr_headers && static_cast<int32_t>(add_hdr_map.size()) + 1 != binary_header.max_num_add_tr_headers)
+    if (com->binary_header.max_num_add_tr_headers && static_cast<int32_t>(com->add_tr_hdr_map.size()) + 1 != com->binary_header.max_num_add_tr_headers)
         throw Exception(__FILE__, __LINE__,
             "number of additional trace headers not equal to max number of headers in binary header");
-    for (auto& p : add_hdr_map) {
+    for (auto& p : com->add_tr_hdr_map) {
         if (p.first.size() != 8)
             throw Exception(__FILE__, __LINE__, "additional trace header name must have 8 bytes length");
         for (auto& i : p.second) {
@@ -67,37 +43,37 @@ void CommonSEGY::Impl::check_add_tr_hdr_map()
                 first = 0;
             } else {
                 switch (i.second.second) {
-                case TrHdrValueType::int8_t:
+                case CommonSEGY::TrHdrValueType::int8_t:
                     size = 1;
                     break;
-                case TrHdrValueType::uint8_t:
+                case CommonSEGY::TrHdrValueType::uint8_t:
                     size = 1;
                     break;
-                case TrHdrValueType::int16_t:
+                case CommonSEGY::TrHdrValueType::int16_t:
                     size = 2;
                     break;
-                case TrHdrValueType::uint16_t:
+                case CommonSEGY::TrHdrValueType::uint16_t:
                     size = 2;
                     break;
-                case TrHdrValueType::int32_t:
+                case CommonSEGY::TrHdrValueType::int32_t:
                     size = 4;
                     break;
-                case TrHdrValueType::uint32_t:
+                case CommonSEGY::TrHdrValueType::uint32_t:
                     size = 4;
                     break;
-                case TrHdrValueType::int64_t:
+                case CommonSEGY::TrHdrValueType::int64_t:
                     size = 8;
                     break;
-                case TrHdrValueType::uint64_t:
+                case CommonSEGY::TrHdrValueType::uint64_t:
                     size = 8;
                     break;
-                case TrHdrValueType::ibm:
+                case CommonSEGY::TrHdrValueType::ibm:
                     size = 4;
                     break;
-                case TrHdrValueType::ieee_single:
+                case CommonSEGY::TrHdrValueType::ieee_single:
                     size = 4;
                     break;
-                case TrHdrValueType::ieee_double:
+                case CommonSEGY::TrHdrValueType::ieee_double:
                     size = 8;
                     break;
                 default:
@@ -113,21 +89,6 @@ void CommonSEGY::Impl::check_add_tr_hdr_map()
             }
         }
     }
-}
-
-CommonSEGY::~CommonSEGY() = default;
-
-fstream& CommonSEGY::p_file() { return pimpl->file; }
-vector<string>& CommonSEGY::p_txt_hdrs() { return pimpl->text_headers; }
-CommonSEGY::BinaryHeader& CommonSEGY::p_bin_hdr() { return pimpl->binary_header; }
-vector<string>& CommonSEGY::p_trlr_stnzs() { return pimpl->trailer_stanzas; }
-char* CommonSEGY::p_hdr_buf() { return pimpl->hdr_buf; }
-vector<char>& CommonSEGY::p_samp_buf() { return pimpl->samp_buf; }
-int& CommonSEGY::p_bytes_per_sample() { return pimpl->bytes_per_sample; }
-int32_t& CommonSEGY::p_samp_per_tr() { return pimpl->samp_per_tr; }
-vector<pair<string, map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>>>& CommonSEGY::p_add_tr_hdrs_map()
-{
-    return pimpl->add_hdr_map;
 }
 
 static uint8_t constexpr e2a[256] = {
