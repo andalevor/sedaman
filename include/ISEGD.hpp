@@ -169,6 +169,11 @@ public:
     /// \return return third general header or std::nullopt if there is no such header in file
     ///
     std::optional<CommonSEGD::GeneralHeaderMeas> general_header_measurement_blk();
+    ///
+    /// \brief Channel set headers getter
+    /// \return return reference to channel sets
+    ///
+    std::vector<std::vector<CommonSEGD::ChannelSetHeader>> const& channel_set_headers();
     virtual ~ISEGD();
 
 private:

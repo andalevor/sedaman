@@ -1,8 +1,15 @@
 #include "CommonSEGD.hpp"
 #include "Exception.hpp"
+#include "util.hpp"
+#include <cmath>
+#include <functional>
 
+using std::array;
 using std::fstream;
+using std::function;
 using std::move;
+using std::nullopt;
+using std::optional;
 using std::string;
 using std::vector;
 
@@ -17,7 +24,81 @@ CommonSEGD::CommonSEGD(string name, fstream::openmode mode)
     file = move(fl);
 }
 
-static char const* gh1_bin_names[] = {
+CommonSEGD::ChannelSetHeader::ChannelSetHeader(CommonSEGD& common)
+{
+    function<uint16_t(char const**)> read_u16 = [](char const** buf) { return swap(read<uint16_t>(buf)); };
+    function<int16_t(char const**)> read_i16 = [](char const** buf) { return swap(read<int16_t>(buf)); };
+    function<uint32_t(char const**)> read_u24 = [](char const** buf) { return read<uint16_t>(buf) << 8 | read<uint8_t>(buf); };
+    function<uint32_t(char const**)> read_u32 = [](char const** buf) { return swap(read<uint32_t>(buf)); };
+    char const* buf = common.ch_set_hdr_buf.data();
+    if (common.general_header.add_gen_hdr_blocks)
+        segd_rev_major = common.general_header2.segd_rev_major;
+    if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3) {
+        scan_type_number = from_bcd<int>(&buf, false, 2);
+        channel_set_number = from_bcd<int>(&buf, false, 2);
+        channel_set_start_time = read_u16(&buf) * 2;
+        channel_set_end_time = read_u16(&buf) * 2;
+        descale_multiplier = swap(read_i16(&buf)) / pow(2, 10);
+        number_of_channels = from_bcd<int>(&buf, false, 4);
+        channel_type = from_bcd<int>(&buf, false, 1);
+        ++buf;
+        subscans_per_ch_set = pow(2, from_bcd<int>(&buf, false, 1));
+        channel_gain = from_bcd<int>(&buf, true, 1);
+        alias_filter_freq = from_bcd<int>(&buf, false, 4);
+        alias_filter_slope = from_bcd<int>(&buf, false, 4);
+        low_cut_filter_freq = from_bcd<int>(&buf, false, 4);
+        low_cut_filter_slope = from_bcd<int>(&buf, false, 4);
+        first_notch_filter = from_bcd<int>(&buf, false, 4);
+        second_notch_filter = from_bcd<int>(&buf, false, 4);
+        third_notch_filter = from_bcd<int>(&buf, false, 4);
+        ext_ch_set_num = read_u16(&buf);
+        ext_hdr_flag = *buf >> 4;
+        trc_hdr_ext = *buf & 0x0f;
+        ++buf;
+        vert_stack = *buf++;
+        streamer_no = *buf++;
+        array_forming = *buf++;
+    } else {
+        scan_type_number = from_bcd<int>(&buf, false, 2);
+        channel_set_number = read_u16(&buf);
+        channel_type = *buf++;
+        channel_set_start_time = read_u32(&buf);
+        channel_set_end_time = read_u32(&buf);
+        p_number_of_samples = read_u32(&buf);
+        descale_multiplier = read_u32(&buf);
+        number_of_channels = read_u24(&buf);
+        p_samp_int = read_u24(&buf);
+        array_forming = *buf++;
+        trc_hdr_ext = *buf++;
+        ext_hdr_flag = *buf >> 4;
+        channel_gain = *buf & 0x0f;
+        ++buf;
+        vert_stack = *buf++;
+        streamer_no = *buf++;
+        ++buf;
+        alias_filter_freq = read_u32(&buf);
+        low_cut_filter_freq = read_u32(&buf);
+        alias_filter_slope = read_u32(&buf);
+        low_cut_filter_slope = read_u32(&buf);
+        first_notch_filter = read_u32(&buf);
+        second_notch_filter = read_u32(&buf);
+        third_notch_filter = read_u32(&buf);
+        p_filter_phase = *buf++;
+        p_physical_unit = *buf++;
+        buf += 2;
+        p_filter_delay = read_u32(&buf);
+        memcpy(p_description.data(), buf, p_description.size());
+    }
+}
+
+optional<uint32_t> CommonSEGD::ChannelSetHeader::number_of_samples() { return segd_rev_major > 2 ? optional<uint32_t>(p_number_of_samples) : nullopt; }
+optional<uint32_t> CommonSEGD::ChannelSetHeader::samp_int() { return segd_rev_major > 2 ? optional<uint32_t>(p_samp_int) : nullopt; }
+optional<uint8_t> CommonSEGD::ChannelSetHeader::filter_phase() { return segd_rev_major > 2 ? optional<uint8_t>(p_filter_phase) : nullopt; }
+optional<uint8_t> CommonSEGD::ChannelSetHeader::physical_unit() { return segd_rev_major > 2 ? optional<uint8_t>(p_physical_unit) : nullopt; }
+optional<uint32_t> CommonSEGD::ChannelSetHeader::filter_delay() { return segd_rev_major > 2 ? optional<uint8_t>(p_filter_delay) : nullopt; }
+optional<array<char, 27>> CommonSEGD::ChannelSetHeader::description() { return segd_rev_major > 2 ? optional<array<char, 27>>(p_description) : nullopt; }
+
+static char const* gh1_names[] = {
     "File number",
     "Format code",
     "General constants",
@@ -44,10 +125,10 @@ static char const* gh1_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeader::name_as_string(Name n)
 {
-    return gh1_bin_names[static_cast<int>(n)];
+    return gh1_names[static_cast<int>(n)];
 }
 
-static char const* gh2_bin_names[] = {
+static char const* gh2_names[] = {
     "Expanded File Number",
     "Extended Channel Sets per Scan Types",
     "Extended Header Blocks",
@@ -65,10 +146,10 @@ static char const* gh2_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeader2::name_as_string(Name n)
 {
-    return gh2_bin_names[static_cast<int>(n)];
+    return gh2_names[static_cast<int>(n)];
 }
 
-static char const* ghN_bin_names[] = {
+static char const* ghN_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -82,10 +163,10 @@ static char const* ghN_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderN::name_as_string(Name n)
 {
-    return ghN_bin_names[static_cast<int>(n)];
+    return ghN_names[static_cast<int>(n)];
 }
 
-static char const* gh3_bin_names[] = {
+static char const* gh3_names[] = {
     "Time Zero for this record",
     "The total size of the SEG-D record in bytes",
     "The total size of the headers and data in this record in bytes",
@@ -97,10 +178,10 @@ static char const* gh3_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeader3::name_as_string(Name n)
 {
-    return gh3_bin_names[static_cast<int>(n)];
+    return gh3_names[static_cast<int>(n)];
 }
 
-static char const* ghVes_bin_names[] = {
+static char const* ghVes_names[] = {
     "Abbreviated vessel or crew name",
     "Vessel or crew name",
     "General header type"
@@ -108,30 +189,30 @@ static char const* ghVes_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderVes::name_as_string(Name n)
 {
-    return ghVes_bin_names[static_cast<int>(n)];
+    return ghVes_names[static_cast<int>(n)];
 }
 
-static char const* ghSur_bin_names[] = {
+static char const* ghSur_names[] = {
     "Survey Area Name",
     "General header type"
 };
 
 char const* CommonSEGD::GeneralHeaderSur::name_as_string(Name n)
 {
-    return ghSur_bin_names[static_cast<int>(n)];
+    return ghSur_names[static_cast<int>(n)];
 }
 
-static char const* ghCli_bin_names[] = {
+static char const* ghCli_names[] = {
     "Client Area Name",
     "General header type"
 };
 
 char const* CommonSEGD::GeneralHeaderCli::name_as_string(Name n)
 {
-    return ghCli_bin_names[static_cast<int>(n)];
+    return ghCli_names[static_cast<int>(n)];
 }
 
-static char const* ghJob_bin_names[] = {
+static char const* ghJob_names[] = {
     "Abbr Job Identification",
     "Job Identification",
     "General header type"
@@ -139,10 +220,10 @@ static char const* ghJob_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderJob::name_as_string(Name n)
 {
-    return ghJob_bin_names[static_cast<int>(n)];
+    return ghJob_names[static_cast<int>(n)];
 }
 
-static char const* ghLin_bin_names[] = {
+static char const* ghLin_names[] = {
     "Line Abbreviation",
     "Line Identification",
     "General header type"
@@ -150,10 +231,10 @@ static char const* ghLin_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderLin::name_as_string(Name n)
 {
-    return ghLin_bin_names[static_cast<int>(n)];
+    return ghLin_names[static_cast<int>(n)];
 }
 
-static char const* ghVib_bin_names[] = {
+static char const* ghVib_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -175,10 +256,10 @@ static char const* ghVib_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderVib::name_as_string(Name n)
 {
-    return ghVib_bin_names[static_cast<int>(n)];
+    return ghVib_names[static_cast<int>(n)];
 }
 
-static char const* ghExp_bin_names[] = {
+static char const* ghExp_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -200,10 +281,10 @@ static char const* ghExp_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderExp::name_as_string(Name n)
 {
-    return ghExp_bin_names[static_cast<int>(n)];
+    return ghExp_names[static_cast<int>(n)];
 }
 
-static char const* ghAir_bin_names[] = {
+static char const* ghAir_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -224,10 +305,10 @@ static char const* ghAir_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderAir::name_as_string(Name n)
 {
-    return ghAir_bin_names[static_cast<int>(n)];
+    return ghAir_names[static_cast<int>(n)];
 }
 
-static char const* ghWat_bin_names[] = {
+static char const* ghWat_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -248,10 +329,10 @@ static char const* ghWat_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderWat::name_as_string(Name n)
 {
-    return ghWat_bin_names[static_cast<int>(n)];
+    return ghWat_names[static_cast<int>(n)];
 }
 
-static char const* ghEle_bin_names[] = {
+static char const* ghEle_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -272,10 +353,10 @@ static char const* ghEle_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderEle::name_as_string(Name n)
 {
-    return ghEle_bin_names[static_cast<int>(n)];
+    return ghEle_names[static_cast<int>(n)];
 }
 
-static char const* ghOth_bin_names[] = {
+static char const* ghOth_names[] = {
     "Expanded File Number",
     "Source Line Number",
     "Source Point Number",
@@ -294,10 +375,10 @@ static char const* ghOth_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderOth::name_as_string(Name n)
 {
-    return ghOth_bin_names[static_cast<int>(n)];
+    return ghOth_names[static_cast<int>(n)];
 }
 
-static char const* ghAdd_bin_names[] = {
+static char const* ghAdd_names[] = {
     "Time",
     "Source Status",
     "Source Id",
@@ -308,10 +389,10 @@ static char const* ghAdd_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderAdd::name_as_string(Name n)
 {
-    return ghAdd_bin_names[static_cast<int>(n)];
+    return ghAdd_names[static_cast<int>(n)];
 }
 
-static char const* ghSaux_bin_names[] = {
+static char const* ghSaux_names[] = {
     "Source Id",
     "Scan Type Number 1",
     "Channel Set Number 1",
@@ -333,20 +414,20 @@ static char const* ghSaux_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderSaux::name_as_string(Name n)
 {
-    return ghSaux_bin_names[static_cast<int>(n)];
+    return ghSaux_names[static_cast<int>(n)];
 }
 
-static char const* ghCoord_bin_names[] = {
+static char const* ghCoord_names[] = {
     "Coordinate Reference System (CRS) identification",
     "General header type"
 };
 
 char const* CommonSEGD::GeneralHeaderCoord::name_as_string(Name n)
 {
-    return ghCoord_bin_names[static_cast<int>(n)];
+    return ghCoord_names[static_cast<int>(n)];
 }
 
-static char const* ghPos1_bin_names[] = {
+static char const* ghPos1_names[] = {
     "Time of position",
     "Time of measurement/calculation",
     "Vertical error",
@@ -359,10 +440,10 @@ static char const* ghPos1_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderPos1::name_as_string(Name n)
 {
-    return ghPos1_bin_names[static_cast<int>(n)];
+    return ghPos1_names[static_cast<int>(n)];
 }
 
-static char const* ghPos2_bin_names[] = {
+static char const* ghPos2_names[] = {
     "Coord tuple 1 / CRS A Coord 1",
     "Coord tuple 1 / CRS A Coord 2",
     "Coord tuple 1 / CRS A Coord 3",
@@ -374,10 +455,10 @@ static char const* ghPos2_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderPos2::name_as_string(Name n)
 {
-    return ghPos2_bin_names[static_cast<int>(n)];
+    return ghPos2_names[static_cast<int>(n)];
 }
 
-static char const* ghPos3_bin_names[] = {
+static char const* ghPos3_names[] = {
     "Coord tuple 2 / CRS B Coord 1",
     "Coord tuple 2 / CRS B Coord 2",
     "Coord tuple 2 / CRS B Coord 3",
@@ -389,10 +470,10 @@ static char const* ghPos3_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderPos3::name_as_string(Name n)
 {
-    return ghPos3_bin_names[static_cast<int>(n)];
+    return ghPos3_names[static_cast<int>(n)];
 }
 
-static char const* ghRel_bin_names[] = {
+static char const* ghRel_names[] = {
     "Offset easting",
     "Offset northing",
     "Offset vertical",
@@ -402,10 +483,10 @@ static char const* ghRel_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderRel::name_as_string(Name n)
 {
-    return ghRel_bin_names[static_cast<int>(n)];
+    return ghRel_names[static_cast<int>(n)];
 }
 
-static char const* ghSen_bin_names[] = {
+static char const* ghSen_names[] = {
     "Instrument Test Time",
     "Sensor Sensitivity",
     "Instr Test Result",
@@ -415,10 +496,10 @@ static char const* ghSen_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderSen::name_as_string(Name n)
 {
-    return ghSen_bin_names[static_cast<int>(n)];
+    return ghSen_names[static_cast<int>(n)];
 }
 
-static char const* ghSCa_bin_names[] = {
+static char const* ghSCa_names[] = {
     "Frequency 1",
     "Amplitude 1",
     "Phase 1",
@@ -431,10 +512,10 @@ static char const* ghSCa_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderSCa::name_as_string(Name n)
 {
-    return ghSCa_bin_names[static_cast<int>(n)];
+    return ghSCa_names[static_cast<int>(n)];
 }
 
-static char const* ghTim_bin_names[] = {
+static char const* ghTim_names[] = {
     "Time of deployment",
     "Time of retrieval",
     "Timer Offset Deployment",
@@ -446,10 +527,10 @@ static char const* ghTim_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderTim::name_as_string(Name n)
 {
-    return ghTim_bin_names[static_cast<int>(n)];
+    return ghTim_names[static_cast<int>(n)];
 }
 
-static char const* ghElm_bin_names[] = {
+static char const* ghElSR_names[] = {
     "Equipment Dimension X",
     "Equipment Dimension Y",
     "Equipment Dimension Z",
@@ -460,12 +541,12 @@ static char const* ghElm_bin_names[] = {
     "General header type"
 };
 
-char const* CommonSEGD::GeneralHeaderElm::name_as_string(Name n)
+char const* CommonSEGD::GeneralHeaderElSR::name_as_string(Name n)
 {
-    return ghElm_bin_names[static_cast<int>(n)];
+    return ghElSR_names[static_cast<int>(n)];
 }
 
-static char const* ghOri_bin_names[] = {
+static char const* ghOri_names[] = {
     "Rotation x axis",
     "Rotation Y axis",
     "Rotation Z axis",
@@ -479,10 +560,10 @@ static char const* ghOri_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderOri::name_as_string(Name n)
 {
-    return ghOri_bin_names[static_cast<int>(n)];
+    return ghOri_names[static_cast<int>(n)];
 }
 
-static char const* ghMeas_bin_names[] = {
+static char const* ghMeas_names[] = {
     "Timestamp",
     "Measurement Value",
     "Maximum Value",
@@ -495,6 +576,42 @@ static char const* ghMeas_bin_names[] = {
 
 char const* CommonSEGD::GeneralHeaderMeas::name_as_string(Name n)
 {
-    return ghMeas_bin_names[static_cast<int>(n)];
+    return ghMeas_names[static_cast<int>(n)];
+}
+
+static char const* ch_sets_names[] = {
+    "Scan type number",
+    "Channel set number",
+    "Channel type",
+    "Channel set start time",
+    "Channel set end time",
+    "Descale multiplier",
+    "Number of channels",
+    "Subscans per channel set",
+    "Channel gain",
+    "Alias filter frequency",
+    "Alias filter slope",
+    "Low cut filter frequency",
+    "Low cut filter slope",
+    "First notch filter",
+    "Second notch filter",
+    "Third notch filter",
+    "Extended channel set number",
+    "Extended header flag",
+    "Trace header extension",
+    "Verical stack",
+    "Streamer no",
+    "Array forming",
+    "Number of samples",
+    "Sample interval",
+    "Filter phase",
+    "Physical unit",
+    "Filter delay",
+    "Description"
+};
+
+char const* CommonSEGD::ChannelSetHeader::name_as_string(Name n)
+{
+    return ch_sets_names[static_cast<int>(n)];
 }
 } //sedaman

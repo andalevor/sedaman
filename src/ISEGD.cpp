@@ -16,6 +16,7 @@ using std::streampos;
 using std::streamsize;
 using std::string;
 using std::unordered_map;
+using std::vector;
 
 namespace sedaman {
 class ISEGD::Impl {
@@ -118,14 +119,14 @@ ISEGD::Impl::Impl(CommonSEGD com)
     //while (curr_pos != end_of_data) {
     read_general_headers();
     // read header for each scan type
-    // uint16_t ch_sets_per_scan_type_num = sgd.p_general_header().channel_sets_per_scan_type == 0xff ? sgd.p_general_header2().ext_ch_sets_per_scan_type : sgd.p_general_header().channel_sets_per_scan_type;
-    //    for (int i = sgd.p_general_header().scan_types_per_record; i; --i) {
-    //        sgd.p_ch_sets().push_back({});
-    //        for (int j = ch_sets_per_scan_type_num; j; --j) {
-    //            sgd.p_ch_sets()[i].push_back(read_ch_set_hdr());
-    //        }
-    //    }
-    //}
+    uint16_t ch_sets_per_scan_type_num = common.general_header.channel_sets_per_scan_type == 1665 ? common.general_header2.ext_ch_sets_per_scan_type : common.general_header.channel_sets_per_scan_type;
+    for (int i = 0; i < common.general_header.scan_types_per_record; ++i) {
+        common.ch_sets.push_back({});
+        for (int j = ch_sets_per_scan_type_num; j; --j) {
+            common.ch_sets[i].push_back(read_ch_set_hdr());
+        }
+    }
+    //  }
 }
 
 void ISEGD::Impl::read_general_headers()
@@ -145,7 +146,6 @@ void ISEGD::Impl::read_general_headers()
         gh2.ext_ch_sets_per_scan_type = read_u16(&buf);
         if (gh2.segd_rev_major < 3) {
             read_gen_hdr2(buf);
-            file_skip_bytes(CommonSEGD::GEN_HDR_SIZE * (common.general_header.add_gen_hdr_blocks - 1));
         } else {
             read_gen_hdr2_and_3(buf);
             uint16_t add_blks_num = common.general_header.add_gen_hdr_blocks == 0xf ? gh2.ext_num_add_blks_in_gen_hdr : common.general_header.add_gen_hdr_blocks;
@@ -699,27 +699,12 @@ void ISEGD::Impl::read_measurement_hdr(char const* buf)
 
 CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
 {
-    fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
-    char const* buf = common.gen_hdr_buf.data();
-    CommonSEGD::ChannelSetHeader csh = {};
-    csh.scan_type_number = from_bcd<int>(&buf, false, 2);
-    csh.channel_set_number = from_bcd<int>(&buf, false, 2);
-    csh.channel_set_start_time = read_u16(&buf) * 2;
-    csh.channel_set_end_time = read_u16(&buf) * 2;
-    csh.descale_multiplier = swap(read_u16(&buf)) / pow(2, 10);
-    csh.number_of_channels = from_bcd<int>(&buf, false, 4);
-    csh.channel_type = from_bcd<int>(&buf, false, 1);
-    ++buf;
-    csh.samples_per_channel = from_bcd<int>(&buf, false, 1);
-    csh.channel_gain = from_bcd<int>(&buf, true, 1);
-    csh.alias_filter_freq = from_bcd<int>(&buf, false, 4);
-    csh.alias_filter_slope = from_bcd<int>(&buf, false, 4);
-    csh.low_cut_filter_freq = from_bcd<int>(&buf, false, 4);
-    csh.low_cut_filter_slope = from_bcd<int>(&buf, false, 4);
-    csh.first_notch_filter = from_bcd<int>(&buf, false, 4);
-    csh.second_notch_filter = from_bcd<int>(&buf, false, 4);
-    csh.third_notch_filter = from_bcd<int>(&buf, false, 4);
-    return csh;
+    if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3)
+        common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_SIZE);
+    else
+        common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_R3_SIZE);
+    fill_buf_from_file(common.ch_set_hdr_buf.data(), common.ch_set_hdr_buf.size());
+    return CommonSEGD::ChannelSetHeader(common);
 }
 
 void ISEGD::Impl::fill_buf_from_file(char* buf, streamsize n)
@@ -845,6 +830,11 @@ optional<CommonSEGD::GeneralHeaderOri> ISEGD::general_header_orient_hdr_blk()
 optional<CommonSEGD::GeneralHeaderMeas> ISEGD::general_header_measurement_blk()
 {
     return pimpl->add_gen_hdr_blks_map.find(Impl::MEASUREMENT_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderMeas>(pimpl->common.general_header_meas) : std::nullopt;
+}
+
+vector<vector<CommonSEGD::ChannelSetHeader>> const& ISEGD::channel_set_headers()
+{
+    return pimpl->common.ch_sets;
 }
 
 ISEGD::ISEGD(string name)

@@ -10,8 +10,10 @@
 #ifndef SEDAMAN_COMMON_SEGD_HPP
 #define SEDAMAN_COMMON_SEGD_HPP
 
+#include <array>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -971,14 +973,15 @@ public:
     } general_header_meas;
     class ChannelSetHeader {
     public:
+        explicit ChannelSetHeader(CommonSEGD& com);
         int scan_type_number;
-        int channel_set_number;
-        int32_t channel_set_start_time;
-        int32_t channel_set_end_time;
-        int descale_multiplier;
-        int number_of_channels;
-        int channel_type;
-        int samples_per_channel;
+        uint16_t channel_set_number;
+        uint8_t channel_type;
+        uint32_t channel_set_start_time;
+        uint32_t channel_set_end_time;
+        double descale_multiplier;
+        uint32_t number_of_channels;
+        int subscans_per_ch_set;
         int channel_gain;
         int alias_filter_freq;
         int alias_filter_slope;
@@ -987,18 +990,76 @@ public:
         int first_notch_filter;
         int second_notch_filter;
         int third_notch_filter;
+        uint16_t ext_ch_set_num;
+        int ext_hdr_flag;
+        int trc_hdr_ext;
+        uint8_t vert_stack;
+        uint8_t streamer_no;
+        uint8_t array_forming;
+        std::optional<uint32_t> number_of_samples();
+        std::optional<uint32_t> samp_int();
+        std::optional<uint8_t> filter_phase();
+        std::optional<uint8_t> physical_unit();
+        std::optional<uint32_t> filter_delay();
+        std::optional<std::array<char, 27>> description();
+        ///
+        /// \enum
+        /// \brief Constants to use with names.
+        /// \see names
+        ///
+        enum class Name {
+            SCAN_TYPE_NUMBER,
+            CHANNEL_SET_NUMBER,
+            CHANNEL_TYPE,
+            CHANNEL_SET_START_TIME,
+            CHANNEL_SET_END_TIME,
+            DESCALE_MULTIPLIER,
+            NUMBER_OF_CHANNELS,
+            SUBSCANS_PER_CH_SET,
+            CHANNEL_GAIN,
+            ALIAS_FILTER_FREQ,
+            ALIAS_FILTER_SLOPE,
+            LOW_CUT_FILTER_FREQ,
+            LOW_CUT_FILTER_SLOPE,
+            FIRST_NOTCH_FILTER,
+            SECOND_NOTCH_FILTER,
+            THIRD_NOTCH_FILTER,
+            EXT_CH_SET_NUM,
+            EXT_HDR_FLAG,
+            TRC_HDR_EXT,
+            VERT_STACK,
+            STREAMER_NO,
+            ARRAY_FORMING,
+            NUMBER_OF_SAMPLES,
+            SAMPLE_INTERVAL,
+            FILTER_PHASE,
+            PHYSICAL_UNIT,
+            FILTER_DELAY,
+            DESCRIPTION
+        };
+        static char const* name_as_string(Name n);
+
+    private:
+        uint8_t segd_rev_major;
+        uint32_t p_number_of_samples;
+        uint32_t p_samp_int;
+        uint8_t p_filter_phase;
+        uint8_t p_physical_unit;
+        uint32_t p_filter_delay;
+        std::array<char, 27> p_description;
     };
     static constexpr int GEN_HDR_SIZE = 32;
     static constexpr int CH_SET_HDR_SIZE = 32;
     static constexpr int CH_SET_HDR_R3_SIZE = 96;
     ///
-    /// \param file_name Name of file.
+    /// \pa m file_name Name of file.
     /// \param mode Choose input or output.
     ///
     CommonSEGD(std::string file_name, std::fstream::openmode mode);
     std::string file_name;
     std::fstream file;
     std::vector<char> gen_hdr_buf;
+    std::vector<char> ch_set_hdr_buf;
     std::vector<std::vector<ChannelSetHeader>> ch_sets;
 };
 } // namespace sedaman

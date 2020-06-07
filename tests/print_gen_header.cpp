@@ -1,4 +1,5 @@
 #include "ISEGD.hpp"
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 
@@ -18,13 +19,15 @@ private:
     int size;
 };
 
+int get_max();
+
 int main(int argc, char* argv[])
 {
     if (argc < 2)
         return 1;
     try {
         sedaman::ISEGD segd(argv[1]);
-        Printer p(66);
+        Printer p(get_max());
         auto gen_hdr = segd.general_header();
         using name = sedaman::CommonSEGD::GeneralHeader::Name;
         auto name_as_string = sedaman::CommonSEGD::GeneralHeader::name_as_string;
@@ -107,4 +110,28 @@ int main(int argc, char* argv[])
         return 1;
     }
     return 0;
+}
+
+int get_max()
+{
+    int result = 0;
+    for (int i = static_cast<int>(sedaman::CommonSEGD::GeneralHeader::Name::FILE_NUMBER);
+         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeader::Name::EXTERNAL_HEADER_BLOCKS); ++i) {
+        int len = strlen(sedaman::CommonSEGD::GeneralHeader::name_as_string(static_cast<sedaman::CommonSEGD::GeneralHeader::Name>(i)));
+        if (result < len)
+            result = len;
+    }
+    for (int i = static_cast<int>(sedaman::CommonSEGD::GeneralHeader2::Name::EXPANDED_FILE_NUMBER);
+         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeader2::Name::GEN_HEADER_BLOCK_NUM); ++i) {
+        int len = strlen(sedaman::CommonSEGD::GeneralHeader2::name_as_string(static_cast<sedaman::CommonSEGD::GeneralHeader2::Name>(i)));
+        if (result < len)
+            result = len;
+    }
+    for (int i = static_cast<int>(sedaman::CommonSEGD::GeneralHeaderN::Name::EXPANDED_FILE_NUMBER);
+         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeaderN::Name::SOURCE_SET_NUMBER); ++i) {
+        int len = strlen(sedaman::CommonSEGD::GeneralHeaderN::name_as_string(static_cast<sedaman::CommonSEGD::GeneralHeaderN::Name>(i)));
+        if (result < len)
+            result = len;
+    }
+    return result;
 }

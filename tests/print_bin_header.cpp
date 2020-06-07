@@ -1,4 +1,5 @@
 #include "ISEGY.hpp"
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 
@@ -18,6 +19,8 @@ private:
     int size;
 };
 
+int get_max();
+
 int main(int argc, char* argv[])
 {
     if (argc < 2)
@@ -27,7 +30,7 @@ int main(int argc, char* argv[])
         auto bin_hdr = segy.binary_header();
         using name = sedaman::CommonSEGY::BinaryHeader::Name;
         auto name_as_string = sedaman::CommonSEGY::BinaryHeader::name_as_string;
-        Printer p(63);
+        Printer p(get_max());
         p(bin_hdr.job_id, name_as_string(name::JOB_ID));
         p(bin_hdr.line_num, name_as_string(name::LINE_NUM));
         p(bin_hdr.reel_num, name_as_string(name::REEL_NUM));
@@ -77,4 +80,16 @@ int main(int argc, char* argv[])
         return 1;
     }
     return 0;
+}
+
+int get_max()
+{
+    int result = 0;
+    for (int i = static_cast<int>(sedaman::CommonSEGY::BinaryHeader::Name::JOB_ID);
+         i != static_cast<int>(sedaman::CommonSEGY::BinaryHeader::Name::NUM_OF_TRAILER_STANZA); ++i) {
+        int len = strlen(sedaman::CommonSEGY::BinaryHeader::name_as_string(static_cast<sedaman::CommonSEGY::BinaryHeader::Name>(i)));
+        if (result < len)
+            result = len;
+    }
+    return result;
 }
