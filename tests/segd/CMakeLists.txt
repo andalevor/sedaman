@@ -1,0 +1,7 @@
+add_executable(print_gen_header print_gen_header.cpp)
+#add_test(print_gen_header_test print_gen_header)
+target_link_libraries(print_gen_header sedaman)
+
+add_executable(print_ch_sets print_channel_sets.cpp)
+#add_test(print_ch_sets_test print_ch_sets)
+target_link_libraries(print_ch_sets sedaman)
