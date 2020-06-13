@@ -42,7 +42,7 @@ valarray<double> const& Trace::samples() const { return pimpl->d_samples; }
 optional<Trace::Header::Value> Trace::Header::get(string key) const
 {
     auto it = pimpl->d_hdr.find(move(key));
-    return it == pimpl->d_hdr.end() ? nullopt : optional<Header::Value>(it->second);
+    return it == pimpl->d_hdr.end() ? nullopt : optional<Value>(it->second);
 }
 void Trace::Header::set(string key, Value v) { pimpl->d_hdr[move(key)] = v; }
 
