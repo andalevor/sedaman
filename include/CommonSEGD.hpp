@@ -1051,6 +1051,11 @@ public:
     static constexpr int GEN_HDR_SIZE = 32;
     static constexpr int CH_SET_HDR_SIZE = 32;
     static constexpr int CH_SET_HDR_R3_SIZE = 96;
+    static constexpr int SKEW_BLOCK_SIZE = 32;
+    static constexpr int EXTENDED_HEADER_SIZE = 32;
+    static constexpr int EXTERNAL_HEADER_SIZE = 32;
+    static constexpr int TRACE_HEADER_SIZE = 20;
+    static constexpr int TRACE_HEADER_EXT_SIZE = 32;
     ///
     /// \pa m file_name Name of file.
     /// \param mode Choose input or output.
@@ -1060,6 +1065,7 @@ public:
     std::fstream file;
     std::vector<char> gen_hdr_buf;
     std::vector<char> ch_set_hdr_buf;
+    std::vector<char> trc_hdr_buf;
     std::vector<std::vector<ChannelSetHeader>> ch_sets;
 };
 } // namespace sedaman

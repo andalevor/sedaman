@@ -72,7 +72,7 @@ public:
     /// \brief checks for next trace in file
     /// \return true if there is at least one trace
     ///
-    bool has_next();
+    bool has_trace();
     ///
     /// \fn read_header
     /// \brief reads header, skips samples

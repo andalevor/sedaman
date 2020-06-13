@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
         std::string const& text_header = in.text_headers()[0];
         sedaman::CommonSEGY::BinaryHeader const& binary_header = in.binary_header();
         sedaman::OSEGYRev0 out(argv[2], text_header, binary_header);
-        while (in.has_next()) {
+        while (in.has_trace()) {
             sedaman::Trace t = in.read_trace();
             out.write_trace(t);
         }

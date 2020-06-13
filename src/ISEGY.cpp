@@ -784,7 +784,7 @@ Trace ISEGY::read_trace()
     return Trace(move(hdr), move(samples));
 }
 
-bool ISEGY::has_next()
+bool ISEGY::has_trace()
 {
     if (pimpl->curr_pos == pimpl->end_of_data)
         return false;

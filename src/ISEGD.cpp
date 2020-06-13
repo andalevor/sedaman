@@ -1,4 +1,6 @@
 #include "ISEGD.hpp"
+#include "Exception.hpp"
+#include "Trace.hpp"
 #include "util.hpp"
 #include <cmath>
 #include <cstring>
@@ -7,6 +9,7 @@
 
 using std::fstream;
 using std::function;
+using std::get;
 using std::ios_base;
 using std::make_unique;
 using std::move;
@@ -64,11 +67,13 @@ private:
     CommonSEGD::ChannelSetHeader read_ch_set_hdr();
     void fill_buf_from_file(char* buf, streamsize n);
     void file_skip_bytes(streamoff off);
+    function<double(char const**)> read_sample;
     function<uint16_t(char const**)> read_u16;
     function<int16_t(char const**)> read_i16;
     function<uint32_t(char const**)> read_u24;
     function<int32_t(char const**)> read_i24;
     function<uint32_t(char const**)> read_u32;
+    function<int32_t(char const**)> read_i32;
     function<uint64_t(char const**)> read_u64;
     void read_gen_hdr1(char const* buf);
     void read_gen_hdr2(char const* buf);
@@ -98,26 +103,24 @@ private:
     void read_electromagnetic_src_recv_hdr(char const* buf);
     void read_orientation_hdr(char const* buf);
     void read_measurement_hdr(char const* buf);
+    Trace::Header read_header();
+    void assign_raw_readers();
+    void assign_sample_reading();
 };
+
+static bool is_big_endian(void);
 
 ISEGD::Impl::Impl(CommonSEGD com)
     : common(move(com))
-    , read_u16([](char const** buf) { return swap(read<uint16_t>(buf)); })
-    , read_i16([](char const** buf) { return swap(read<int16_t>(buf)); })
-    , read_u24([](char const** buf) { return swap(read<uint16_t>(buf)) | read<uint8_t>(buf) << 16; })
-    , read_i24([](char const** buf) {
-        uint32_t result = swap(read<uint16_t>(buf)) | read<uint8_t>(buf) << 16;
-        return result & 0x800000 ? result | 0xff000000 : result;
-    })
-    , read_u32([](char const** buf) { return swap(read<uint32_t>(buf)); })
-    , read_u64([](char const** buf) { return swap(read<uint64_t>(buf)); })
 {
     common.file.seekg(0, ios_base::end);
     end_of_data = common.file.tellg();
     common.file.seekg(0, ios_base::beg);
     curr_pos = common.file.tellg();
+    assign_raw_readers();
     //while (curr_pos != end_of_data) {
     read_general_headers();
+    assign_sample_reading();
     // read header for each scan type
     uint16_t ch_sets_per_scan_type_num = common.general_header.channel_sets_per_scan_type == 1665 ? common.general_header2.ext_ch_sets_per_scan_type : common.general_header.channel_sets_per_scan_type;
     for (int i = 0; i < common.general_header.scan_types_per_record; ++i) {
@@ -125,8 +128,40 @@ ISEGD::Impl::Impl(CommonSEGD com)
         for (int j = ch_sets_per_scan_type_num; j; --j) {
             common.ch_sets[i].push_back(read_ch_set_hdr());
         }
+        uint16_t skew_blks = common.general_header.skew_blocks == 165 ? common.general_header2.extended_skew_blocks : common.general_header.skew_blocks;
+        file_skip_bytes(skew_blks * CommonSEGD::SKEW_BLOCK_SIZE);
     }
+    uint32_t extended_blocks = common.general_header.extended_hdr_blocks == 165 ? common.general_header2.extended_hdr_blocks : common.general_header.extended_hdr_blocks;
+    uint32_t external_blocks = common.general_header.external_hdr_blocks == 165 ? common.general_header2.external_hdr_blocks : common.general_header.external_hdr_blocks;
+    file_skip_bytes(extended_blocks * CommonSEGD::EXTENDED_HEADER_SIZE + external_blocks * CommonSEGD::EXTERNAL_HEADER_SIZE);
     //  }
+}
+
+void ISEGD::Impl::assign_raw_readers()
+{
+    if (is_big_endian()) {
+        read_u16 = [](char const** buf) { return read<uint16_t>(buf); };
+        read_i16 = [](char const** buf) { return read<int16_t>(buf); };
+        read_u24 = [](char const** buf) { return read<uint16_t>(buf) << 8 | read<uint8_t>(buf); };
+        read_i24 = [](char const** buf) {
+            uint32_t result = read<uint16_t>(buf) << 8 | read<uint8_t>(buf);
+            return result & 0x800000 ? result | 0xff000000 : result;
+        };
+        read_u32 = [](char const** buf) { return read<uint32_t>(buf); };
+        read_i32 = [](char const** buf) { return read<int32_t>(buf); };
+        read_u64 = [](char const** buf) { return read<uint64_t>(buf); };
+    } else {
+        read_u16 = [](char const** buf) { return swap(read<uint16_t>(buf)); };
+        read_i16 = [](char const** buf) { return swap(read<int16_t>(buf)); };
+        read_u24 = [](char const** buf) { return swap(read<uint16_t>(buf)) | read<uint8_t>(buf) << 16; };
+        read_i24 = [](char const** buf) {
+            uint32_t result = swap(read<uint16_t>(buf)) | read<uint8_t>(buf) << 16;
+            return result & 0x800000 ? result | 0xff000000 : result;
+        };
+        read_u32 = [](char const** buf) { return swap(read<uint32_t>(buf)); };
+        read_i32 = [](char const** buf) { return swap(read<int32_t>(buf)); };
+        read_u64 = [](char const** buf) { return swap(read<uint64_t>(buf)); };
+    }
 }
 
 void ISEGD::Impl::read_general_headers()
@@ -697,6 +732,140 @@ void ISEGD::Impl::read_measurement_hdr(char const* buf)
     ghM.gen_hdr_block_type = *buf++;
 }
 
+void ISEGD::Impl::assign_sample_reading()
+{
+    switch (common.general_header.format_code) {
+    case 8015:
+        read_sample = [this](char const** buf) {
+            static double result[4];
+            static int counter = 0;
+            if (counter == 4)
+                counter = 0;
+            if (!counter) {
+                int exp[4];
+                for (int i = 0; i < 4; i += 2) {
+                    exp[i] = **buf >> 4;
+                    exp[i + 1] = **buf++ & 0xf;
+                }
+                for (int i = 0; i < 4; ++i)
+                    result[i] = read_i16(buf) * pow(2, exp[i] - 15);
+            }
+            return result[counter++];
+        };
+        break;
+    case 8022:
+        read_sample = [](char const** buf) {
+            int sign = **buf & 0b10000000 ? -1 : 1;
+            int exp = **buf & 0b01110000;
+            return sign * (**buf++ & 0xf) * pow(2, exp - 4);
+        };
+        break;
+    case 8024:
+        read_sample = [](char const** buf) {
+            int sign = **buf & 0b10000000 ? -1 : 1;
+            int exp = **buf & 0b01110000;
+            uint16_t frac = **buf++ & 0xf;
+            frac = (frac << 8) & **buf++;
+            return sign * frac * pow(2, exp - 12);
+        };
+        break;
+    case 8036:
+        read_sample = [this](char const** buf) { return read_i24(buf); };
+        break;
+    case 8038:
+        read_sample = [this](char const** buf) { return read_i32(buf); };
+        break;
+    case 8042:
+        read_sample = [](char const** buf) {
+            int sign = **buf & 0b10000000 ? -1 : 1;
+            int exp = **buf & 0b01100000;
+            return sign * (**buf++ & 0x1f) / pow(2, 5) * pow(16, exp);
+        };
+        break;
+    case 8044:
+        read_sample = [](char const** buf) {
+            int sign = **buf & 0b10000000 ? -1 : 1;
+            int exp = **buf & 0b01100000;
+            uint16_t frac = **buf++ & 0x1f;
+            frac = (frac << 8) & **buf++;
+            return sign * frac / pow(2, 13) * pow(16, exp);
+        };
+        break;
+    case 8048:
+        read_sample = [this](char const** buf) {
+            int sign = **buf & 0b10000000 ? -1 : 1;
+            int exp = **buf++ & 0b01111111;
+            return sign * read_u24(buf) / pow(2, 24) * pow(16, exp);
+        };
+        break;
+    case 8058:
+        read_sample = [this](char const** buf) {
+            uint32_t tmp = read_u32(buf);
+            float result;
+            memcpy(&result, &tmp, sizeof(tmp));
+            return result;
+        };
+        break;
+    case 8080:
+        read_sample = [this](char const** buf) {
+            uint64_t tmp = read_u64(buf);
+            double result;
+            memcpy(&result, &tmp, sizeof(tmp));
+            return result;
+        };
+        break;
+    case 9036:
+        if (is_big_endian())
+            read_sample = [this](char const** buf) { return swap(read_i24(buf)); };
+        else
+            read_sample = [](char const** buf) {
+                uint32_t result = read<uint16_t>(buf) << 8 | read<uint8_t>(buf);
+                return result & 0x800000 ? result | 0xff000000 : result;
+            };
+        break;
+    case 9038:
+        if (is_big_endian())
+            read_sample = [this](char const** buf) { return swap(read_i32(buf)); };
+        else
+            read_sample = [](char const** buf) { return read<int32_t>(buf); };
+        break;
+    case 9058:
+        if (is_big_endian())
+            read_sample = [this](char const** buf) {
+                uint32_t tmp = read_u32(buf);
+                float result;
+                memcpy(&result, &tmp, sizeof(tmp));
+                return result;
+            };
+        else
+            read_sample = [](char const** buf) {
+                uint32_t tmp = read<uint32_t>(buf);
+                float result;
+                memcpy(&result, &tmp, sizeof(tmp));
+                return result;
+            };
+        break;
+    case 9080:
+        if (is_big_endian())
+            read_sample = [this](char const** buf) {
+                uint64_t tmp = read_u64(buf);
+                double result;
+                memcpy(&result, &tmp, sizeof(tmp));
+                return result;
+            };
+        else
+            read_sample = [](char const** buf) {
+                uint64_t tmp = read<uint64_t>(buf);
+                double result;
+                memcpy(&result, &tmp, sizeof(tmp));
+                return result;
+            };
+        break;
+    default:
+        throw Exception(__FILE__, __LINE__, "Unsupported format");
+    }
+}
+
 CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
 {
     if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3)
@@ -705,6 +874,57 @@ CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
         common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_R3_SIZE);
     fill_buf_from_file(common.ch_set_hdr_buf.data(), common.ch_set_hdr_buf.size());
     return CommonSEGD::ChannelSetHeader(common);
+}
+
+Trace::Header ISEGD::Impl::read_header()
+{
+    unordered_map<string, Trace::Header::Value> hdr;
+    fill_buf_from_file(common.trc_hdr_buf.data(), common.trc_hdr_buf.size());
+    char const* buf = common.trc_hdr_buf.data();
+    hdr["FFID"] = from_bcd<int32_t>(&buf, false, 4);
+    hdr["SCAN_TYPE_NUM"] = from_bcd<int16_t>(&buf, false, 2);
+    hdr["CH_SET_NUM"] = from_bcd<int16_t>(&buf, false, 2);
+    hdr["TRACE_NUMBER"] = from_bcd<int32_t>(&buf, false, 4);
+    hdr["FIRST_TIMING_WORD"] = read_u24(&buf) / pow(2, 8);
+    int tr_hdr_ext = *buf++;
+    hdr["TR_HDR_EXT"] = tr_hdr_ext;
+    hdr["SAMPLE_SKEW"] = *buf++ / pow(2, 8);
+    hdr["TRACE_EDIT"] = *buf++;
+    hdr["TIME_BREAK_WIN"] = read_u24(&buf) / pow(2, 8);
+    uint16_t ext_ch_set_num = read_u16(&buf);
+    if (ext_ch_set_num)
+        hdr["CH_SET_NUM"] = ext_ch_set_num;
+    uint32_t ext_file_num = read_u24(&buf);
+    if (ext_file_num)
+        hdr["FFID"] = ext_file_num;
+    if (tr_hdr_ext || (common.general_header.add_gen_hdr_blocks && common.general_header2.segd_rev_major > 2)) {
+        fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
+        hdr["R_LINE"] = read_u24(&buf);
+        hdr["R_POINT"] = read_u24(&buf);
+        hdr["R_POINT_IDX"] = *buf++;
+        hdr["RESHOOT_IDX"] = *buf++;
+        hdr["GROUP_IDX"] = *buf++;
+        hdr["DEPTH_IDX"] = *buf++;
+        double ext_r_line = read_u24(&buf);
+        ext_r_line /= read_u16(&buf) / pow(2, 16);
+        if (ext_r_line != 0.0)
+            hdr["R_LINE"] = ext_r_line;
+        double ext_r_point = read_u24(&buf);
+        ext_r_point /= read_u16(&buf) / pow(2, 16);
+        if (ext_r_point != 0.0)
+            hdr["R_POINT"] = ext_r_point;
+        hdr["SENSOR_TYPE"] = *buf++;
+        uint32_t ext_tr_num = read_u24(&buf);
+        if (ext_tr_num)
+            hdr["TRACE_NUMBER"] = read_u24(&buf);
+        hdr["SAMP_NUM"] = read_u32(&buf);
+        hdr["SENSOR_MOVING"] = *buf++;
+        ++buf;
+        hdr["PHYSICAL_UNIT"] = *buf++;
+        --tr_hdr_ext;
+    }
+    file_skip_bytes(tr_hdr_ext * CommonSEGD::TRACE_HEADER_EXT_SIZE);
+    return Trace::Header(move(hdr));
 }
 
 void ISEGD::Impl::fill_buf_from_file(char* buf, streamsize n)
@@ -717,6 +937,16 @@ void ISEGD::Impl::file_skip_bytes(streamoff off)
 {
     common.file.seekg(off, ios_base::cur);
     curr_pos = common.file.tellg();
+}
+
+bool is_big_endian(void)
+{
+    union {
+        uint32_t i;
+        char c[4];
+    } bint = { 0x01020304 };
+
+    return bint.c[0] == 1;
 }
 
 CommonSEGD::GeneralHeader ISEGD::general_header()

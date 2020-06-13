@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     try {
         sedaman::ISEGY segy(argv[1]);
         int counter = 0;
-        while (segy.has_next()) {
+        while (segy.has_trace()) {
             sedaman::Trace t = segy.read_trace();
             ++counter;
         }

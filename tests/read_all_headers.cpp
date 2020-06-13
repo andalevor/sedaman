@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
     int32_t val = 1;
     try {
         sedaman::ISEGY segy(argv[1]);
-        while (segy.has_next()) {
+        while (segy.has_trace()) {
             sedaman::Trace::Header hdr = segy.read_header();
             std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");
             sedaman::Trace::Header::Value v;

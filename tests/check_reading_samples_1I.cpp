@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
         sedaman::ISEGY segy(argv[1]);
         std::deque<double> reference;
         bool first = true;
-        while (segy.has_next()) {
+        while (segy.has_trace()) {
             sedaman::Trace t = segy.read_trace();
             if (first) {
                 for (auto i : t.samples())
