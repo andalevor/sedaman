@@ -3,10 +3,11 @@
 #include <iomanip>
 #include <iostream>
 
-class Printer {
+class Printer
+{
 public:
     explicit Printer(int s)
-        : size { s }
+        : size{s}
     {
     }
     template <typename T>
@@ -21,11 +22,12 @@ private:
 
 int get_max();
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     if (argc < 2)
         return 1;
-    try {
+    try
+    {
         sedaman::ISEGY segy(argv[1]);
         auto bin_hdr = segy.binary_header();
         using name = sedaman::CommonSEGY::BinaryHeader::Name;
@@ -75,7 +77,9 @@ int main(int argc, char* argv[])
         p(bin_hdr.num_of_tr_in_file, name_as_string(name::NUM_OF_TR_IN_FILE));
         p(bin_hdr.byte_off_of_first_tr, name_as_string(name::BYTE_OFF_OF_FIRST_TR));
         p(bin_hdr.num_of_trailer_stanza, name_as_string(name::NUM_OF_TRAILER_STANZA));
-    } catch (std::exception& e) {
+    }
+    catch (std::exception &e)
+    {
         std::cerr << e.what() << '\n';
         return 1;
     }
@@ -86,7 +90,8 @@ int get_max()
 {
     int result = 0;
     for (int i = static_cast<int>(sedaman::CommonSEGY::BinaryHeader::Name::JOB_ID);
-         i != static_cast<int>(sedaman::CommonSEGY::BinaryHeader::Name::NUM_OF_TRAILER_STANZA); ++i) {
+         i != static_cast<int>(sedaman::CommonSEGY::BinaryHeader::Name::NUM_OF_TRAILER_STANZA); ++i)
+    {
         int len = strlen(sedaman::CommonSEGY::BinaryHeader::name_as_string(static_cast<sedaman::CommonSEGY::BinaryHeader::Name>(i)));
         if (result < len)
             result = len;

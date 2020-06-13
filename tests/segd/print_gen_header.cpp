@@ -3,10 +3,11 @@
 #include <iomanip>
 #include <iostream>
 
-class Printer {
+class Printer
+{
 public:
     explicit Printer(int s)
-        : size { s }
+        : size{s}
     {
     }
     template <typename T>
@@ -21,11 +22,12 @@ private:
 
 int get_max();
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     if (argc < 2)
         return 1;
-    try {
+    try
+    {
         sedaman::ISEGD segd(argv[1]);
         Printer p(get_max());
         auto gen_hdr = segd.general_header();
@@ -54,7 +56,8 @@ int main(int argc, char* argv[])
         p(gen_hdr.skew_blocks, name_as_string(name::SKEW_BLOCKS));
         p(gen_hdr.extended_hdr_blocks, name_as_string(name::EXTENDED_HEADER_BLOCKS));
         p(gen_hdr.external_hdr_blocks, name_as_string(name::EXTERNAL_HEADER_BLOCKS));
-        if (gen_hdr.add_gen_hdr_blocks) {
+        if (gen_hdr.add_gen_hdr_blocks)
+        {
             auto gen_hdr2 = *segd.general_header2();
             using name = sedaman::CommonSEGD::GeneralHeader2::Name;
             auto name_as_string = sedaman::CommonSEGD::GeneralHeader2::name_as_string;
@@ -70,13 +73,15 @@ int main(int argc, char* argv[])
             p(gen_hdr2.segd_rev_minor, name_as_string(name::SEGD_REVISION_MINOR));
             p(gen_hdr2.gen_trailer_num_of_blocks, name_as_string(name::EXPANDED_FILE_NUMBER));
             p(gen_hdr2.ext_record_len, name_as_string(name::EXTENDED_RECORD_LENGTH));
-            if (gen_hdr2.segd_rev_major > 2) {
+            if (gen_hdr2.segd_rev_major > 2)
+            {
                 p(gen_hdr2.record_set_number, name_as_string(name::RECORD_SET_NUMBER));
                 p(gen_hdr2.ext_num_add_blks_in_gen_hdr, name_as_string(name::EXT_NUM_ADD_BLKS_IN_GEN_HDR));
                 p(gen_hdr2.dominant_sampling_int, name_as_string(name::DOMINANT_SAMPLING_INT));
             }
             p(gen_hdr2.gen_hdr_block_num, name_as_string(name::GEN_HEADER_BLOCK_NUM));
-            if (gen_hdr.add_gen_hdr_blocks > 1 && gen_hdr2.segd_rev_major < 3) {
+            if (gen_hdr.add_gen_hdr_blocks > 1 && gen_hdr2.segd_rev_major < 3)
+            {
                 auto gen_hdrN = *segd.general_headerN();
                 using name = sedaman::CommonSEGD::GeneralHeaderN::Name;
                 auto name_as_string = sedaman::CommonSEGD::GeneralHeaderN::name_as_string;
@@ -91,7 +96,8 @@ int main(int argc, char* argv[])
                 p(gen_hdrN.gen_hdr_block_num, name_as_string(name::GEN_HEADER_BLOCK_NUM));
                 p(gen_hdrN.sou_set_num, name_as_string(name::SOURCE_SET_NUMBER));
             }
-            if (gen_hdr2.segd_rev_major > 2) {
+            if (gen_hdr2.segd_rev_major > 2)
+            {
                 auto gen_hdr3 = *segd.general_header3();
                 using name = sedaman::CommonSEGD::GeneralHeader3::Name;
                 auto name_as_string = sedaman::CommonSEGD::GeneralHeader3::name_as_string;
@@ -105,7 +111,9 @@ int main(int argc, char* argv[])
                 p(gen_hdr3.gen_hdr_block_num, name_as_string(name::GEN_HEADER_BLOCK_NUM));
             }
         }
-    } catch (std::exception& e) {
+    }
+    catch (std::exception &e)
+    {
         std::cerr << e.what() << '\n';
         return 1;
     }
@@ -116,19 +124,22 @@ int get_max()
 {
     int result = 0;
     for (int i = static_cast<int>(sedaman::CommonSEGD::GeneralHeader::Name::FILE_NUMBER);
-         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeader::Name::EXTERNAL_HEADER_BLOCKS); ++i) {
+         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeader::Name::EXTERNAL_HEADER_BLOCKS); ++i)
+    {
         int len = strlen(sedaman::CommonSEGD::GeneralHeader::name_as_string(static_cast<sedaman::CommonSEGD::GeneralHeader::Name>(i)));
         if (result < len)
             result = len;
     }
     for (int i = static_cast<int>(sedaman::CommonSEGD::GeneralHeader2::Name::EXPANDED_FILE_NUMBER);
-         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeader2::Name::GEN_HEADER_BLOCK_NUM); ++i) {
+         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeader2::Name::GEN_HEADER_BLOCK_NUM); ++i)
+    {
         int len = strlen(sedaman::CommonSEGD::GeneralHeader2::name_as_string(static_cast<sedaman::CommonSEGD::GeneralHeader2::Name>(i)));
         if (result < len)
             result = len;
     }
     for (int i = static_cast<int>(sedaman::CommonSEGD::GeneralHeaderN::Name::EXPANDED_FILE_NUMBER);
-         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeaderN::Name::SOURCE_SET_NUMBER); ++i) {
+         i != static_cast<int>(sedaman::CommonSEGD::GeneralHeaderN::Name::SOURCE_SET_NUMBER); ++i)
+    {
         int len = strlen(sedaman::CommonSEGD::GeneralHeaderN::name_as_string(static_cast<sedaman::CommonSEGD::GeneralHeaderN::Name>(i)));
         if (result < len)
             result = len;

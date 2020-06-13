@@ -1,13 +1,16 @@
 #include "ISEGY.hpp"
 #include <iostream>
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     if (argc < 2)
         return 1;
-    try {
+    try
+    {
         sedaman::ISEGY segy(argv[1]);
-    } catch (std::exception& e) {
+    }
+    catch (std::exception &e)
+    {
         std::cerr << e.what() << '\n';
         return 0;
     }

@@ -5,17 +5,19 @@
 template <typename T, typename U>
 void check(T first, U second)
 {
-    if (first != second) {
+    if (first != second)
+    {
         std::cerr << first << " not equal to " << second << '\n';
         exit(1);
     }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     if (argc < 2)
         return 1;
-    try {
+    try
+    {
         sedaman::ISEGY segy(argv[1]);
         sedaman::CommonSEGY::BinaryHeader bin_hdr = segy.binary_header();
         check(bin_hdr.job_id, 9999);
@@ -35,7 +37,9 @@ int main(int argc, char* argv[])
         check(bin_hdr.measure_system, 1);
         check(bin_hdr.SEGY_rev_major_ver, 1);
         check(bin_hdr.fixed_tr_length, 1);
-    } catch (std::exception& e) {
+    }
+    catch (std::exception &e)
+    {
         std::cerr << e.what() << '\n';
         return 1;
     }
