@@ -5,3 +5,11 @@ target_link_libraries(print_gen_header sedaman)
 add_executable(print_ch_sets print_channel_sets.cpp)
 #add_test(print_ch_sets_test print_ch_sets)
 target_link_libraries(print_ch_sets sedaman)
+
+add_executable(print_trc_hdr print_trace_header.cpp)
+#add_test(print_trc_hdr_test print_ch_sets)
+target_link_libraries(print_trc_hdr sedaman)
+
+add_executable(print_trc_samples print_trace_samples.cpp)
+#add_test(print_trc_samples_test print_trc_samples)
+target_link_libraries(print_trc_samples sedaman)

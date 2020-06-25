@@ -15,10 +15,16 @@ int main(int argc, char *argv[])
             sedaman::Trace::Header hdr = segy.read_header();
             std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");
             sedaman::Trace::Header::Value v;
-            if (opt)
+            if (opt) {
                 v = *opt;
-            else
+			} else {
+				std::cerr << "No such header\n";
                 return 1;
+			}
+			if (!std::holds_alternative<int32_t>(v)) {
+				std::cerr << "Wrong header format in variant\n";
+				return 1;
+			}
             if (std::get<int32_t>(v) != val++)
             {
                 std::cerr << std::get<int32_t>(v) << " not equal to " << val - 1 << '\n';

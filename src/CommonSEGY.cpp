@@ -17,7 +17,7 @@ namespace sedaman
 
     CommonSEGY::CommonSEGY(string name, ios_base::openmode mode, BinaryHeader bh,
                            vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>> add_hdr_map)
-        : binary_header(move(bh)), file_name(move(name)), add_tr_hdr_map(move(add_hdr_map))
+        : binary_header(move(bh)), file_name(move(name)), hdr_buf{}, add_tr_hdr_map(move(add_hdr_map))
     {
         fstream fl;
         fl.exceptions(fstream::failbit | fstream::badbit);

@@ -1,11 +1,7 @@
-///
 /// \file CommonSEGD.hpp
 /// \brief header file with CommonSEGD class declaration
-///
 /// \author andalevor
-///
 /// \date   2020/05/04
-///
 
 #ifndef SEDAMAN_COMMON_SEGD_HPP
 #define SEDAMAN_COMMON_SEGD_HPP
@@ -17,26 +13,20 @@
 #include <string>
 #include <vector>
 
-///
 /// \namespace sedaman
 /// \brief General namespace for sedaman library.
-///
 namespace sedaman
 {
-    ///
     /// \class CommonSEGD
     /// \brief Class with common SEGD parts.
     /// Holds common data and members for ISEGD and OSEGD classes.
     /// \see ISEGD
     /// \see OSEGD
-    ///
     class CommonSEGD
     {
     public:
-        ///
         /// \class GeneralHeader
         /// \brief Class for first general header
-        ///
         class GeneralHeader
         {
         public:
@@ -62,11 +52,9 @@ namespace sedaman
             int skew_blocks;
             int extended_hdr_blocks;
             int external_hdr_blocks;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 FILE_NUMBER,
@@ -94,11 +82,9 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header;
-        ///
         /// \class GeneralHeader
         /// \brief Class for second general header
         /// Mandatory from SEGD rev 1
-        ///
         class GeneralHeader2
         {
         public:
@@ -115,11 +101,9 @@ namespace sedaman
             uint16_t ext_num_add_blks_in_gen_hdr;
             uint32_t dominant_sampling_int;
             uint8_t gen_hdr_block_num;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -138,11 +122,9 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header2;
-        ///
         /// \class GeneralHeader
         /// \brief Class for N-th general header
         /// Optional from SEGD rev 1 till 2
-        ///
         class GeneralHeaderN
         {
         public:
@@ -155,11 +137,9 @@ namespace sedaman
             int16_t phase_angle;
             uint8_t gen_hdr_block_num;
             uint8_t sou_set_num;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -174,11 +154,9 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_headerN;
-        ///
         /// \class GeneralHeader
         /// \brief Class for second general header
         /// Mandatory from SEGD rev 3
-        ///
         class GeneralHeader3
         {
         public:
@@ -189,11 +167,9 @@ namespace sedaman
             uint8_t extd_rec_mode;
             uint8_t rel_time_mode;
             uint8_t gen_hdr_block_num;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 TIME_ZERO,
@@ -206,21 +182,17 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header3;
-        ///
         /// \class GeneralHeaderVes
         /// \brief Class for general header vessel\crew information
-        ///
         class GeneralHeaderVes
         {
         public:
             char abbr_vessel_crew_name[3];
             char vessel_crew_name[28];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 ABBR_VESSEL_OR_CREW_NAME,
@@ -229,20 +201,16 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_ves;
-        ///
         /// \class GeneralHeaderSur
         /// \brief Class for general header for Survea Area Name
-        ///
         class GeneralHeaderSur
         {
         public:
             char survey_area_name[31];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 SURVEY_ARE_NAME,
@@ -250,20 +218,16 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_sur;
-        ///
         /// \class GeneralHeaderCli
         /// \brief Class for general header for Client Name
-        ///
         class GeneralHeaderCli
         {
         public:
             char client_name[31];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 CLIENT_NAME,
@@ -271,21 +235,17 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_cli;
-        ///
         /// \class GeneralHeaderJob
         /// \brief Class for general header for Job ID
-        ///
         class GeneralHeaderJob
         {
         public:
             char abbr_job_id[5];
             char job_id[26];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 ABBR_JOB_ID,
@@ -294,21 +254,17 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_job;
-        ///
         /// \class GeneralHeaderLin
         /// \brief Class for general header for Line ID
-        ///
         class GeneralHeaderLin
         {
         public:
             char line_abbr[7];
             char line_id[24];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 LINE_ABBR,
@@ -317,10 +273,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_lin;
-        ///
         /// \class GeneralHeaderVib
         /// \brief Class for general header for Vibrator source information
-        ///
         class GeneralHeaderVib
         {
         public:
@@ -341,11 +295,9 @@ namespace sedaman
             uint16_t size;
             uint16_t offset_depth;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -368,10 +320,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_vib;
-        ///
         /// \class GeneralHeaderExp
         /// \brief Class for general header for Explosive source information
-        ///
         class GeneralHeaderExp
         {
         public:
@@ -392,11 +342,9 @@ namespace sedaman
             uint16_t size;
             uint16_t offset_depth;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -419,10 +367,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_exp;
-        ///
         /// \class GeneralHeaderAir
         /// \brief Class for general header for Airgun source information
-        ///
         class GeneralHeaderAir
         {
         public:
@@ -442,11 +388,9 @@ namespace sedaman
             uint16_t size;
             uint16_t offset_depth;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -468,10 +412,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_air;
-        ///
         /// \class GeneralHeaderWat
         /// \brief Class for general header for Watergun source information
-        ///
         class GeneralHeaderWat
         {
         public:
@@ -491,11 +433,9 @@ namespace sedaman
             uint16_t size;
             uint16_t offset_depth;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -517,10 +457,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_wat;
-        ///
         /// \class GeneralHeaderEle
         /// \brief Class for general header for Electromagnetic source information
-        ///
         class GeneralHeaderEle
         {
         public:
@@ -540,11 +478,9 @@ namespace sedaman
             uint16_t size;
             uint16_t offset_depth;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -566,10 +502,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_ele;
-        ///
         /// \class GeneralHeaderOth
         /// \brief Class for general header for Other source information
-        ///
         class GeneralHeaderOth
         {
         public:
@@ -587,11 +521,9 @@ namespace sedaman
             uint16_t size;
             uint16_t offset_depth;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EXPANDED_FILE_NUMBER,
@@ -611,10 +543,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_oth;
-        ///
         /// \class GeneralHeaderAdd
         /// \brief Class for general header for Additional source information
-        ///
         class GeneralHeaderAdd
         {
         public:
@@ -624,11 +554,9 @@ namespace sedaman
             uint8_t source_moving;
             char error_description[20];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 TIME,
@@ -640,10 +568,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_add;
-        ///
         /// \class GeneralHeaderSaux
         /// \brief Class for general header for Source Auxiliary information
-        ///
         class GeneralHeaderSaux
         {
         public:
@@ -664,11 +590,9 @@ namespace sedaman
             uint16_t ch_set_num_5;
             uint32_t trace_num_5;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 SOURCE_ID,
@@ -691,20 +615,16 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_saux;
-        ///
         /// \class GeneralHeaderCoord
         /// \brief Class for general header for coordinate reference system identification
-        ///
         class GeneralHeaderCoord
         {
         public:
             char crs[31];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 COORD_REF_SYS,
@@ -712,10 +632,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_coord;
-        ///
         /// \class GeneralHeaderPos1
         /// \brief Class for general header for position blocks 1 identification
-        ///
         class GeneralHeaderPos1
         {
         public:
@@ -727,11 +645,9 @@ namespace sedaman
             uint16_t hor_error_orientation;
             uint8_t position_type;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 TIME_OF_POSITION,
@@ -745,10 +661,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_pos1;
-        ///
         /// \class GeneralHeaderPos2
         /// \brief Class for general header for position blocks 2 identification
-        ///
         class GeneralHeaderPos2
         {
         public:
@@ -759,11 +673,9 @@ namespace sedaman
             uint8_t pos1_valid;
             uint8_t pos1_quality;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 CRS_A_COORD1,
@@ -776,10 +688,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_pos2;
-        ///
         /// \class GeneralHeaderPos3
         /// \brief Class for general header for position blocks 3 identification
-        ///
         class GeneralHeaderPos3
         {
         public:
@@ -790,11 +700,9 @@ namespace sedaman
             uint8_t pos2_valid;
             uint8_t pos2_quality;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 CRS_B_COORD1,
@@ -807,10 +715,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_pos3;
-        ///
         /// \class GeneralHeaderRel
         /// \brief Class for general header for relative position identification
-        ///
         class GeneralHeaderRel
         {
         public:
@@ -819,11 +725,9 @@ namespace sedaman
             uint32_t offset_vert;
             char description[19];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 OFFSET_EAST,
@@ -834,10 +738,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_rel;
-        ///
         /// \class GeneralHeaderSen
         /// \brief Class for general header for sensor info
-        ///
         class GeneralHeaderSen
         {
         public:
@@ -846,11 +748,9 @@ namespace sedaman
             uint8_t instr_test_result;
             char serial_number[28];
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 INSTRUMENT_TEST_TIME,
@@ -861,10 +761,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_sen;
-        ///
         /// \class GeneralHeaderSCa
         /// \brief Class for general header for sensor calibration
-        ///
         class GeneralHeaderSCa
         {
         public:
@@ -876,11 +774,9 @@ namespace sedaman
             uint32_t phase2;
             uint8_t calib_applied;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 FREQUENCY_1,
@@ -894,10 +790,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_sca;
-        ///
         /// \class GeneralHeaderTim
         /// \brief Class for general header for time drift
-        ///
         class GeneralHeaderTim
         {
         public:
@@ -908,11 +802,9 @@ namespace sedaman
             uint8_t timedrift_corr;
             uint8_t corr_method;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 TIME_OF_DEPLOYMENT,
@@ -925,10 +817,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_tim;
-        ///
         /// \class GeneralHeaderElSR
         /// \brief Class for general header for electomagnetic src/recv desc block
-        ///
         class GeneralHeaderElSR
         {
         public:
@@ -940,11 +830,9 @@ namespace sedaman
             uint32_t equip_offset_y;
             uint32_t equip_offset_z;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 EQUIPMENT_DIMENTION_X,
@@ -958,10 +846,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_elsr;
-        ///
         /// \class GeneralHeaderOri
         /// \brief Class for general header for orientation block
-        ///
         class GeneralHeaderOri
         {
         public:
@@ -975,11 +861,9 @@ namespace sedaman
             uint8_t rot_applied;
             uint8_t rot_north_applied;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 ROTATION_X_AXIS,
@@ -996,10 +880,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header_ori;
-        ///
         /// \class GeneralHeaderMeas
         /// \brief Class for general header for measurement block
-        ///
         class GeneralHeaderMeas
         {
         public:
@@ -1011,11 +893,9 @@ namespace sedaman
             uint16_t unit_of_measure;
             uint16_t measurement_description;
             uint8_t gen_hdr_block_type;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 TIMESTAMP,
@@ -1061,11 +941,9 @@ namespace sedaman
             std::optional<uint8_t> physical_unit();
             std::optional<uint32_t> filter_delay();
             std::optional<std::array<char, 27>> description();
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 SCAN_TYPE_NUMBER,
@@ -1116,17 +994,17 @@ namespace sedaman
         static constexpr int EXTERNAL_HEADER_SIZE = 32;
         static constexpr int TRACE_HEADER_SIZE = 20;
         static constexpr int TRACE_HEADER_EXT_SIZE = 32;
-        ///
-        /// \pa m file_name Name of file.
+        /// \param file_name Name of file.
         /// \param mode Choose input or output.
-        ///
         CommonSEGD(std::string file_name, std::fstream::openmode mode);
         std::string file_name;
         std::fstream file;
-        std::vector<char> gen_hdr_buf;
+        char gen_hdr_buf[CommonSEGD::GEN_HDR_SIZE];
         std::vector<char> ch_set_hdr_buf;
-        std::vector<char> trc_hdr_buf;
+        char trc_hdr_buf[CommonSEGD::TRACE_HEADER_SIZE];
+        std::vector<char> trc_samp_buf;
         std::vector<std::vector<ChannelSetHeader>> ch_sets;
+        int bites_per_sample;
     };
 } // namespace sedaman
 

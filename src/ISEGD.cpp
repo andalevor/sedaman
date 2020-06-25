@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
-#include <unordered_map>
 
 using std::fstream;
 using std::function;
@@ -19,6 +18,7 @@ using std::streampos;
 using std::streamsize;
 using std::string;
 using std::unordered_map;
+using std::valarray;
 using std::vector;
 
 namespace sedaman
@@ -27,9 +27,14 @@ namespace sedaman
     {
     public:
         Impl(CommonSEGD com);
+        unordered_map<string, Trace::Header::Value> read_trace_header();
+        valarray<double> read_trace_samples(unordered_map<string, Trace::Header::Value> &hdr);
+        void read_headers_before_traces();
         CommonSEGD common;
         streampos curr_pos;
         streampos end_of_data;
+        uint64_t chans_in_record;
+        uint64_t chans_read;
         enum ADD_GEN_HDR_BLKS
         {
             VESSEL_CREW_ID = 0x10,
@@ -106,12 +111,36 @@ namespace sedaman
         void read_electromagnetic_src_recv_hdr(char const *buf);
         void read_orientation_hdr(char const *buf);
         void read_measurement_hdr(char const *buf);
-        Trace::Header read_header();
         void assign_raw_readers();
         void assign_sample_reading();
     };
 
     static bool is_big_endian(void);
+
+    bool ISEGD::has_record()
+    {
+        return pimpl->curr_pos != pimpl->end_of_data;
+    }
+
+    bool ISEGD::has_trace()
+    {
+        return pimpl->chans_in_record != pimpl->chans_read;
+    }
+
+    Trace ISEGD::read_trace()
+    {
+        unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trace_header();
+        valarray<double> samples = pimpl->read_trace_samples(hdr);
+        ++pimpl->chans_read;
+        if (pimpl->chans_in_record == pimpl->chans_read)
+        {
+            pimpl->chans_in_record = pimpl->chans_read = 0;
+            pimpl->common.ch_sets.clear();
+            if (has_record())
+                pimpl->read_headers_before_traces();
+        }
+        return Trace(move(hdr), move(samples));
+    }
 
     ISEGD::Impl::Impl(CommonSEGD com)
         : common(move(com))
@@ -121,7 +150,11 @@ namespace sedaman
         common.file.seekg(0, ios_base::beg);
         curr_pos = common.file.tellg();
         assign_raw_readers();
-        //while (curr_pos != end_of_data) {
+        read_headers_before_traces();
+    }
+
+    void ISEGD::Impl::read_headers_before_traces()
+    {
         read_general_headers();
         assign_sample_reading();
         // read header for each scan type
@@ -131,15 +164,17 @@ namespace sedaman
             common.ch_sets.push_back({});
             for (int j = ch_sets_per_scan_type_num; j; --j)
             {
-                common.ch_sets[i].push_back(read_ch_set_hdr());
+                CommonSEGD::ChannelSetHeader hdr = read_ch_set_hdr();
+                chans_in_record += hdr.number_of_channels;
+                common.ch_sets[i].push_back(move(hdr));
             }
             uint16_t skew_blks = common.general_header.skew_blocks == 165 ? common.general_header2.extended_skew_blocks : common.general_header.skew_blocks;
             file_skip_bytes(skew_blks * CommonSEGD::SKEW_BLOCK_SIZE);
         }
         uint32_t extended_blocks = common.general_header.extended_hdr_blocks == 165 ? common.general_header2.extended_hdr_blocks : common.general_header.extended_hdr_blocks;
         uint32_t external_blocks = common.general_header.external_hdr_blocks == 165 ? common.general_header2.external_hdr_blocks : common.general_header.external_hdr_blocks;
-        file_skip_bytes(extended_blocks * CommonSEGD::EXTENDED_HEADER_SIZE + external_blocks * CommonSEGD::EXTERNAL_HEADER_SIZE);
-        //  }
+        file_skip_bytes(extended_blocks * CommonSEGD::EXTENDED_HEADER_SIZE +
+                        external_blocks * CommonSEGD::EXTERNAL_HEADER_SIZE);
     }
 
     void ISEGD::Impl::assign_raw_readers()
@@ -174,18 +209,18 @@ namespace sedaman
 
     void ISEGD::Impl::read_general_headers()
     {
-        fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
-        char const *buf = common.gen_hdr_buf.data();
+        fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
+        char const *buf = common.gen_hdr_buf;
         read_gen_hdr1(buf);
         if (common.general_header.add_gen_hdr_blocks)
         {
-            fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
-            char const *buf = common.gen_hdr_buf.data();
+            fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
+            char const *buf = common.gen_hdr_buf;
             CommonSEGD::GeneralHeader2 &gh2 = common.general_header2;
             buf += 10;
             gh2.segd_rev_major = *buf++;
             gh2.segd_rev_minor = *buf++;
-            buf = common.gen_hdr_buf.data();
+            buf = common.gen_hdr_buf;
             gh2.expanded_file_num = read_u24(&buf);
             gh2.ext_ch_sets_per_scan_type = read_u16(&buf);
             if (gh2.segd_rev_major < 3)
@@ -198,9 +233,8 @@ namespace sedaman
                 uint16_t add_blks_num = common.general_header.add_gen_hdr_blocks == 0xf ? gh2.ext_num_add_blks_in_gen_hdr : common.general_header.add_gen_hdr_blocks;
                 for (uint16_t i = add_blks_num - 2; i; --i)
                 {
-                    fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
-                    char const *buf = common.gen_hdr_buf.data();
-                    read_rev3_add_gen_hdr_blks(buf);
+                    fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
+                    read_rev3_add_gen_hdr_blks(common.gen_hdr_buf);
                 }
             }
         }
@@ -246,8 +280,8 @@ namespace sedaman
         gh2.gen_hdr_block_num = *++buf;
         if (common.general_header.add_gen_hdr_blocks > 1)
         {
-            fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
-            char const *buf = common.gen_hdr_buf.data();
+            fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
+            char const *buf = common.gen_hdr_buf;
             CommonSEGD::GeneralHeaderN &ghN = common.general_headerN;
             ghN.expanded_file_number = read_u24(&buf);
             ghN.sou_line_num = read_i24(&buf);
@@ -276,8 +310,8 @@ namespace sedaman
         gh2.dominant_sampling_int = read_u16(&buf);
         gh2.external_hdr_blocks = read_u24(&buf);
         gh2.gen_hdr_block_num = *++buf;
-        fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
-        buf = common.gen_hdr_buf.data();
+        fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
+        buf = common.gen_hdr_buf;
         CommonSEGD::GeneralHeader3 &gh3 = common.general_header3;
         gh3.time_zero = read_u64(&buf);
         gh3.record_size = read_u64(&buf);
@@ -752,6 +786,7 @@ namespace sedaman
         switch (common.general_header.format_code)
         {
         case 8015:
+            common.bites_per_sample = 20;
             read_sample = [this](char const **buf) {
                 static double result[4];
                 static int counter = 0;
@@ -772,6 +807,7 @@ namespace sedaman
             };
             break;
         case 8022:
+            common.bites_per_sample = 8;
             read_sample = [](char const **buf) {
                 int sign = **buf & 0b10000000 ? -1 : 1;
                 int exp = **buf & 0b01110000;
@@ -779,6 +815,7 @@ namespace sedaman
             };
             break;
         case 8024:
+            common.bites_per_sample = 16;
             read_sample = [](char const **buf) {
                 int sign = **buf & 0b10000000 ? -1 : 1;
                 int exp = **buf & 0b01110000;
@@ -788,12 +825,15 @@ namespace sedaman
             };
             break;
         case 8036:
+            common.bites_per_sample = 24;
             read_sample = [this](char const **buf) { return read_i24(buf); };
             break;
         case 8038:
+            common.bites_per_sample = 32;
             read_sample = [this](char const **buf) { return read_i32(buf); };
             break;
         case 8042:
+            common.bites_per_sample = 8;
             read_sample = [](char const **buf) {
                 int sign = **buf & 0b10000000 ? -1 : 1;
                 int exp = **buf & 0b01100000;
@@ -801,6 +841,7 @@ namespace sedaman
             };
             break;
         case 8044:
+            common.bites_per_sample = 16;
             read_sample = [](char const **buf) {
                 int sign = **buf & 0b10000000 ? -1 : 1;
                 int exp = **buf & 0b01100000;
@@ -810,6 +851,7 @@ namespace sedaman
             };
             break;
         case 8048:
+            common.bites_per_sample = 32;
             read_sample = [this](char const **buf) {
                 int sign = **buf & 0b10000000 ? -1 : 1;
                 int exp = **buf++ & 0b01111111;
@@ -817,6 +859,7 @@ namespace sedaman
             };
             break;
         case 8058:
+            common.bites_per_sample = 32;
             read_sample = [this](char const **buf) {
                 uint32_t tmp = read_u32(buf);
                 float result;
@@ -825,6 +868,7 @@ namespace sedaman
             };
             break;
         case 8080:
+            common.bites_per_sample = 64;
             read_sample = [this](char const **buf) {
                 uint64_t tmp = read_u64(buf);
                 double result;
@@ -833,6 +877,7 @@ namespace sedaman
             };
             break;
         case 9036:
+            common.bites_per_sample = 24;
             if (is_big_endian())
                 read_sample = [this](char const **buf) { return swap(read_i24(buf)); };
             else
@@ -842,12 +887,14 @@ namespace sedaman
                 };
             break;
         case 9038:
+            common.bites_per_sample = 32;
             if (is_big_endian())
                 read_sample = [this](char const **buf) { return swap(read_i32(buf)); };
             else
                 read_sample = [](char const **buf) { return read<int32_t>(buf); };
             break;
         case 9058:
+            common.bites_per_sample = 32;
             if (is_big_endian())
                 read_sample = [this](char const **buf) {
                     uint32_t tmp = read_u32(buf);
@@ -864,6 +911,7 @@ namespace sedaman
                 };
             break;
         case 9080:
+            common.bites_per_sample = 64;
             if (is_big_endian())
                 read_sample = [this](char const **buf) {
                     uint64_t tmp = read_u64(buf);
@@ -894,11 +942,11 @@ namespace sedaman
         return CommonSEGD::ChannelSetHeader(common);
     }
 
-    Trace::Header ISEGD::Impl::read_header()
+    unordered_map<string, Trace::Header::Value> ISEGD::Impl::read_trace_header()
     {
         unordered_map<string, Trace::Header::Value> hdr;
-        fill_buf_from_file(common.trc_hdr_buf.data(), common.trc_hdr_buf.size());
-        char const *buf = common.trc_hdr_buf.data();
+        fill_buf_from_file(common.trc_hdr_buf, CommonSEGD::TRACE_HEADER_SIZE);
+        char const *buf = common.trc_hdr_buf;
         hdr["FFID"] = from_bcd<int32_t>(&buf, false, 4);
         hdr["SCAN_TYPE_NUM"] = from_bcd<int16_t>(&buf, false, 2);
         hdr["CH_SET_NUM"] = from_bcd<int16_t>(&buf, false, 2);
@@ -917,33 +965,69 @@ namespace sedaman
             hdr["FFID"] = ext_file_num;
         if (tr_hdr_ext || (common.general_header.add_gen_hdr_blocks && common.general_header2.segd_rev_major > 2))
         {
-            fill_buf_from_file(common.gen_hdr_buf.data(), common.gen_hdr_buf.size());
+            fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::TRACE_HEADER_EXT_SIZE);
+            char const *buf = common.gen_hdr_buf;
             hdr["R_LINE"] = read_u24(&buf);
             hdr["R_POINT"] = read_u24(&buf);
             hdr["R_POINT_IDX"] = *buf++;
-            hdr["RESHOOT_IDX"] = *buf++;
-            hdr["GROUP_IDX"] = *buf++;
-            hdr["DEPTH_IDX"] = *buf++;
-            double ext_r_line = read_u24(&buf);
-            ext_r_line /= read_u16(&buf) / pow(2, 16);
-            if (ext_r_line != 0.0)
-                hdr["R_LINE"] = ext_r_line;
-            double ext_r_point = read_u24(&buf);
-            ext_r_point /= read_u16(&buf) / pow(2, 16);
-            if (ext_r_point != 0.0)
-                hdr["R_POINT"] = ext_r_point;
-            hdr["SENSOR_TYPE"] = *buf++;
-            uint32_t ext_tr_num = read_u24(&buf);
-            if (ext_tr_num)
-                hdr["TRACE_NUMBER"] = read_u24(&buf);
-            hdr["SAMP_NUM"] = read_u32(&buf);
-            hdr["SENSOR_MOVING"] = *buf++;
-            ++buf;
-            hdr["PHYSICAL_UNIT"] = *buf++;
+            if (common.general_header2.segd_rev_major < 3)
+            {
+                hdr["SAMP_NUM"] = read_u24(&buf);
+            }
+            else
+            {
+                hdr["RESHOOT_IDX"] = *buf++;
+                hdr["GROUP_IDX"] = *buf++;
+                hdr["DEPTH_IDX"] = *buf++;
+            }
+            if (common.general_header2.segd_rev_major > 1)
+            {
+                double ext_r_line = read_u24(&buf);
+                ext_r_line += read_u16(&buf) / pow(2, 16);
+                if (ext_r_line != 0.0)
+                    hdr["R_LINE"] = ext_r_line;
+                double ext_r_point = read_u24(&buf);
+                ext_r_point += read_u16(&buf) / pow(2, 16);
+                if (ext_r_point != 0.0)
+                    hdr["R_POINT"] = ext_r_point;
+                hdr["SENSOR_TYPE"] = *buf++;
+            }
+            if (common.general_header2.segd_rev_major > 2)
+            {
+                uint32_t ext_tr_num = read_u24(&buf);
+                if (ext_tr_num)
+                    hdr["TRACE_NUMBER"] = ext_tr_num;
+                hdr["SAMP_NUM"] = read_u32(&buf);
+                hdr["SENSOR_MOVING"] = *buf++;
+                ++buf;
+                hdr["PHYSICAL_UNIT"] = *buf++;
+            }
             --tr_hdr_ext;
         }
         file_skip_bytes(tr_hdr_ext * CommonSEGD::TRACE_HEADER_EXT_SIZE);
-        return Trace::Header(move(hdr));
+        return hdr;
+    } // namespace sedaman
+
+    valarray<double> ISEGD::Impl::read_trace_samples(unordered_map<string, Trace::Header::Value> &hdr)
+    {
+        uint32_t samp_num;
+        CommonSEGD::ChannelSetHeader curr_ch_set = common.ch_sets[get<int16_t>(hdr["SCAN_TYPE_NUM"]) - 1]
+                                                                 [get<int16_t>(hdr["CH_SET_NUM"]) - 1];
+        if (hdr.find("SAMP_NUM") != hdr.end())
+            samp_num = get<uint32_t>(hdr["SAMP_NUM"]);
+        else if (curr_ch_set.number_of_samples())
+            samp_num = *curr_ch_set.number_of_samples();
+        else
+            samp_num = curr_ch_set.subscans_per_ch_set;
+        if (common.trc_samp_buf.size() != (samp_num * common.bites_per_sample) / 8)
+            common.trc_samp_buf.resize((samp_num * common.bites_per_sample) / 8);
+        fill_buf_from_file(common.trc_samp_buf.data(), common.trc_samp_buf.size());
+        char const *buf = common.trc_samp_buf.data();
+        valarray<double> result(samp_num);
+        double descale = pow(2, curr_ch_set.descale_multiplier);
+        for (uint32_t i = 0; i < samp_num; ++i)
+            result[i] = read_sample(&buf) * descale;
+        return result;
     }
 
     void ISEGD::Impl::fill_buf_from_file(char *buf, streamsize n)
@@ -960,7 +1044,8 @@ namespace sedaman
 
     bool is_big_endian(void)
     {
-        union {
+        union
+        {
             uint32_t i;
             char c[4];
         } bint = {0x01020304};

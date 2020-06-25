@@ -1,11 +1,7 @@
-///
 /// \file CommonSEGY.hpp
 /// \brief header file with CommonSEGY class declaration
-///
 /// \author andalevor
-///
 /// \date   2019/06/07
-///
 
 #ifndef SEDAMAN_COMMON_SEGY_HPP
 #define SEDAMAN_COMMON_SEGY_HPP
@@ -15,26 +11,18 @@
 #include <string>
 #include <vector>
 
-///
-/// \namespace sedaman
 /// \brief General namespace for sedaman library.
-///
 namespace sedaman
 {
-    ///
-    /// \class CommonSEGY
     /// \brief Class with common SEGY parts.
     /// Holds common data and members for ISEGY and OSEGY classes.
     /// \see ISEGY
     /// \see OSEGY
-    ///
     class CommonSEGY
     {
     public:
-        ///
         /// \class BinaryHeader
         /// \brief SEGY binary header storage class.
-        ///
         class BinaryHeader
         {
         public:
@@ -82,11 +70,9 @@ namespace sedaman
             uint64_t num_of_tr_in_file;
             uint64_t byte_off_of_first_tr;
             int32_t num_of_trailer_stanza;
-            ///
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
-            ///
             enum class Name
             {
                 JOB_ID,
@@ -136,10 +122,8 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } binary_header;
-        ///
         /// \enum
         /// \brief Enumiration to set type of additional trace header values.
-        ///
         enum class TrHdrValueType
         {
             int8_t,
@@ -154,49 +138,26 @@ namespace sedaman
             ieee_single,
             ieee_double
         };
-        ///
-        /// \fn ebcdic_to_ascii
         /// \brief Transform text header from ebcdic to ascii.
         /// \param ebcdic String in ebcdic encoding.
-        ///
         static void ebcdic_to_ascii(std::string &ebcdic);
-        ///
-        /// \fn ascii_to_ebcdic
         /// \brief Transform text header from ascii to ebcdic.
         /// \param ascii String in ascii encoding.
-        ///
         static void ascii_to_ebcdic(std::string &ascii);
-        ///
-        /// \var default_text_header
         /// \brief Default SEGY text header from standard.
-        ///
         static char const *default_text_header;
-        ///
-        /// \var TEXT_HEADER_SIZE
         /// \brief SEGY text header length in bytes
-        ///
         static constexpr int TEXT_HEADER_SIZE = 3200;
-        ///
-        /// \var BIN_HEADER_SIZE
         /// \brief SEGY binary header length in bytes
-        ///
         static constexpr int BIN_HEADER_SIZE = 400;
-        ///
-        /// \var TR_HEADER_SIZE
         /// \brief SEGY trace header length in bytes
-        ///
         static constexpr int TR_HEADER_SIZE = 240;
-        ///
-        /// \var trace_header_description
         /// \brief Can be used to browse headers or get there description.
-        ///
         static std::map<std::string, std::string> trace_header_description;
-        ///
         /// \param file_name Name of SEGY file.
         /// \param mode Used to switch between input and output
         /// \param bh Can be used to override binary header values. Usefull for OSegy.
         /// \param add_tr_hdrs_map Each item of vector is pair of headers name and map.
-        ///
         CommonSEGY(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
                    std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
         std::string file_name;

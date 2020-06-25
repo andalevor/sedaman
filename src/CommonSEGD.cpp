@@ -16,7 +16,7 @@ using std::vector;
 namespace sedaman
 {
     CommonSEGD::CommonSEGD(string name, fstream::openmode mode)
-        : file_name(move(name)), gen_hdr_buf(vector<char>(CommonSEGD::GEN_HDR_SIZE)), trc_hdr_buf(vector<char>(CommonSEGD::TRACE_HEADER_SIZE))
+        : file_name(move(name)), gen_hdr_buf{}, trc_hdr_buf{}
     {
         fstream fl;
         fl.exceptions(fstream::failbit | fstream::badbit);
@@ -39,7 +39,9 @@ namespace sedaman
             channel_set_number = from_bcd<int>(&buf, false, 2);
             channel_set_start_time = read_u16(&buf) * 2;
             channel_set_end_time = read_u16(&buf) * 2;
-            descale_multiplier = static_cast<double>(swap(read_i16(&buf))) / pow(2, 10);
+            uint16_t val = read<uint16_t>(&buf);
+            descale_multiplier = static_cast<double>((val & 0x8000) ? -1 : 1) *
+                                 (val & 0x7fff) / pow(2, 10);
             number_of_channels = from_bcd<int>(&buf, false, 4);
             channel_type = from_bcd<int>(&buf, false, 1);
             ++buf;

@@ -47,6 +47,15 @@ namespace sedaman
     }
     void Trace::Header::set(string key, Value v) { pimpl->d_hdr[move(key)] = v; }
 
+	vector<string> Trace::Header::keys() const
+	{
+		vector<string> result;
+		for (auto it = pimpl->d_hdr.cbegin(),
+			 end = pimpl->d_hdr.cend(); it != end; ++it)
+			result.push_back(it->first);
+		return result;
+	}
+
     Trace::Header::Header(Header const &hdr)
         : pimpl{make_unique<Impl>(hdr.pimpl->d_hdr)}
     {

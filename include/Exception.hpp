@@ -1,11 +1,7 @@
-///
 /// \file Exception.hpp
 /// \brief header file with Exception class declaration
-///
 /// \author andalevor
-///
 /// \date   2019/06/06
-///
 
 #ifndef SEDAMAN_SEXCEPTION_HPP
 #define SEDAMAN_SEXCEPTION_HPP

@@ -1,32 +1,23 @@
-///
 /// \file OSEGYRev2.hpp
 /// \brief header file with OSEGYRev1 class declaration
-///
 /// \author andalevor
-///
 /// \date   2020/04/23
-///
 
 #ifndef SEDAMAN_OSEGYREV2_HPP
 #define SEDAMAN_OSEGYREV2_HPP
 
 #include "OSEGY.hpp"
 
-///
 /// \namespace sedaman
 /// \brief General namespace for sedaman library.
-///
 namespace sedaman
 {
-    ///
     /// \class OSEGYRev2
     /// \brief Class for SEGY reading.
     /// Defines methods to write information from SEGY files.
-    ///
     class OSEGYRev2 : public OSEGY
     {
     public:
-        ///
         /// \param file_name Name of SEGY file.
         /// \param text_headers Vector with SEGY text header and extended text headers.
         /// \param bin_header Could be used to set some files in binary header.
@@ -43,15 +34,12 @@ namespace sedaman
         /// Key - offset starting second additional trace header. Offset starts from 0.
         /// Header value should not overlap 240 bytes.
         /// Maps value is a pair of header values name and header values type.
-        ///
         OSEGYRev2(std::string file_name, std::vector<std::string> text_headers = {},
                   CommonSEGY::BinaryHeader bin_header = {},
                   std::vector<std::string> trailer_stanzas = {},
                   std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map = {});
-        ///
         /// \param tr Trace to write.
         /// \brief Writes trace to the end of file.
-        ///
         void write_trace(Trace &trace) override;
         virtual ~OSEGYRev2();
 
