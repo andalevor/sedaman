@@ -5,6 +5,7 @@
 #include "Trace.hpp"
 #include <cstring>
 
+using sedaman::CommonSEGY;
 using sedaman::ISEGD;
 using sedaman::ISEGY;
 using sedaman::OSEGYRev0;
@@ -15,6 +16,11 @@ using std::holds_alternative;
 using std::move;
 using std::string;
 using std::strncpy;
+
+struct sedaman_CommonSEGY_BinaryHeader
+{
+	CommonSEGY::BinaryHeader hdr;
+};
 
 struct sedaman_ISEGY
 {
@@ -43,9 +49,9 @@ struct sedaman_Trace
 		: trc(move(t)) {}
 	Trace trc;
 };
-
+#include <iostream>
 sedaman_ISEGY *sedaman_ISEGY_new(char const *file_name,
-								 char const **err)
+								 char *err)
 {
 	try
 	{
@@ -55,10 +61,8 @@ sedaman_ISEGY *sedaman_ISEGY_new(char const *file_name,
 	catch (exception &e)
 	{
 		string const &s = e.what();
-		char *new_s = static_cast<char *>(malloc(s.size() + 1));
-		strncpy(new_s, s.data(), s.size());
-		new_s[s.size()] = '\0';
-		*err = new_s;
+		strncpy(err, s.data(), 255);
+		err[255] = '\0';
 		return NULL;
 	}
 }

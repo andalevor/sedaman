@@ -14,6 +14,10 @@
 extern "C"
 {
 #endif
+	/// \struct sedaman_CommonSegy_BinaryHeader
+	/// \brief CommonSegy::BinaryHeader wrapper
+	/// \see CommonSegy::BinaryHeader
+	typedef struct sedaman_CommonSEGY_BinaryHeader sedaman_CommonSEGY_BinaryHeader;
 	/// \struct sedaman_Trace
 	/// \brief Trace wrapper
 	/// \see Trace
@@ -92,7 +96,7 @@ extern "C"
 	/// \param err
 	/// \see ISEGY::ISEGY
 	/// \return sedaman_ISEGY*
-	sedaman_ISEGY *sedaman_ISEGY_new(char const *file_name, char const **err);
+	sedaman_ISEGY *sedaman_ISEGY_new(char const *file_name, char *err);
 	/// \brief Frees resources
 	/// ISEGY destructor wrapper
 	/// \see ISEGY::~ISEGY
@@ -153,12 +157,29 @@ extern "C"
 	/// \see OSEGY
 	typedef struct sedaman_OSEGYRev0 sedaman_OSEGYRev0;
 	/// \brief Creates new sedaman_OSEGYRev0 instance
-	/// One of OSEGYRev0s constructor wrappers
+	/// One of OSEGYRev0 constructor wrappers
 	/// \param file_name
 	/// \param err
 	/// \see OSEGYRev0::OSEGYRev0
 	/// \return sedaman_OSEGYRev0*
 	sedaman_OSEGYRev0 *sedaman_OSEGYRev0_new(char const *file_name, char const **err);
+	/// \brief Creates new sedaman_OSEGYRev0 instance
+	/// One of OSEGYRev0 constructor wrappers
+	/// \param file_name
+	/// \param text_header
+	/// \param err
+	/// \see OSEGYRev0::OSEGYRev0
+	/// \return sedaman_OSEGYRev0*
+	sedaman_OSEGYRev0 *sedaman_OSEGYRev0_new_with_text_header(char const *file_name, char const *text_header, char const **err);
+	/// \brief Creates new sedaman_OSEGYRev0 instance
+	/// One of OSEGYRev0 constructor wrappers
+	/// \param file_name
+	/// \param text_header
+	/// \param bin_header
+	/// \param err
+	/// \see OSEGYRev0::OSEGYRev0
+	/// \return sedaman_OSEGYRev0*
+	sedaman_OSEGYRev0 *sedaman_OSEGYRev0_new_with_text_and_bin_headers(char const *file_name, char const *text_header, sedaman_CommonSEGY_BinaryHeader *bin_header, char const **err);
 	/// \brief Frees resources
 	/// OSEGYRev0 destructor wrapper
 	/// \see OSEGYRev0::~OSEGYRev0
