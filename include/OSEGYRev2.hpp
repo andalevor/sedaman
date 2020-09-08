@@ -14,7 +14,7 @@ namespace sedaman
 {
     /// \class OSEGYRev2
     /// \brief Class for SEGY reading.
-    /// Defines methods to write information from SEGY files.
+    /// Defines methods to write information to SEGY files.
     class OSEGYRev2 : public OSEGY
     {
     public:

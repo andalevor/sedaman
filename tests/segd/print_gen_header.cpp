@@ -80,21 +80,21 @@ int main(int argc, char *argv[])
                 p(gen_hdr2.dominant_sampling_int, name_as_string(name::DOMINANT_SAMPLING_INT));
             }
             p(gen_hdr2.gen_hdr_block_num, name_as_string(name::GEN_HEADER_BLOCK_NUM));
-            if (gen_hdr.add_gen_hdr_blocks > 1 && gen_hdr2.segd_rev_major < 3)
+
+            for (auto hdr : segd.general_headerN())
             {
-                auto gen_hdrN = *segd.general_headerN();
                 using name = sedaman::CommonSEGD::GeneralHeaderN::Name;
                 auto name_as_string = sedaman::CommonSEGD::GeneralHeaderN::name_as_string;
-                std::cout << "\nGeneral Header #N:\n";
-                p(gen_hdrN.expanded_file_number, name_as_string(name::EXPANDED_FILE_NUMBER));
-                p(gen_hdrN.sou_line_num, name_as_string(name::SOURCE_LINE_NUMBER));
-                p(gen_hdrN.sou_point_num, name_as_string(name::SOURCE_POINT_NUMBER));
-                p(gen_hdrN.sou_point_index, name_as_string(name::SOURCE_POINT_INDEX));
-                p(gen_hdrN.phase_control, name_as_string(name::PHASE_CONTROL));
-                p(gen_hdrN.type_vibrator, name_as_string(name::TYPE_VIBRATOR));
-                p(gen_hdrN.phase_angle, name_as_string(name::PHASE_ANGLE));
-                p(gen_hdrN.gen_hdr_block_num, name_as_string(name::GEN_HEADER_BLOCK_NUM));
-                p(gen_hdrN.sou_set_num, name_as_string(name::SOURCE_SET_NUMBER));
+                std::cout << "\nGeneral Header #:" << hdr.gen_hdr_block_num << "\n";
+                p(hdr.expanded_file_number, name_as_string(name::EXPANDED_FILE_NUMBER));
+                p(hdr.sou_line_num, name_as_string(name::SOURCE_LINE_NUMBER));
+                p(hdr.sou_point_num, name_as_string(name::SOURCE_POINT_NUMBER));
+                p(hdr.sou_point_index, name_as_string(name::SOURCE_POINT_INDEX));
+                p(hdr.phase_control, name_as_string(name::PHASE_CONTROL));
+                p(hdr.type_vibrator, name_as_string(name::TYPE_VIBRATOR));
+                p(hdr.phase_angle, name_as_string(name::PHASE_ANGLE));
+                p(hdr.gen_hdr_block_num, name_as_string(name::GEN_HEADER_BLOCK_NUM));
+                p(hdr.sou_set_num, name_as_string(name::SOURCE_SET_NUMBER));
             }
             if (gen_hdr2.segd_rev_major > 2)
             {

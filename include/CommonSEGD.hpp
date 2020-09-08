@@ -12,6 +12,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <map>
 
 /// \namespace sedaman
 /// \brief General namespace for sedaman library.
@@ -101,6 +102,7 @@ namespace sedaman
             uint16_t ext_num_add_blks_in_gen_hdr;
             uint32_t dominant_sampling_int;
             uint8_t gen_hdr_block_num;
+            uint16_t sequence_number;
             /// \enum
             /// \brief Constants to use with names.
             /// \see names
@@ -122,10 +124,49 @@ namespace sedaman
             };
             static char const *name_as_string(Name n);
         } general_header2;
+        class AdditionalGeneralHeader
+        {
+        public:
+            enum ADD_GEN_HDR_BLKS
+            {
+                VESSEL_CREW_ID = 0x10,
+                SURVEY_AREA_NAME = 0x11,
+                CLIENT_NAME = 0x12,
+                JOB_ID = 0x13,
+                LINE_ID = 0x14,
+                VIBRATOR_SOURCE_INFO = 0x15,
+                EXPLOSIVE_SOURCE_INFO = 0x16,
+                AIRGUN_SOURCE_INFO = 0x17,
+                WATERGUN_SOURCE_INFO = 0x18,
+                ELECTROMAGNETIC_SOURCE = 0x19,
+                OTHER_SOURCE_TYPE_INFO = 0x1f,
+                ADD_SOURCE_INFO = 0x20,
+                SOU_AUX_CHAN_REF = 0x21,
+                CH_SET_DESCRIP_BLK1 = 0x30,
+                CH_SET_DESCRIP_BLK2 = 0x31,
+                CH_SET_DESCRIP_BLK3 = 0x32,
+                TRACE_HDR_EXT1 = 0x40,
+                SENSOR_INFO_HDR_EXT_BLK = 0x41,
+                TIME_STAMP_HDR_BLK = 0x42,
+                SENSOR_CALIBRATION_BLK = 0x43,
+                TIME_DRIFT_BLK = 0x44,
+                ELECTROMAG_SRC_REC_DESC_BLK = 0x45,
+                POSITION_BLK1 = 0x50,
+                POSITION_BLK2 = 0x51,
+                POSITION_BLK3 = 0x52,
+                COORD_REF_SYSTEM = 0x55,
+                RELATIVE_POS_BLK = 0x56,
+                ORIENT_HDR_BLK = 0x60,
+                MEASUREMENT_BLK = 0x61,
+                GEN_TRAILER_DESC_BLK = 0x70
+            };
+            virtual uint8_t type() = 0;
+            virtual ~AdditionalGeneralHeader() {}
+        };
         /// \class GeneralHeader
         /// \brief Class for N-th general header
         /// Optional from SEGD rev 1 till 2
-        class GeneralHeaderN
+        class GeneralHeaderN : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -153,7 +194,9 @@ namespace sedaman
                 SOURCE_SET_NUMBER
             };
             static char const *name_as_string(Name n);
-        } general_headerN;
+            uint8_t type() override { return gen_hdr_block_num; }
+            virtual ~GeneralHeaderN() override {}
+        };
         /// \class GeneralHeader
         /// \brief Class for second general header
         /// Mandatory from SEGD rev 3
@@ -184,7 +227,7 @@ namespace sedaman
         } general_header3;
         /// \class GeneralHeaderVes
         /// \brief Class for general header vessel\crew information
-        class GeneralHeaderVes
+        class GeneralHeaderVes : public AdditionalGeneralHeader
         {
         public:
             char abbr_vessel_crew_name[3];
@@ -200,10 +243,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_ves;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderVes() override {}
+        };
         /// \class GeneralHeaderSur
         /// \brief Class for general header for Survea Area Name
-        class GeneralHeaderSur
+        class GeneralHeaderSur : public AdditionalGeneralHeader
         {
         public:
             char survey_area_name[31];
@@ -217,10 +262,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_sur;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderSur() override {}
+        };
         /// \class GeneralHeaderCli
         /// \brief Class for general header for Client Name
-        class GeneralHeaderCli
+        class GeneralHeaderCli : public AdditionalGeneralHeader
         {
         public:
             char client_name[31];
@@ -234,10 +281,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_cli;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderCli() override {}
+        };
         /// \class GeneralHeaderJob
         /// \brief Class for general header for Job ID
-        class GeneralHeaderJob
+        class GeneralHeaderJob : public AdditionalGeneralHeader
         {
         public:
             char abbr_job_id[5];
@@ -253,10 +302,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_job;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderJob() override {}
+        };
         /// \class GeneralHeaderLin
         /// \brief Class for general header for Line ID
-        class GeneralHeaderLin
+        class GeneralHeaderLin : public AdditionalGeneralHeader
         {
         public:
             char line_abbr[7];
@@ -272,10 +323,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_lin;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderLin() override {}
+        };
         /// \class GeneralHeaderVib
         /// \brief Class for general header for Vibrator source information
-        class GeneralHeaderVib
+        class GeneralHeaderVib : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -319,10 +372,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_vib;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderVib() override {}
+        };
         /// \class GeneralHeaderExp
         /// \brief Class for general header for Explosive source information
-        class GeneralHeaderExp
+        class GeneralHeaderExp : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -366,10 +421,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_exp;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderExp() override {}
+        };
         /// \class GeneralHeaderAir
         /// \brief Class for general header for Airgun source information
-        class GeneralHeaderAir
+        class GeneralHeaderAir : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -411,10 +468,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_air;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderAir() override {}
+        };
         /// \class GeneralHeaderWat
         /// \brief Class for general header for Watergun source information
-        class GeneralHeaderWat
+        class GeneralHeaderWat : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -456,10 +515,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_wat;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderWat() override {}
+        };
         /// \class GeneralHeaderEle
         /// \brief Class for general header for Electromagnetic source information
-        class GeneralHeaderEle
+        class GeneralHeaderEle : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -501,10 +562,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_ele;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderEle() override {}
+        };
         /// \class GeneralHeaderOth
         /// \brief Class for general header for Other source information
-        class GeneralHeaderOth
+        class GeneralHeaderOth : public AdditionalGeneralHeader
         {
         public:
             uint32_t expanded_file_number;
@@ -542,10 +605,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_oth;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderOth() override {}
+        };
         /// \class GeneralHeaderAdd
         /// \brief Class for general header for Additional source information
-        class GeneralHeaderAdd
+        class GeneralHeaderAdd : public AdditionalGeneralHeader
         {
         public:
             uint64_t time;
@@ -567,10 +632,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_add;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderAdd() override {}
+        };
         /// \class GeneralHeaderSaux
         /// \brief Class for general header for Source Auxiliary information
-        class GeneralHeaderSaux
+        class GeneralHeaderSaux : public AdditionalGeneralHeader
         {
         public:
             uint8_t source_id;
@@ -614,10 +681,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_saux;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderSaux() override {}
+        };
         /// \class GeneralHeaderCoord
         /// \brief Class for general header for coordinate reference system identification
-        class GeneralHeaderCoord
+        class GeneralHeaderCoord : public AdditionalGeneralHeader
         {
         public:
             char crs[31];
@@ -631,10 +700,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_coord;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderCoord() override {}
+        };
         /// \class GeneralHeaderPos1
         /// \brief Class for general header for position blocks 1 identification
-        class GeneralHeaderPos1
+        class GeneralHeaderPos1 : public AdditionalGeneralHeader
         {
         public:
             uint64_t time_of_position;
@@ -660,10 +731,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_pos1;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderPos1() override {}
+        };
         /// \class GeneralHeaderPos2
         /// \brief Class for general header for position blocks 2 identification
-        class GeneralHeaderPos2
+        class GeneralHeaderPos2 : public AdditionalGeneralHeader
         {
         public:
             uint64_t crs_a_coord1;
@@ -687,10 +760,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_pos2;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderPos2() override {}
+        };
         /// \class GeneralHeaderPos3
         /// \brief Class for general header for position blocks 3 identification
-        class GeneralHeaderPos3
+        class GeneralHeaderPos3 : public AdditionalGeneralHeader
         {
         public:
             uint64_t crs_b_coord1;
@@ -714,10 +789,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_pos3;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderPos3() override {}
+        };
         /// \class GeneralHeaderRel
         /// \brief Class for general header for relative position identification
-        class GeneralHeaderRel
+        class GeneralHeaderRel : public AdditionalGeneralHeader
         {
         public:
             uint32_t offset_east;
@@ -737,10 +814,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_rel;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderRel() override {}
+        };
         /// \class GeneralHeaderSen
         /// \brief Class for general header for sensor info
-        class GeneralHeaderSen
+        class GeneralHeaderSen : public AdditionalGeneralHeader
         {
         public:
             uint64_t instrument_test_time;
@@ -760,10 +839,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_sen;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderSen() override {}
+        };
         /// \class GeneralHeaderSCa
         /// \brief Class for general header for sensor calibration
-        class GeneralHeaderSCa
+        class GeneralHeaderSCa : public AdditionalGeneralHeader
         {
         public:
             uint32_t freq1;
@@ -789,10 +870,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_sca;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderSCa() override {}
+        };
         /// \class GeneralHeaderTim
         /// \brief Class for general header for time drift
-        class GeneralHeaderTim
+        class GeneralHeaderTim : public AdditionalGeneralHeader
         {
         public:
             uint64_t time_of_depl;
@@ -816,10 +899,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_tim;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderTim() override {}
+        };
         /// \class GeneralHeaderElSR
         /// \brief Class for general header for electomagnetic src/recv desc block
-        class GeneralHeaderElSR
+        class GeneralHeaderElSR : public AdditionalGeneralHeader
         {
         public:
             uint32_t equip_dim_x;
@@ -845,10 +930,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_elsr;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderElSR() override {}
+        };
         /// \class GeneralHeaderOri
         /// \brief Class for general header for orientation block
-        class GeneralHeaderOri
+        class GeneralHeaderOri : public AdditionalGeneralHeader
         {
         public:
             uint32_t rot_x;
@@ -879,10 +966,12 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_ori;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderOri() override {}
+        };
         /// \class GeneralHeaderMeas
         /// \brief Class for general header for measurement block
-        class GeneralHeaderMeas
+        class GeneralHeaderMeas : public AdditionalGeneralHeader
         {
         public:
             uint64_t timestamp;
@@ -908,11 +997,23 @@ namespace sedaman
                 GEN_HEADER_TYPE
             };
             static char const *name_as_string(Name n);
-        } general_header_meas;
+            uint8_t type() override { return gen_hdr_block_type; }
+            virtual ~GeneralHeaderMeas() override {}
+        };
         class ChannelSetHeader
         {
         public:
-            explicit ChannelSetHeader(CommonSEGD &com);
+            ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht,
+                             uint32_t chsstm, uint32_t chsetm, double dm, uint32_t noch, int spchs,
+                             uint8_t chg, uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
+                             uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn, uint8_t ehf,
+                             uint8_t the, uint8_t vs, uint8_t sn, uint8_t af);
+            ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht,
+                             uint32_t chsstm, uint32_t chsetm, double dm, uint32_t noch, int spchs,
+                             uint8_t chg, uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
+                             uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn, uint8_t ehf,
+                             uint8_t the, uint8_t vs, uint8_t sn, uint8_t af, uint32_t nos,
+                             uint32_t si, uint8_t fph, uint8_t phu, uint32_t fd, std::array<char, 27> d);
             int scan_type_number;
             uint16_t channel_set_number;
             uint8_t channel_type;
@@ -921,17 +1022,17 @@ namespace sedaman
             double descale_multiplier;
             uint32_t number_of_channels;
             int subscans_per_ch_set;
-            int channel_gain;
-            int alias_filter_freq;
-            int alias_filter_slope;
-            int low_cut_filter_freq;
-            int low_cut_filter_slope;
-            int first_notch_filter;
-            int second_notch_filter;
-            int third_notch_filter;
+            uint8_t channel_gain;
+            uint32_t alias_filter_freq;
+            uint32_t alias_filter_slope;
+            uint32_t low_cut_filter_freq;
+            uint32_t low_cut_filter_slope;
+            uint32_t first_notch_filter;
+            uint32_t second_notch_filter;
+            uint32_t third_notch_filter;
             uint16_t ext_ch_set_num;
-            int ext_hdr_flag;
-            int trc_hdr_ext;
+            uint8_t ext_hdr_flag;
+            uint8_t trc_hdr_ext;
             uint8_t vert_stack;
             uint8_t streamer_no;
             uint8_t array_forming;
@@ -978,7 +1079,7 @@ namespace sedaman
             static char const *name_as_string(Name n);
 
         private:
-            uint8_t segd_rev_major;
+            bool segd_rev_more_than_2;
             uint32_t p_number_of_samples;
             uint32_t p_samp_int;
             uint8_t p_filter_phase;
@@ -987,6 +1088,7 @@ namespace sedaman
             std::array<char, 27> p_description;
         };
         static constexpr int GEN_HDR_SIZE = 32;
+        static constexpr int GEN_TRLR_SIZE = 32;
         static constexpr int CH_SET_HDR_SIZE = 32;
         static constexpr int CH_SET_HDR_R3_SIZE = 96;
         static constexpr int SKEW_BLOCK_SIZE = 32;
@@ -996,14 +1098,18 @@ namespace sedaman
         static constexpr int TRACE_HEADER_EXT_SIZE = 32;
         /// \param file_name Name of file.
         /// \param mode Choose input or output.
-        CommonSEGD(std::string file_name, std::fstream::openmode mode);
+        CommonSEGD(std::string file_name, std::fstream::openmode mode,
+                   GeneralHeader gh = {}, GeneralHeader2 gh2 = {}, GeneralHeader3 gh3 = {},
+                   std::vector<std::unique_ptr<AdditionalGeneralHeader>> add_ghs = {},
+                   std::vector<std::vector<ChannelSetHeader>> ch_sets = {});
         std::string file_name;
         std::fstream file;
         char gen_hdr_buf[CommonSEGD::GEN_HDR_SIZE];
         std::vector<char> ch_set_hdr_buf;
         char trc_hdr_buf[CommonSEGD::TRACE_HEADER_SIZE];
         std::vector<char> trc_samp_buf;
-        std::vector<std::vector<ChannelSetHeader>> ch_sets;
+        std::map<AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, std::unique_ptr<AdditionalGeneralHeader>> add_gen_hdr_blks_map;
+        std::vector<std::vector<ChannelSetHeader>> channel_sets;
         int bites_per_sample;
     };
 } // namespace sedaman

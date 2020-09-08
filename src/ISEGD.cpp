@@ -6,17 +6,21 @@
 #include <cstring>
 #include <functional>
 
+using std::array;
 using std::fstream;
 using std::function;
 using std::get;
 using std::ios_base;
 using std::make_unique;
+using std::map;
 using std::move;
+using std::nullopt;
 using std::optional;
 using std::streamoff;
 using std::streampos;
 using std::streamsize;
 using std::string;
+using std::unique_ptr;
 using std::unordered_map;
 using std::valarray;
 using std::vector;
@@ -30,45 +34,12 @@ namespace sedaman
         unordered_map<string, Trace::Header::Value> read_trace_header();
         valarray<double> read_trace_samples(unordered_map<string, Trace::Header::Value> &hdr);
         void read_headers_before_traces();
+        void read_trailer();
         CommonSEGD common;
         streampos curr_pos;
         streampos end_of_data;
         uint64_t chans_in_record;
         uint64_t chans_read;
-        enum ADD_GEN_HDR_BLKS
-        {
-            VESSEL_CREW_ID = 0x10,
-            SURVEY_AREA_NAME = 0x11,
-            CLIENT_NAME = 0x12,
-            JOB_ID = 0x13,
-            LINE_ID = 0x14,
-            VIBRATOR_SOURCE_INFO = 0x15,
-            EXPLOSIVE_SOURCE_INFO = 0x16,
-            AIRGUN_SOURCE_INFO = 0x17,
-            WATERGUN_SOURCE_INFO = 0x18,
-            ELECTROMAGNETIC_SOURCE = 0x19,
-            OTHER_SOURCE_TYPE_INFO = 0x1f,
-            ADD_SOURCE_INFO = 0x20,
-            SOU_AUX_CHAN_REF = 0x21,
-            CH_SET_DESCRIP_BLK1 = 0x30,
-            CH_SET_DESCRIP_BLK2 = 0x31,
-            CH_SET_DESCRIP_BLK3 = 0x32,
-            TRACE_HDR_EXT1 = 0x40,
-            SENSOR_INFO_HDR_EXT_BLK = 0x41,
-            TIME_STAMP_HDR_BLK = 0x42,
-            SENSOR_CALIBRATION_BLK = 0x43,
-            TIME_DRIFT_BLK = 0x44,
-            ELECTROMAG_SRC_REC_DESC_BLK = 0x45,
-            POSITION_BLK1 = 0x50,
-            POSITION_BLK2 = 0x51,
-            POSITION_BLK3 = 0x52,
-            COORD_REF_SYSTEM = 0x55,
-            RELATIVE_POS_BLK = 0x56,
-            ORIENT_HDR_BLK = 0x60,
-            MEASUREMENT_BLK = 0x61,
-            GEN_TRAILER_DESC_BLK = 0x70
-        };
-        unordered_map<ADD_GEN_HDR_BLKS, bool> add_gen_hdr_blks_map;
 
     private:
         void read_general_headers();
@@ -84,38 +55,37 @@ namespace sedaman
         function<int32_t(char const **)> read_i32;
         function<uint64_t(char const **)> read_u64;
         void read_gen_hdr1(char const *buf);
-        void read_gen_hdr2(char const *buf);
+        void read_gen_hdr2_rev2(char const *buf);
+        void read_rev2_add_gen_hdr_blks(char const *buf);
         void read_gen_hdr2_and_3(char const *buf);
         void read_rev3_add_gen_hdr_blks(char const *buf);
-        void read_vessel_crew_id(char const *buf);
-        void read_survey_area_name(char const *buf);
-        void read_client_name(const char *buf);
-        void read_job_id(char const *buf);
-        void read_line_id(char const *buf);
-        void read_vibrator_hdr(char const *buf);
-        void read_explosive_hdr(char const *buf);
-        void read_airgun_hdr(char const *buf);
-        void read_watergun_hdr(char const *buf);
-        void read_electromagnetic_hdr(char const *buf);
-        void read_other_source_hdr(char const *buf);
-        void read_additional_source_hdr(char const *buf);
-        void read_source_aux_hdr(char const *buf);
-        void read_crs_hdr(char const *buf);
-        void read_position1_hdr(char const *buf);
-        void read_position2_hdr(char const *buf);
-        void read_position3_hdr(char const *buf);
-        void read_relative_position_hdr(char const *buf);
-        void read_sensor_info_hdr(char const *buf);
-        void read_sensor_calibration_hdr(char const *buf);
-        void read_time_drift_hdr(char const *buf);
-        void read_electromagnetic_src_recv_hdr(char const *buf);
-        void read_orientation_hdr(char const *buf);
-        void read_measurement_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_vessel_crew_id(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_survey_area_name(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_client_name(const char *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_job_id(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_line_id(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_vibrator_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_explosive_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_airgun_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_watergun_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_electromagnetic_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_other_source_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_additional_source_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_source_aux_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_crs_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_position1_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_position2_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_position3_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_relative_position_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_sensor_info_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_sensor_calibration_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_time_drift_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_electromagnetic_src_recv_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_orientation_hdr(char const *buf);
+        unique_ptr<CommonSEGD::AdditionalGeneralHeader> read_measurement_hdr(char const *buf);
         void assign_raw_readers();
         void assign_sample_reading();
     };
-
-    static bool is_big_endian(void);
 
     bool ISEGD::has_record()
     {
@@ -135,7 +105,7 @@ namespace sedaman
         if (pimpl->chans_in_record == pimpl->chans_read)
         {
             pimpl->chans_in_record = pimpl->chans_read = 0;
-            pimpl->common.ch_sets.clear();
+            pimpl->common.channel_sets.clear();
             if (has_record())
                 pimpl->read_headers_before_traces();
         }
@@ -159,14 +129,18 @@ namespace sedaman
         assign_sample_reading();
         // read header for each scan type
         uint16_t ch_sets_per_scan_type_num = common.general_header.channel_sets_per_scan_type == 1665 ? common.general_header2.ext_ch_sets_per_scan_type : common.general_header.channel_sets_per_scan_type;
+        if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3)
+            common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_SIZE);
+        else
+            common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_R3_SIZE);
         for (int i = 0; i < common.general_header.scan_types_per_record; ++i)
         {
-            common.ch_sets.push_back({});
+            common.channel_sets.push_back({});
             for (int j = ch_sets_per_scan_type_num; j; --j)
             {
                 CommonSEGD::ChannelSetHeader hdr = read_ch_set_hdr();
                 chans_in_record += hdr.number_of_channels;
-                common.ch_sets[i].push_back(move(hdr));
+                common.channel_sets[i].push_back(move(hdr));
             }
             uint16_t skew_blks = common.general_header.skew_blocks == 165 ? common.general_header2.extended_skew_blocks : common.general_header.skew_blocks;
             file_skip_bytes(skew_blks * CommonSEGD::SKEW_BLOCK_SIZE);
@@ -221,11 +195,14 @@ namespace sedaman
             gh2.segd_rev_major = *buf++;
             gh2.segd_rev_minor = *buf++;
             buf = common.gen_hdr_buf;
-            gh2.expanded_file_num = read_u24(&buf);
-            gh2.ext_ch_sets_per_scan_type = read_u16(&buf);
             if (gh2.segd_rev_major < 3)
             {
-                read_gen_hdr2(buf);
+                read_gen_hdr2_rev2(buf);
+                for (int i = common.general_header.add_gen_hdr_blocks - 1; i; --i)
+                {
+                    fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
+                    read_rev2_add_gen_hdr_blks(common.gen_hdr_buf);
+                }
             }
             else
             {
@@ -268,9 +245,11 @@ namespace sedaman
         gh.external_hdr_blocks = from_bcd<int>(&buf, false, 2);
     }
 
-    void ISEGD::Impl::read_gen_hdr2(char const *buf)
+    void ISEGD::Impl::read_gen_hdr2_rev2(char const *buf)
     {
         CommonSEGD::GeneralHeader2 &gh2 = common.general_header2;
+        gh2.expanded_file_num = read_u24(&buf);
+        gh2.ext_ch_sets_per_scan_type = read_u16(&buf);
         gh2.segd_rev_minor = gh2.segd_rev_minor / pow(2, 8) * 10;
         gh2.extended_hdr_blocks = read_u16(&buf);
         gh2.external_hdr_blocks = read_u16(&buf);
@@ -278,29 +257,32 @@ namespace sedaman
         gh2.gen_trailer_num_of_blocks = read_u16(&buf);
         gh2.ext_record_len = read_u24(&buf);
         gh2.gen_hdr_block_num = *++buf;
-        if (common.general_header.add_gen_hdr_blocks > 1)
-        {
-            fill_buf_from_file(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
-            char const *buf = common.gen_hdr_buf;
-            CommonSEGD::GeneralHeaderN &ghN = common.general_headerN;
-            ghN.expanded_file_number = read_u24(&buf);
-            ghN.sou_line_num = read_i24(&buf);
-            ghN.sou_line_num += read_u16(&buf) / pow(2, 16);
-            ghN.sou_point_num = read_i24(&buf);
-            ghN.sou_point_num += read_u16(&buf) / pow(2, 16);
-            ghN.sou_point_index = *buf++;
-            ghN.phase_control = *buf++;
-            ghN.type_vibrator = *buf++;
-            ghN.phase_angle = read_i16(&buf);
-            ghN.gen_hdr_block_num = *buf++;
-            ghN.sou_set_num = *buf++;
-            file_skip_bytes(CommonSEGD::GEN_HDR_SIZE * (common.general_header.add_gen_hdr_blocks - 2));
-        }
+        buf += 2;
+        gh2.sequence_number = read_u16(&buf);
+    }
+
+    void ISEGD::Impl::read_rev2_add_gen_hdr_blks(char const *buf)
+    {
+        CommonSEGD::GeneralHeaderN ghN;
+        ghN.expanded_file_number = read_u24(&buf);
+        ghN.sou_line_num = read_i24(&buf);
+        ghN.sou_line_num += read_u16(&buf) / pow(2, 16);
+        ghN.sou_point_num = read_i24(&buf);
+        ghN.sou_point_num += read_u16(&buf) / pow(2, 16);
+        ghN.sou_point_index = *buf++;
+        ghN.phase_control = *buf++;
+        ghN.type_vibrator = *buf++;
+        ghN.phase_angle = read_i16(&buf);
+        ghN.gen_hdr_block_num = *buf++;
+        ghN.sou_set_num = *buf++;
+        common.add_gen_hdr_blks_map[static_cast<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS>(ghN.gen_hdr_block_num)] = make_unique<CommonSEGD::GeneralHeaderN>(ghN);
     }
 
     void ISEGD::Impl::read_gen_hdr2_and_3(char const *buf)
     {
         CommonSEGD::GeneralHeader2 &gh2 = common.general_header2;
+        gh2.expanded_file_num = read_u24(&buf);
+        gh2.ext_ch_sets_per_scan_type = read_u16(&buf);
         gh2.extended_hdr_blocks = read_u24(&buf);
         gh2.extended_skew_blocks = read_u16(&buf);
         buf += 2;
@@ -327,154 +309,135 @@ namespace sedaman
         int hdr_blk_type = *(buf + 31);
         switch (hdr_blk_type)
         {
-        case VESSEL_CREW_ID:
-            read_vessel_crew_id(buf);
-            add_gen_hdr_blks_map[VESSEL_CREW_ID] = true;
+        case CommonSEGD::AdditionalGeneralHeader::VESSEL_CREW_ID:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::VESSEL_CREW_ID] = read_vessel_crew_id(buf);
             break;
-        case SURVEY_AREA_NAME:
-            read_survey_area_name(buf);
-            add_gen_hdr_blks_map[SURVEY_AREA_NAME] = true;
+        case CommonSEGD::AdditionalGeneralHeader::SURVEY_AREA_NAME:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::SURVEY_AREA_NAME] = read_survey_area_name(buf);
             break;
-        case CLIENT_NAME:
-            read_client_name(buf);
-            add_gen_hdr_blks_map[CLIENT_NAME] = true;
+        case CommonSEGD::AdditionalGeneralHeader::CLIENT_NAME:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::CLIENT_NAME] = read_client_name(buf);
             break;
-        case JOB_ID:
-            read_job_id(buf);
-            add_gen_hdr_blks_map[JOB_ID] = true;
+        case CommonSEGD::AdditionalGeneralHeader::JOB_ID:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::JOB_ID] = read_job_id(buf);
             break;
-        case LINE_ID:
-            read_line_id(buf);
-            add_gen_hdr_blks_map[LINE_ID] = true;
+        case CommonSEGD::AdditionalGeneralHeader::LINE_ID:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::LINE_ID] = read_line_id(buf);
             break;
-        case VIBRATOR_SOURCE_INFO:
-            read_vibrator_hdr(buf);
-            add_gen_hdr_blks_map[VIBRATOR_SOURCE_INFO] = true;
+        case CommonSEGD::AdditionalGeneralHeader::VIBRATOR_SOURCE_INFO:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::VIBRATOR_SOURCE_INFO] = read_vibrator_hdr(buf);
             break;
-        case EXPLOSIVE_SOURCE_INFO:
-            read_explosive_hdr(buf);
-            add_gen_hdr_blks_map[EXPLOSIVE_SOURCE_INFO] = true;
+        case CommonSEGD::AdditionalGeneralHeader::EXPLOSIVE_SOURCE_INFO:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::EXPLOSIVE_SOURCE_INFO] = read_explosive_hdr(buf);
             break;
-        case AIRGUN_SOURCE_INFO:
-            read_airgun_hdr(buf);
-            add_gen_hdr_blks_map[AIRGUN_SOURCE_INFO] = true;
+        case CommonSEGD::AdditionalGeneralHeader::AIRGUN_SOURCE_INFO:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::AIRGUN_SOURCE_INFO] = read_airgun_hdr(buf);
             break;
-        case WATERGUN_SOURCE_INFO:
-            read_watergun_hdr(buf);
-            add_gen_hdr_blks_map[WATERGUN_SOURCE_INFO] = true;
+        case CommonSEGD::AdditionalGeneralHeader::WATERGUN_SOURCE_INFO:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::WATERGUN_SOURCE_INFO] = read_watergun_hdr(buf);
             break;
-        case ELECTROMAGNETIC_SOURCE:
-            read_electromagnetic_hdr(buf);
-            add_gen_hdr_blks_map[ELECTROMAGNETIC_SOURCE] = true;
+        case CommonSEGD::AdditionalGeneralHeader::ELECTROMAGNETIC_SOURCE:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::ELECTROMAGNETIC_SOURCE] = read_electromagnetic_hdr(buf);
             break;
-        case OTHER_SOURCE_TYPE_INFO:
-            read_other_source_hdr(buf);
-            add_gen_hdr_blks_map[OTHER_SOURCE_TYPE_INFO] = true;
+        case CommonSEGD::AdditionalGeneralHeader::OTHER_SOURCE_TYPE_INFO:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::OTHER_SOURCE_TYPE_INFO] = read_other_source_hdr(buf);
             break;
-        case ADD_SOURCE_INFO:
-            read_additional_source_hdr(buf);
-            add_gen_hdr_blks_map[ADD_SOURCE_INFO] = true;
+        case CommonSEGD::AdditionalGeneralHeader::ADD_SOURCE_INFO:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::ADD_SOURCE_INFO] = read_additional_source_hdr(buf);
             break;
-        case SOU_AUX_CHAN_REF:
-            read_source_aux_hdr(buf);
-            add_gen_hdr_blks_map[SOU_AUX_CHAN_REF] = true;
+        case CommonSEGD::AdditionalGeneralHeader::SOU_AUX_CHAN_REF:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::SOU_AUX_CHAN_REF] = read_source_aux_hdr(buf);
             break;
-        case SENSOR_INFO_HDR_EXT_BLK:
-            read_sensor_info_hdr(buf);
-            add_gen_hdr_blks_map[SENSOR_INFO_HDR_EXT_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::SENSOR_INFO_HDR_EXT_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::SENSOR_INFO_HDR_EXT_BLK] = read_sensor_info_hdr(buf);
             break;
-        case SENSOR_CALIBRATION_BLK:
-            read_sensor_calibration_hdr(buf);
-            add_gen_hdr_blks_map[SENSOR_CALIBRATION_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::SENSOR_CALIBRATION_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::SENSOR_CALIBRATION_BLK] = read_sensor_calibration_hdr(buf);
             break;
-        case TIME_DRIFT_BLK:
-            read_time_drift_hdr(buf);
-            add_gen_hdr_blks_map[TIME_DRIFT_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::TIME_DRIFT_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::TIME_DRIFT_BLK] = read_time_drift_hdr(buf);
             break;
-        case ELECTROMAG_SRC_REC_DESC_BLK:
-            read_electromagnetic_src_recv_hdr(buf);
-            add_gen_hdr_blks_map[ELECTROMAG_SRC_REC_DESC_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::ELECTROMAG_SRC_REC_DESC_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::ELECTROMAG_SRC_REC_DESC_BLK] = read_electromagnetic_src_recv_hdr(buf);
             break;
-        case POSITION_BLK1:
-            read_position1_hdr(buf);
-            add_gen_hdr_blks_map[POSITION_BLK1] = true;
+        case CommonSEGD::AdditionalGeneralHeader::POSITION_BLK1:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::POSITION_BLK1] = read_position1_hdr(buf);
             break;
-        case POSITION_BLK2:
-            read_position2_hdr(buf);
-            add_gen_hdr_blks_map[POSITION_BLK2] = true;
+        case CommonSEGD::AdditionalGeneralHeader::POSITION_BLK2:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::POSITION_BLK2] = read_position2_hdr(buf);
             break;
-        case POSITION_BLK3:
-            read_position3_hdr(buf);
-            add_gen_hdr_blks_map[POSITION_BLK3] = true;
+        case CommonSEGD::AdditionalGeneralHeader::POSITION_BLK3:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::POSITION_BLK3] = read_position3_hdr(buf);
             break;
-        case COORD_REF_SYSTEM:
-            read_crs_hdr(buf);
-            add_gen_hdr_blks_map[COORD_REF_SYSTEM] = true;
+        case CommonSEGD::AdditionalGeneralHeader::COORD_REF_SYSTEM:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::COORD_REF_SYSTEM] = read_crs_hdr(buf);
             break;
-        case RELATIVE_POS_BLK:
-            read_relative_position_hdr(buf);
-            add_gen_hdr_blks_map[RELATIVE_POS_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::RELATIVE_POS_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::RELATIVE_POS_BLK] = read_relative_position_hdr(buf);
             break;
-        case ORIENT_HDR_BLK:
-            read_orientation_hdr(buf);
-            add_gen_hdr_blks_map[ORIENT_HDR_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::ORIENT_HDR_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::ORIENT_HDR_BLK] = read_orientation_hdr(buf);
             break;
-        case MEASUREMENT_BLK:
-            read_measurement_hdr(buf);
-            add_gen_hdr_blks_map[MEASUREMENT_BLK] = true;
+        case CommonSEGD::AdditionalGeneralHeader::MEASUREMENT_BLK:
+            common.add_gen_hdr_blks_map[CommonSEGD::AdditionalGeneralHeader::MEASUREMENT_BLK] = read_measurement_hdr(buf);
             break;
         }
     }
 
-    void ISEGD::Impl::read_vessel_crew_id(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_vessel_crew_id(char const *buf)
     {
-        CommonSEGD::GeneralHeaderVes &ghv = common.general_header_ves;
+        CommonSEGD::GeneralHeaderVes ghv;
         memcpy(ghv.abbr_vessel_crew_name, buf, sizeof(ghv.abbr_vessel_crew_name));
         buf += sizeof(ghv.abbr_vessel_crew_name);
         memcpy(ghv.vessel_crew_name, buf, sizeof(ghv.vessel_crew_name));
         buf += sizeof(ghv.vessel_crew_name);
         ghv.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderVes>(move(ghv));
     }
 
-    void ISEGD::Impl::read_survey_area_name(const char *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_survey_area_name(const char *buf)
     {
-        CommonSEGD::GeneralHeaderSur &ghs = common.general_header_sur;
+        CommonSEGD::GeneralHeaderSur ghs;
         memcpy(ghs.survey_area_name, buf, sizeof(ghs.survey_area_name));
         buf += sizeof(ghs.survey_area_name);
         ghs.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderSur>(move(ghs));
     }
 
-    void ISEGD::Impl::read_client_name(const char *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_client_name(const char *buf)
     {
-        CommonSEGD::GeneralHeaderCli &ghc = common.general_header_cli;
+        CommonSEGD::GeneralHeaderCli ghc;
         memcpy(ghc.client_name, buf, sizeof(ghc.client_name));
         buf += sizeof(ghc.client_name);
         ghc.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderCli>(move(ghc));
     }
 
-    void ISEGD::Impl::read_job_id(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_job_id(char const *buf)
     {
-        CommonSEGD::GeneralHeaderJob &ghj = common.general_header_job;
+        CommonSEGD::GeneralHeaderJob ghj;
         memcpy(ghj.abbr_job_id, buf, sizeof(ghj.abbr_job_id));
         buf += sizeof(ghj.abbr_job_id);
         memcpy(ghj.job_id, buf, sizeof(ghj.job_id));
         buf += sizeof(ghj.job_id);
         ghj.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderJob>(move(ghj));
     }
 
-    void ISEGD::Impl::read_line_id(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_line_id(char const *buf)
     {
-        CommonSEGD::GeneralHeaderLin &ghl = common.general_header_lin;
+        CommonSEGD::GeneralHeaderLin ghl;
         memcpy(ghl.line_abbr, buf, sizeof(ghl.line_abbr));
         buf += sizeof(ghl.line_abbr);
         memcpy(ghl.line_id, buf, sizeof(ghl.line_id));
         buf += sizeof(ghl.line_id);
         ghl.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderLin>(move(ghl));
     }
 
-    void ISEGD::Impl::read_vibrator_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_vibrator_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderVib &ghV = common.general_header_vib;
+        CommonSEGD::GeneralHeaderVib ghV;
         ghV.expanded_file_number = read_u24(&buf);
         ghV.sou_line_num = read_u24(&buf);
         ghV.sou_line_num += read_u16(&buf) / pow(2, 16);
@@ -493,12 +456,13 @@ namespace sedaman
         ghV.offset_inline = *buf++;
         ghV.size = *buf++;
         ghV.offset_depth = *buf++;
-        ghV.gen_hdr_block_type = *buf++;
+        ghV.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderVib>(move(ghV));
     }
 
-    void ISEGD::Impl::read_explosive_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_explosive_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderExp &ghE = common.general_header_exp;
+        CommonSEGD::GeneralHeaderExp ghE;
         ghE.expanded_file_number = read_u24(&buf);
         ghE.sou_line_num = read_u24(&buf);
         ghE.sou_line_num += read_u16(&buf) / pow(2, 16);
@@ -517,12 +481,13 @@ namespace sedaman
         ghE.offset_inline = *buf++;
         ghE.size = *buf++;
         ghE.offset_depth = *buf++;
-        ghE.gen_hdr_block_type = *buf++;
+        ghE.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderExp>(move(ghE));
     }
 
-    void ISEGD::Impl::read_airgun_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_airgun_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderAir &ghA = common.general_header_air;
+        CommonSEGD::GeneralHeaderAir ghA;
         ghA.expanded_file_number = read_u24(&buf);
         ghA.sou_line_num = read_u24(&buf);
         ghA.sou_line_num += read_u16(&buf) / pow(2, 16);
@@ -531,6 +496,7 @@ namespace sedaman
         ghA.sou_point_index = *buf++;
         ghA.depth = read_u16(&buf);
         ghA.air_pressure = read_u16(&buf);
+        ghA.source_id = *buf++;
         ghA.source_set_num = *buf++;
         ghA.reshoot_idx = *buf++;
         ghA.group_idx = *buf++;
@@ -539,12 +505,13 @@ namespace sedaman
         ghA.offset_inline = *buf++;
         ghA.size = *buf++;
         ghA.offset_depth = *buf++;
-        ghA.gen_hdr_block_type = *buf++;
+        ghA.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderAir>(move(ghA));
     }
 
-    void ISEGD::Impl::read_watergun_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_watergun_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderWat &ghA = common.general_header_wat;
+        CommonSEGD::GeneralHeaderWat ghA;
         ghA.expanded_file_number = read_u24(&buf);
         ghA.sou_line_num = read_u24(&buf);
         ghA.sou_line_num += read_u16(&buf) / pow(2, 16);
@@ -553,6 +520,7 @@ namespace sedaman
         ghA.sou_point_index = *buf++;
         ghA.depth = read_u16(&buf);
         ghA.air_pressure = read_u16(&buf);
+        ghA.source_id = *buf++;
         ghA.source_set_num = *buf++;
         ghA.reshoot_idx = *buf++;
         ghA.group_idx = *buf++;
@@ -561,12 +529,13 @@ namespace sedaman
         ghA.offset_inline = *buf++;
         ghA.size = *buf++;
         ghA.offset_depth = *buf++;
-        ghA.gen_hdr_block_type = *buf++;
+        ghA.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderWat>(move(ghA));
     }
 
-    void ISEGD::Impl::read_electromagnetic_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_electromagnetic_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderEle &ghE = common.general_header_ele;
+        CommonSEGD::GeneralHeaderEle ghE;
         ghE.expanded_file_number = read_u24(&buf);
         ghE.sou_line_num = read_u24(&buf);
         ghE.sou_line_num += read_u16(&buf) / pow(2, 16);
@@ -575,6 +544,7 @@ namespace sedaman
         ghE.sou_point_index = *buf++;
         ghE.source_type = *buf++;
         ghE.moment = read_u24(&buf);
+        ghE.source_id = *buf++;
         ghE.source_set_num = *buf++;
         ghE.reshoot_idx = *buf++;
         ghE.group_idx = *buf++;
@@ -583,12 +553,13 @@ namespace sedaman
         ghE.offset_inline = *buf++;
         ghE.size = *buf++;
         ghE.offset_depth = *buf++;
-        ghE.gen_hdr_block_type = *buf++;
+        ghE.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderEle>(move(ghE));
     }
 
-    void ISEGD::Impl::read_other_source_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_other_source_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderOth &ghO = common.general_header_oth;
+        CommonSEGD::GeneralHeaderOth ghO;
         ghO.expanded_file_number = read_u24(&buf);
         ghO.sou_line_num = read_u24(&buf);
         ghO.sou_line_num += read_u16(&buf) / pow(2, 16);
@@ -596,6 +567,7 @@ namespace sedaman
         ghO.sou_point_num += read_u16(&buf) / pow(2, 16);
         ghO.sou_point_index = *buf++;
         buf += 4;
+        ghO.source_id = *buf++;
         ghO.source_set_num = *buf++;
         ghO.reshoot_idx = *buf++;
         ghO.group_idx = *buf++;
@@ -604,24 +576,26 @@ namespace sedaman
         ghO.offset_inline = *buf++;
         ghO.size = *buf++;
         ghO.offset_depth = *buf++;
-        ghO.gen_hdr_block_type = *buf++;
+        ghO.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderOth>(move(ghO));
     }
 
-    void ISEGD::Impl::read_additional_source_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_additional_source_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderAdd &ghA = common.general_header_add;
+        CommonSEGD::GeneralHeaderAdd ghA;
         ghA.time = read_u64(&buf);
         ghA.source_status = *buf++;
         ghA.source_id = *buf++;
         ghA.source_moving = *buf++;
         memcpy(ghA.error_description, buf, sizeof(ghA.error_description));
         buf += sizeof(ghA.error_description);
-        ghA.gen_hdr_block_type = *buf++;
+        ghA.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderAdd>(move(ghA));
     }
 
-    void ISEGD::Impl::read_source_aux_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_source_aux_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderSaux &ghS = common.general_header_saux;
+        CommonSEGD::GeneralHeaderSaux ghS;
         ghS.source_id = *buf++;
         ghS.scan_type_num_1 = from_bcd<uint8_t>(&buf, false, 2);
         ghS.ch_set_num_1 = read_u16(&buf);
@@ -638,20 +612,22 @@ namespace sedaman
         ghS.scan_type_num_5 = from_bcd<uint8_t>(&buf, false, 2);
         ghS.ch_set_num_5 = read_u16(&buf);
         ghS.trace_num_5 = read_u24(&buf);
-        ghS.gen_hdr_block_type = *buf++;
+        ghS.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderSaux>(move(ghS));
     }
 
-    void ISEGD::Impl::read_crs_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_crs_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderCoord &ghC = common.general_header_coord;
+        CommonSEGD::GeneralHeaderCoord ghC;
         memcpy(ghC.crs, buf, sizeof(ghC.crs));
         buf += sizeof(ghC.crs);
-        ghC.gen_hdr_block_type = *buf++;
+        ghC.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderCoord>(move(ghC));
     }
 
-    void ISEGD::Impl::read_position1_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_position1_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderPos1 &ghP = common.general_header_pos1;
+        CommonSEGD::GeneralHeaderPos1 ghP;
         ghP.time_of_position = read_u64(&buf);
         ghP.time_of_measurement = read_u64(&buf);
         ghP.vert_error = read_u32(&buf);
@@ -659,12 +635,13 @@ namespace sedaman
         ghP.hor_error_semi_minor = read_u32(&buf);
         ghP.hor_error_orientation = read_u16(&buf);
         ghP.position_type = *buf++;
-        ghP.gen_hdr_block_type = *buf++;
+        ghP.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderPos1>(move(ghP));
     }
 
-    void ISEGD::Impl::read_position2_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_position2_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderPos2 &ghP = common.general_header_pos2;
+        CommonSEGD::GeneralHeaderPos2 ghP;
         ghP.crs_a_coord1 = read_u64(&buf);
         ghP.crs_a_coord2 = read_u64(&buf);
         ghP.crs_a_coord3 = read_u64(&buf);
@@ -672,12 +649,13 @@ namespace sedaman
         ghP.pos1_valid = *buf++;
         ghP.pos1_quality = *buf++;
         buf += 3;
-        ghP.gen_hdr_block_type = *buf++;
+        ghP.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderPos2>(move(ghP));
     }
 
-    void ISEGD::Impl::read_position3_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_position3_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderPos3 &ghP = common.general_header_pos3;
+        CommonSEGD::GeneralHeaderPos3 ghP;
         ghP.crs_b_coord1 = read_u64(&buf);
         ghP.crs_b_coord2 = read_u64(&buf);
         ghP.crs_b_coord3 = read_u64(&buf);
@@ -685,34 +663,37 @@ namespace sedaman
         ghP.pos2_valid = *buf++;
         ghP.pos2_quality = *buf++;
         buf += 3;
-        ghP.gen_hdr_block_type = *buf++;
+        ghP.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderPos3>(move(ghP));
     }
 
-    void ISEGD::Impl::read_relative_position_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_relative_position_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderRel &ghR = common.general_header_rel;
+        CommonSEGD::GeneralHeaderRel ghR;
         ghR.offset_east = read_u32(&buf);
         ghR.offset_north = read_u32(&buf);
         ghR.offset_vert = read_u32(&buf);
         memcpy(ghR.description, buf, sizeof(ghR.description));
         buf += sizeof(ghR.description);
-        ghR.gen_hdr_block_type = *buf++;
+        ghR.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderRel>(move(ghR));
     }
 
-    void ISEGD::Impl::read_sensor_info_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_sensor_info_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderSen &ghS = common.general_header_sen;
+        CommonSEGD::GeneralHeaderSen ghS;
         ghS.instrument_test_time = read_u64(&buf);
         ghS.sensor_sensitivity = read_u32(&buf);
         ghS.instr_test_result = *buf++;
         memcpy(ghS.serial_number, buf, sizeof(ghS.serial_number));
         buf += sizeof(ghS.serial_number);
-        ghS.gen_hdr_block_type = *buf++;
+        ghS.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderSen>(move(ghS));
     }
 
-    void ISEGD::Impl::read_sensor_calibration_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_sensor_calibration_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderSCa &ghS = common.general_header_sca;
+        CommonSEGD::GeneralHeaderSCa ghS;
         ghS.freq1 = read_u32(&buf);
         ghS.amp1 = read_u32(&buf);
         ghS.phase1 = read_u32(&buf);
@@ -721,12 +702,13 @@ namespace sedaman
         ghS.phase2 = read_u32(&buf);
         ghS.calib_applied = *buf++;
         buf += 6;
-        ghS.gen_hdr_block_type = *buf++;
+        ghS.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderSCa>(move(ghS));
     }
 
-    void ISEGD::Impl::read_time_drift_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_time_drift_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderTim &ghT = common.general_header_tim;
+        CommonSEGD::GeneralHeaderTim ghT;
         ghT.time_of_depl = read_u64(&buf);
         ghT.time_of_retr = read_u64(&buf);
         ghT.timer_offset_depl = read_u32(&buf);
@@ -734,12 +716,13 @@ namespace sedaman
         ghT.timedrift_corr = *buf++;
         ghT.corr_method = *buf++;
         buf += 5;
-        ghT.gen_hdr_block_type = *buf++;
+        ghT.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderTim>(move(ghT));
     }
 
-    void ISEGD::Impl::read_electromagnetic_src_recv_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_electromagnetic_src_recv_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderElSR &ghE = common.general_header_elsr;
+        CommonSEGD::GeneralHeaderElSR ghE;
         ghE.equip_dim_x = read_u24(&buf);
         ghE.equip_dim_y = read_u24(&buf);
         ghE.equip_dim_z = read_u24(&buf);
@@ -748,12 +731,13 @@ namespace sedaman
         ghE.equip_offset_y = read_u24(&buf);
         ghE.equip_offset_z = read_u24(&buf);
         buf += 12;
-        ghE.gen_hdr_block_type = *buf++;
+        ghE.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderElSR>(move(ghE));
     }
 
-    void ISEGD::Impl::read_orientation_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_orientation_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderOri &ghO = common.general_header_ori;
+        CommonSEGD::GeneralHeaderOri ghO;
         ghO.rot_x = read_u32(&buf);
         ghO.rot_y = read_u32(&buf);
         ghO.rot_z = read_u32(&buf);
@@ -764,12 +748,13 @@ namespace sedaman
         ghO.rot_applied = *buf++;
         ghO.rot_north_applied = *buf++;
         buf += 3;
-        ghO.gen_hdr_block_type = *buf++;
+        ghO.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderOri>(move(ghO));
     }
 
-    void ISEGD::Impl::read_measurement_hdr(char const *buf)
+    unique_ptr<CommonSEGD::AdditionalGeneralHeader> ISEGD::Impl::read_measurement_hdr(char const *buf)
     {
-        CommonSEGD::GeneralHeaderMeas &ghM = common.general_header_meas;
+        CommonSEGD::GeneralHeaderMeas ghM;
         ghM.timestamp = read_u64(&buf);
         ghM.measurement_value = read_u32(&buf);
         ghM.maximum_value = read_u32(&buf);
@@ -778,7 +763,8 @@ namespace sedaman
         ghM.unit_of_measure = read_u16(&buf);
         ghM.measurement_description = read_u16(&buf);
         buf += 5;
-        ghM.gen_hdr_block_type = *buf++;
+        ghM.gen_hdr_block_type = *buf;
+        return make_unique<CommonSEGD::GeneralHeaderMeas>(move(ghM));
     }
 
     void ISEGD::Impl::assign_sample_reading()
@@ -898,6 +884,7 @@ namespace sedaman
             if (is_big_endian())
                 read_sample = [this](char const **buf) {
                     uint32_t tmp = read_u32(buf);
+                    tmp = swap(tmp);
                     float result;
                     memcpy(&result, &tmp, sizeof(tmp));
                     return result;
@@ -915,6 +902,7 @@ namespace sedaman
             if (is_big_endian())
                 read_sample = [this](char const **buf) {
                     uint64_t tmp = read_u64(buf);
+                    tmp = swap(tmp);
                     double result;
                     memcpy(&result, &tmp, sizeof(tmp));
                     return result;
@@ -934,12 +922,88 @@ namespace sedaman
 
     CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
     {
-        if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3)
-            common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_SIZE);
-        else
-            common.ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_R3_SIZE);
         fill_buf_from_file(common.ch_set_hdr_buf.data(), common.ch_set_hdr_buf.size());
-        return CommonSEGD::ChannelSetHeader(common);
+        char const *buf = common.ch_set_hdr_buf.data();
+        int scan_type_number, subscans_per_ch_set;
+        uint8_t channel_type, channel_gain, ext_hdr_flag, trc_hdr_ext,
+            vert_stack, streamer_no, array_forming, filter_phase, physical_unit;
+        uint16_t channel_set_number, ext_ch_set_num;
+        uint32_t channel_set_start_time, channel_set_end_time, number_of_channels,
+            alias_filter_freq, alias_filter_slope, low_cut_filter_freq, low_cut_filter_slope,
+            first_notch_filter, second_notch_filter, third_notch_filter,
+            number_of_samples, samp_int, filter_delay;
+        double descale_multiplier;
+        array<char, 27> description;
+        if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3)
+        {
+            scan_type_number = from_bcd<int>(&buf, false, 2);
+            channel_set_number = from_bcd<int>(&buf, false, 2);
+            channel_set_start_time = read_u16(&buf) * 2;
+            channel_set_end_time = read_u16(&buf) * 2;
+            uint16_t val = read_u16(&buf);
+            descale_multiplier = ((val & 0x8000) ? -1.0 : 1.0) *
+                                 (val & 0x7fff) / pow(2, 10);
+            number_of_channels = from_bcd<int>(&buf, false, 4);
+            channel_type = from_bcd<int>(&buf, false, 1);
+            ++buf;
+            subscans_per_ch_set = pow(2, from_bcd<int>(&buf, false, 1));
+            channel_gain = from_bcd<int>(&buf, true, 1);
+            alias_filter_freq = from_bcd<int>(&buf, false, 4);
+            alias_filter_slope = from_bcd<int>(&buf, false, 4);
+            low_cut_filter_freq = from_bcd<int>(&buf, false, 4);
+            low_cut_filter_slope = from_bcd<int>(&buf, false, 4);
+            first_notch_filter = from_bcd<int>(&buf, false, 4);
+            second_notch_filter = from_bcd<int>(&buf, false, 4);
+            third_notch_filter = from_bcd<int>(&buf, false, 4);
+            ext_ch_set_num = read_u16(&buf);
+            ext_hdr_flag = *buf >> 4;
+            trc_hdr_ext = *buf & 0x0f;
+            ++buf;
+            vert_stack = *buf++;
+            streamer_no = *buf++;
+            array_forming = *buf++;
+        }
+        else
+        {
+            scan_type_number = from_bcd<int>(&buf, false, 2);
+            channel_set_number = read_u16(&buf);
+            channel_type = *buf++;
+            channel_set_start_time = read_u32(&buf);
+            channel_set_end_time = read_u32(&buf);
+            number_of_samples = read_u32(&buf);
+            descale_multiplier = read_u32(&buf);
+            number_of_channels = read_u24(&buf);
+            samp_int = read_u24(&buf);
+            array_forming = *buf++;
+            trc_hdr_ext = *buf++;
+            ext_hdr_flag = *buf >> 4;
+            channel_gain = *buf & 0x0f;
+            ++buf;
+            vert_stack = *buf++;
+            streamer_no = *buf++;
+            ++buf;
+            alias_filter_freq = read_u32(&buf);
+            low_cut_filter_freq = read_u32(&buf);
+            alias_filter_slope = read_u32(&buf);
+            low_cut_filter_slope = read_u32(&buf);
+            first_notch_filter = read_u32(&buf);
+            second_notch_filter = read_u32(&buf);
+            third_notch_filter = read_u32(&buf);
+            filter_phase = *buf++;
+            physical_unit = *buf++;
+            buf += 2;
+            filter_delay = read_u32(&buf);
+            memcpy(description.data(), buf, description.size());
+        }
+        return CommonSEGD::ChannelSetHeader(
+            scan_type_number, channel_set_number, channel_type,
+            channel_set_start_time, channel_set_end_time, descale_multiplier,
+            number_of_channels, subscans_per_ch_set, channel_gain, alias_filter_freq,
+            alias_filter_slope, low_cut_filter_freq, low_cut_filter_slope,
+            first_notch_filter, second_notch_filter, third_notch_filter,
+            ext_ch_set_num, ext_hdr_flag, trc_hdr_ext, vert_stack,
+            streamer_no, array_forming, number_of_samples, samp_int,
+            filter_phase, physical_unit, filter_delay, description);
     }
 
     unordered_map<string, Trace::Header::Value> ISEGD::Impl::read_trace_header()
@@ -950,9 +1014,10 @@ namespace sedaman
         hdr["FFID"] = from_bcd<int32_t>(&buf, false, 4);
         hdr["SCAN_TYPE_NUM"] = from_bcd<int16_t>(&buf, false, 2);
         hdr["CH_SET_NUM"] = from_bcd<int16_t>(&buf, false, 2);
-        hdr["TRACE_NUMBER"] = from_bcd<int32_t>(&buf, false, 4);
+        int trc_num = from_bcd<int32_t>(&buf, false, 4);
+        hdr["TRACE_NUMBER"] = trc_num;
         hdr["FIRST_TIMING_WORD"] = read_u24(&buf) / pow(2, 8);
-        int tr_hdr_ext = *buf++;
+        char tr_hdr_ext = *buf++;
         hdr["TR_HDR_EXT"] = tr_hdr_ext;
         hdr["SAMPLE_SKEW"] = *buf++ / pow(2, 8);
         hdr["TRACE_EDIT"] = *buf++;
@@ -995,7 +1060,7 @@ namespace sedaman
             if (common.general_header2.segd_rev_major > 2)
             {
                 uint32_t ext_tr_num = read_u24(&buf);
-                if (ext_tr_num)
+                if (trc_num == 16665)
                     hdr["TRACE_NUMBER"] = ext_tr_num;
                 hdr["SAMP_NUM"] = read_u32(&buf);
                 hdr["SENSOR_MOVING"] = *buf++;
@@ -1011,8 +1076,8 @@ namespace sedaman
     valarray<double> ISEGD::Impl::read_trace_samples(unordered_map<string, Trace::Header::Value> &hdr)
     {
         uint32_t samp_num;
-        CommonSEGD::ChannelSetHeader curr_ch_set = common.ch_sets[get<int16_t>(hdr["SCAN_TYPE_NUM"]) - 1]
-                                                                 [get<int16_t>(hdr["CH_SET_NUM"]) - 1];
+        CommonSEGD::ChannelSetHeader curr_ch_set = common.channel_sets[get<int16_t>(hdr["SCAN_TYPE_NUM"]) - 1]
+                                                                      [get<int16_t>(hdr["CH_SET_NUM"]) - 1];
         if (hdr.find("SAMP_NUM") != hdr.end())
             samp_num = get<uint32_t>(hdr["SAMP_NUM"]);
         else if (curr_ch_set.number_of_samples())
@@ -1042,15 +1107,10 @@ namespace sedaman
         curr_pos = common.file.tellg();
     }
 
-    bool is_big_endian(void)
+    void ISEGD::Impl::read_trailer()
     {
-        union
-        {
-            uint32_t i;
-            char c[4];
-        } bint = {0x01020304};
-
-        return bint.c[0] == 1;
+        if (common.general_header.add_gen_hdr_blocks && common.general_header2.gen_trailer_num_of_blocks)
+            file_skip_bytes(CommonSEGD::GEN_TRLR_SIZE * common.general_header2.gen_trailer_num_of_blocks);
     }
 
     CommonSEGD::GeneralHeader ISEGD::general_header()
@@ -1061,9 +1121,18 @@ namespace sedaman
     {
         return pimpl->common.general_header.add_gen_hdr_blocks ? optional<CommonSEGD::GeneralHeader2>(pimpl->common.general_header2) : std::nullopt;
     }
-    optional<CommonSEGD::GeneralHeaderN> ISEGD::general_headerN()
+    vector<CommonSEGD::GeneralHeaderN> ISEGD::general_headerN()
     {
-        return pimpl->common.general_header.add_gen_hdr_blocks > 1 && pimpl->common.general_header2.segd_rev_major < 3 ? optional<CommonSEGD::GeneralHeaderN>(pimpl->common.general_headerN) : std::nullopt;
+        if (!pimpl->common.general_header.add_gen_hdr_blocks || pimpl->common.general_header2.segd_rev_major > 2)
+            return {};
+        vector<CommonSEGD::GeneralHeaderN> result;
+        for (map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.begin(),
+                                                                                                                                   end = pimpl->common.add_gen_hdr_blks_map.end();
+             it != end; ++it)
+        {
+            result.push_back(*dynamic_cast<CommonSEGD::GeneralHeaderN *>(it->second.get()));
+        }
+        return result;
     }
     optional<CommonSEGD::GeneralHeader3> ISEGD::general_header3()
     {
@@ -1071,104 +1140,128 @@ namespace sedaman
     }
     optional<CommonSEGD::GeneralHeaderVes> ISEGD::general_header_vessel_crew_id()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::VESSEL_CREW_ID) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderVes>(pimpl->common.general_header_ves) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::VESSEL_CREW_ID);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderVes>(*dynamic_cast<CommonSEGD::GeneralHeaderVes *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderSur> ISEGD::general_header_survey_name()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::SURVEY_AREA_NAME) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSur>(pimpl->common.general_header_sur) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::SURVEY_AREA_NAME);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSur>(*dynamic_cast<CommonSEGD::GeneralHeaderSur *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderCli> ISEGD::general_header_client_name()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::CLIENT_NAME) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderCli>(pimpl->common.general_header_cli) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::CLIENT_NAME);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderCli>(*dynamic_cast<CommonSEGD::GeneralHeaderCli *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderJob> ISEGD::general_header_job_id()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::JOB_ID) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderJob>(pimpl->common.general_header_job) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::JOB_ID);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderJob>(*dynamic_cast<CommonSEGD::GeneralHeaderJob *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderLin> ISEGD::general_header_line_id()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::LINE_ID) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderLin>(pimpl->common.general_header_lin) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::LINE_ID);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderLin>(*dynamic_cast<CommonSEGD::GeneralHeaderLin *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderVib> ISEGD::general_header_vibrator_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::VIBRATOR_SOURCE_INFO) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderVib>(pimpl->common.general_header_vib) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::VIBRATOR_SOURCE_INFO);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderVib>(*dynamic_cast<CommonSEGD::GeneralHeaderVib *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderExp> ISEGD::general_header_explosive_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::EXPLOSIVE_SOURCE_INFO) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderExp>(pimpl->common.general_header_exp) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::EXPLOSIVE_SOURCE_INFO);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderExp>(*dynamic_cast<CommonSEGD::GeneralHeaderExp *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderAir> ISEGD::general_header_airgun_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::AIRGUN_SOURCE_INFO) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderAir>(pimpl->common.general_header_air) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::AIRGUN_SOURCE_INFO);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderAir>(*dynamic_cast<CommonSEGD::GeneralHeaderAir *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderWat> ISEGD::general_header_watergun_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::WATERGUN_SOURCE_INFO) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderWat>(pimpl->common.general_header_wat) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::WATERGUN_SOURCE_INFO);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderWat>(*dynamic_cast<CommonSEGD::GeneralHeaderWat *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderEle> ISEGD::general_header_electromagnetic_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::ELECTROMAGNETIC_SOURCE) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderEle>(pimpl->common.general_header_ele) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::ELECTROMAGNETIC_SOURCE);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderEle>(*dynamic_cast<CommonSEGD::GeneralHeaderEle *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderOth> ISEGD::general_header_other_source_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::OTHER_SOURCE_TYPE_INFO) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderOth>(pimpl->common.general_header_oth) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::OTHER_SOURCE_TYPE_INFO);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderOth>(*dynamic_cast<CommonSEGD::GeneralHeaderOth *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderAdd> ISEGD::general_header_add_source_info()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::ADD_SOURCE_INFO) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderAdd>(pimpl->common.general_header_add) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::ADD_SOURCE_INFO);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderAdd>(*dynamic_cast<CommonSEGD::GeneralHeaderAdd *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderSaux> ISEGD::general_header_sou_aux_chan_ref()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::SOU_AUX_CHAN_REF) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSaux>(pimpl->common.general_header_saux) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::SOU_AUX_CHAN_REF);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSaux>(*dynamic_cast<CommonSEGD::GeneralHeaderSaux *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderSen> ISEGD::general_header_sen_info_hdr_ext_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::SENSOR_INFO_HDR_EXT_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSen>(pimpl->common.general_header_sen) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::SENSOR_INFO_HDR_EXT_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSen>(*dynamic_cast<CommonSEGD::GeneralHeaderSen *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderSCa> ISEGD::general_header_sen_calib_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::SENSOR_CALIBRATION_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSCa>(pimpl->common.general_header_sca) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::SENSOR_CALIBRATION_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderSCa>(*dynamic_cast<CommonSEGD::GeneralHeaderSCa *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderTim> ISEGD::general_header_time_drift_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::TIME_DRIFT_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderTim>(pimpl->common.general_header_tim) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::TIME_DRIFT_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderTim>(*dynamic_cast<CommonSEGD::GeneralHeaderTim *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderElSR> ISEGD::general_header_elemag_src_rec_desc_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::ELECTROMAG_SRC_REC_DESC_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderElSR>(pimpl->common.general_header_elsr) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::ELECTROMAG_SRC_REC_DESC_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderElSR>(*dynamic_cast<CommonSEGD::GeneralHeaderElSR *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderPos1> ISEGD::general_header_position_blk_1()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::POSITION_BLK1) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderPos1>(pimpl->common.general_header_pos1) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::POSITION_BLK1);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderPos1>(*dynamic_cast<CommonSEGD::GeneralHeaderPos1 *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderPos2> ISEGD::general_header_position_blk_2()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::POSITION_BLK2) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderPos2>(pimpl->common.general_header_pos2) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::POSITION_BLK2);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderPos2>(*dynamic_cast<CommonSEGD::GeneralHeaderPos2 *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderPos3> ISEGD::general_header_position_blk_3()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::POSITION_BLK3) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderPos3>(pimpl->common.general_header_pos3) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::POSITION_BLK3);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderPos3>(*dynamic_cast<CommonSEGD::GeneralHeaderPos3 *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderCoord> ISEGD::general_header_coord_ref_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::COORD_REF_SYSTEM) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderCoord>(pimpl->common.general_header_coord) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::COORD_REF_SYSTEM);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderCoord>(*dynamic_cast<CommonSEGD::GeneralHeaderCoord *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderRel> ISEGD::general_header_relative_pos_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::RELATIVE_POS_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderRel>(pimpl->common.general_header_rel) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::RELATIVE_POS_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderRel>(*dynamic_cast<CommonSEGD::GeneralHeaderRel *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderOri> ISEGD::general_header_orient_hdr_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::ORIENT_HDR_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderOri>(pimpl->common.general_header_ori) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::ORIENT_HDR_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderOri>(*dynamic_cast<CommonSEGD::GeneralHeaderOri *>(it->second.get())) : nullopt;
     }
     optional<CommonSEGD::GeneralHeaderMeas> ISEGD::general_header_measurement_blk()
     {
-        return pimpl->add_gen_hdr_blks_map.find(Impl::MEASUREMENT_BLK) != pimpl->add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderMeas>(pimpl->common.general_header_meas) : std::nullopt;
+        map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it = pimpl->common.add_gen_hdr_blks_map.find(CommonSEGD::AdditionalGeneralHeader::MEASUREMENT_BLK);
+        return it != pimpl->common.add_gen_hdr_blks_map.end() ? optional<CommonSEGD::GeneralHeaderMeas>(*dynamic_cast<CommonSEGD::GeneralHeaderMeas *>(it->second.get())) : nullopt;
     }
 
     vector<vector<CommonSEGD::ChannelSetHeader>> const &ISEGD::channel_set_headers()
     {
-        return pimpl->common.ch_sets;
+        return pimpl->common.channel_sets;
     }
 
     ISEGD::ISEGD(string name)

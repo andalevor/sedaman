@@ -29,7 +29,7 @@ namespace sedaman
         std::optional<CommonSEGD::GeneralHeader2> general_header2();
         /// \brief General header N getter
         /// \return return second general header or std::nullopt if SEGD revision less than 1.0
-        std::optional<CommonSEGD::GeneralHeaderN> general_headerN();
+        std::vector<CommonSEGD::GeneralHeaderN> general_headerN();
         /// \brief General header 3 getter
         /// \return return third general header or std::nullopt if SEGD revision less than 3.0
         std::optional<CommonSEGD::GeneralHeader3> general_header3();

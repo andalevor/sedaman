@@ -7,101 +7,147 @@
 using std::array;
 using std::fstream;
 using std::function;
+using std::make_unique;
 using std::move;
 using std::nullopt;
 using std::optional;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 namespace sedaman
 {
-    CommonSEGD::CommonSEGD(string name, fstream::openmode mode)
-        : file_name(move(name)), gen_hdr_buf{}, trc_hdr_buf{}
+    CommonSEGD::CommonSEGD(string file_name, fstream::openmode mode,
+                           GeneralHeader gh, GeneralHeader2 gh2, GeneralHeader3 gh3,
+                           vector<unique_ptr<AdditionalGeneralHeader>> add_ghs,
+                           std::vector<std::vector<ChannelSetHeader>> ch_sets)
+        : general_header{gh}, general_header2{gh2}, general_header3{gh3},
+          file_name(move(file_name)), gen_hdr_buf{}, trc_hdr_buf{}, channel_sets{ch_sets}
     {
         fstream fl;
         fl.exceptions(fstream::failbit | fstream::badbit);
         fl.open(file_name, mode);
         file = move(fl);
+        for (unique_ptr<AdditionalGeneralHeader> &item : add_ghs)
+        {
+            switch (item->type())
+            {
+            case AdditionalGeneralHeader::VESSEL_CREW_ID:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::VESSEL_CREW_ID] = make_unique<GeneralHeaderVes>(*dynamic_cast<GeneralHeaderVes *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::SURVEY_AREA_NAME:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::SURVEY_AREA_NAME] = make_unique<GeneralHeaderSur>(*dynamic_cast<GeneralHeaderSur *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::CLIENT_NAME:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::CLIENT_NAME] = make_unique<GeneralHeaderCli>(*dynamic_cast<GeneralHeaderCli *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::JOB_ID:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::JOB_ID] = make_unique<GeneralHeaderJob>(*dynamic_cast<GeneralHeaderJob *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::LINE_ID:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::LINE_ID] = make_unique<GeneralHeaderLin>(*dynamic_cast<GeneralHeaderLin *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::VIBRATOR_SOURCE_INFO:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::VIBRATOR_SOURCE_INFO] = make_unique<GeneralHeaderVib>(*dynamic_cast<GeneralHeaderVib *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::EXPLOSIVE_SOURCE_INFO:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::EXPLOSIVE_SOURCE_INFO] = make_unique<GeneralHeaderExp>(*dynamic_cast<GeneralHeaderExp *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::AIRGUN_SOURCE_INFO:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::AIRGUN_SOURCE_INFO] = make_unique<GeneralHeaderAir>(*dynamic_cast<GeneralHeaderAir *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::WATERGUN_SOURCE_INFO:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::WATERGUN_SOURCE_INFO] = make_unique<GeneralHeaderWat>(*dynamic_cast<GeneralHeaderWat *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::ELECTROMAGNETIC_SOURCE:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::ELECTROMAGNETIC_SOURCE] = make_unique<GeneralHeaderEle>(*dynamic_cast<GeneralHeaderEle *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::OTHER_SOURCE_TYPE_INFO:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::OTHER_SOURCE_TYPE_INFO] = make_unique<GeneralHeaderOth>(*dynamic_cast<GeneralHeaderOth *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::ADD_SOURCE_INFO:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::ADD_SOURCE_INFO] = make_unique<GeneralHeaderAdd>(*dynamic_cast<GeneralHeaderAdd *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::SOU_AUX_CHAN_REF:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::SOU_AUX_CHAN_REF] = make_unique<GeneralHeaderSaux>(*dynamic_cast<GeneralHeaderSaux *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::SENSOR_INFO_HDR_EXT_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::SENSOR_INFO_HDR_EXT_BLK] = make_unique<GeneralHeaderSen>(*dynamic_cast<GeneralHeaderSen *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::SENSOR_CALIBRATION_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::SENSOR_CALIBRATION_BLK] = make_unique<GeneralHeaderSCa>(*dynamic_cast<GeneralHeaderSCa *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::TIME_DRIFT_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::TIME_DRIFT_BLK] = make_unique<GeneralHeaderTim>(*dynamic_cast<GeneralHeaderTim *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::ELECTROMAG_SRC_REC_DESC_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::ELECTROMAG_SRC_REC_DESC_BLK] = make_unique<GeneralHeaderElSR>(*dynamic_cast<GeneralHeaderElSR *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::POSITION_BLK1:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::POSITION_BLK1] = make_unique<GeneralHeaderPos1>(*dynamic_cast<GeneralHeaderPos1 *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::POSITION_BLK2:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::POSITION_BLK2] = make_unique<GeneralHeaderPos2>(*dynamic_cast<GeneralHeaderPos2 *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::POSITION_BLK3:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::POSITION_BLK3] = make_unique<GeneralHeaderPos3>(*dynamic_cast<GeneralHeaderPos3 *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::COORD_REF_SYSTEM:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::COORD_REF_SYSTEM] = make_unique<GeneralHeaderCoord>(*dynamic_cast<GeneralHeaderCoord *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::RELATIVE_POS_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::RELATIVE_POS_BLK] = make_unique<GeneralHeaderRel>(*dynamic_cast<GeneralHeaderRel *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::ORIENT_HDR_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::ORIENT_HDR_BLK] = make_unique<GeneralHeaderOri>(*dynamic_cast<GeneralHeaderOri *>(item.get()));
+                break;
+            case AdditionalGeneralHeader::MEASUREMENT_BLK:
+                add_gen_hdr_blks_map[AdditionalGeneralHeader::MEASUREMENT_BLK] = make_unique<GeneralHeaderMeas>(*dynamic_cast<GeneralHeaderMeas *>(item.get()));
+                break;
+            }
+        }
     }
 
-    CommonSEGD::ChannelSetHeader::ChannelSetHeader(CommonSEGD &common)
+    CommonSEGD::ChannelSetHeader::ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht,
+                                                   uint32_t chsstm, uint32_t chsetm, double dm, uint32_t noch, int spchs,
+                                                   uint8_t chg, uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
+                                                   uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn, uint8_t ehf,
+                                                   uint8_t the, uint8_t vs, uint8_t sn, uint8_t af)
+        : scan_type_number{stn}, channel_set_number{chsn}, channel_type{cht},
+          channel_set_start_time{chsstm}, channel_set_end_time{chsetm}, descale_multiplier{dm},
+          number_of_channels{noch}, subscans_per_ch_set{spchs}, channel_gain{chg},
+          alias_filter_freq{aff}, alias_filter_slope{afs}, low_cut_filter_freq{lcff},
+          low_cut_filter_slope{lcfs}, first_notch_filter{fnf}, second_notch_filter{snf},
+          third_notch_filter{tnf}, ext_ch_set_num{echsn}, ext_hdr_flag{ehf},
+          trc_hdr_ext{the}, vert_stack{vs}, streamer_no{sn}, array_forming{af}
     {
-        function<uint16_t(char const **)> read_u16 = [](char const **buf) { return swap(read<uint16_t>(buf)); };
-        function<int16_t(char const **)> read_i16 = [](char const **buf) { return swap(read<int16_t>(buf)); };
-        function<uint32_t(char const **)> read_u24 = [](char const **buf) { return read<uint16_t>(buf) << 8 | read<uint8_t>(buf); };
-        function<uint32_t(char const **)> read_u32 = [](char const **buf) { return swap(read<uint32_t>(buf)); };
-        char const *buf = common.ch_set_hdr_buf.data();
-        if (common.general_header.add_gen_hdr_blocks)
-            segd_rev_major = common.general_header2.segd_rev_major;
-        if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3)
-        {
-            scan_type_number = from_bcd<int>(&buf, false, 2);
-            channel_set_number = from_bcd<int>(&buf, false, 2);
-            channel_set_start_time = read_u16(&buf) * 2;
-            channel_set_end_time = read_u16(&buf) * 2;
-            uint16_t val = read<uint16_t>(&buf);
-            descale_multiplier = static_cast<double>((val & 0x8000) ? -1 : 1) *
-                                 (val & 0x7fff) / pow(2, 10);
-            number_of_channels = from_bcd<int>(&buf, false, 4);
-            channel_type = from_bcd<int>(&buf, false, 1);
-            ++buf;
-            subscans_per_ch_set = pow(2, from_bcd<int>(&buf, false, 1));
-            channel_gain = from_bcd<int>(&buf, true, 1);
-            alias_filter_freq = from_bcd<int>(&buf, false, 4);
-            alias_filter_slope = from_bcd<int>(&buf, false, 4);
-            low_cut_filter_freq = from_bcd<int>(&buf, false, 4);
-            low_cut_filter_slope = from_bcd<int>(&buf, false, 4);
-            first_notch_filter = from_bcd<int>(&buf, false, 4);
-            second_notch_filter = from_bcd<int>(&buf, false, 4);
-            third_notch_filter = from_bcd<int>(&buf, false, 4);
-            ext_ch_set_num = read_u16(&buf);
-            ext_hdr_flag = *buf >> 4;
-            trc_hdr_ext = *buf & 0x0f;
-            ++buf;
-            vert_stack = *buf++;
-            streamer_no = *buf++;
-            array_forming = *buf++;
-        }
-        else
-        {
-            scan_type_number = from_bcd<int>(&buf, false, 2);
-            channel_set_number = read_u16(&buf);
-            channel_type = *buf++;
-            channel_set_start_time = read_u32(&buf);
-            channel_set_end_time = read_u32(&buf);
-            p_number_of_samples = read_u32(&buf);
-            descale_multiplier = read_u32(&buf);
-            number_of_channels = read_u24(&buf);
-            p_samp_int = read_u24(&buf);
-            array_forming = *buf++;
-            trc_hdr_ext = *buf++;
-            ext_hdr_flag = *buf >> 4;
-            channel_gain = *buf & 0x0f;
-            ++buf;
-            vert_stack = *buf++;
-            streamer_no = *buf++;
-            ++buf;
-            alias_filter_freq = read_u32(&buf);
-            low_cut_filter_freq = read_u32(&buf);
-            alias_filter_slope = read_u32(&buf);
-            low_cut_filter_slope = read_u32(&buf);
-            first_notch_filter = read_u32(&buf);
-            second_notch_filter = read_u32(&buf);
-            third_notch_filter = read_u32(&buf);
-            p_filter_phase = *buf++;
-            p_physical_unit = *buf++;
-            buf += 2;
-            p_filter_delay = read_u32(&buf);
-            memcpy(p_description.data(), buf, p_description.size());
-        }
+        segd_rev_more_than_2 = false;
+    }
+    CommonSEGD::ChannelSetHeader::ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht,
+                                                   uint32_t chsstm, uint32_t chsetm, double dm, uint32_t noch, int spchs,
+                                                   uint8_t chg, uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
+                                                   uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn, uint8_t ehf,
+                                                   uint8_t the, uint8_t vs, uint8_t sn, uint8_t af, uint32_t nos,
+                                                   uint32_t si, uint8_t fph, uint8_t phu, uint32_t fd, array<char, 27> d)
+        : scan_type_number{stn}, channel_set_number{chsn}, channel_type{cht},
+          channel_set_start_time{chsstm}, channel_set_end_time{chsetm}, descale_multiplier{dm},
+          number_of_channels{noch}, subscans_per_ch_set{spchs}, channel_gain{chg},
+          alias_filter_freq{aff}, alias_filter_slope{afs}, low_cut_filter_freq{lcff},
+          low_cut_filter_slope{lcfs}, first_notch_filter{fnf}, second_notch_filter{snf},
+          third_notch_filter{tnf}, ext_ch_set_num{echsn}, ext_hdr_flag{ehf},
+          trc_hdr_ext{the}, vert_stack{vs}, streamer_no{sn}, array_forming{af},
+          p_number_of_samples{nos}, p_samp_int{si}, p_filter_phase{fph},
+          p_physical_unit{phu}, p_filter_delay{fd}, p_description{d}
+    {
+        segd_rev_more_than_2 = true;
     }
 
-    optional<uint32_t> CommonSEGD::ChannelSetHeader::number_of_samples() { return segd_rev_major > 2 ? optional<uint32_t>(p_number_of_samples) : nullopt; }
-    optional<uint32_t> CommonSEGD::ChannelSetHeader::samp_int() { return segd_rev_major > 2 ? optional<uint32_t>(p_samp_int) : nullopt; }
-    optional<uint8_t> CommonSEGD::ChannelSetHeader::filter_phase() { return segd_rev_major > 2 ? optional<uint8_t>(p_filter_phase) : nullopt; }
-    optional<uint8_t> CommonSEGD::ChannelSetHeader::physical_unit() { return segd_rev_major > 2 ? optional<uint8_t>(p_physical_unit) : nullopt; }
-    optional<uint32_t> CommonSEGD::ChannelSetHeader::filter_delay() { return segd_rev_major > 2 ? optional<uint8_t>(p_filter_delay) : nullopt; }
-    optional<array<char, 27>> CommonSEGD::ChannelSetHeader::description() { return segd_rev_major > 2 ? optional<array<char, 27>>(p_description) : nullopt; }
+    optional<uint32_t> CommonSEGD::ChannelSetHeader::number_of_samples() { return segd_rev_more_than_2 ? optional<uint32_t>(p_number_of_samples) : nullopt; }
+    optional<uint32_t> CommonSEGD::ChannelSetHeader::samp_int() { return segd_rev_more_than_2 ? optional<uint32_t>(p_samp_int) : nullopt; }
+    optional<uint8_t> CommonSEGD::ChannelSetHeader::filter_phase() { return segd_rev_more_than_2 ? optional<uint8_t>(p_filter_phase) : nullopt; }
+    optional<uint8_t> CommonSEGD::ChannelSetHeader::physical_unit() { return segd_rev_more_than_2 ? optional<uint8_t>(p_physical_unit) : nullopt; }
+    optional<uint32_t> CommonSEGD::ChannelSetHeader::filter_delay() { return segd_rev_more_than_2 ? optional<uint8_t>(p_filter_delay) : nullopt; }
+    optional<array<char, 27>> CommonSEGD::ChannelSetHeader::description() { return segd_rev_more_than_2 ? optional<array<char, 27>>(p_description) : nullopt; }
 
     static char const *gh1_names[] = {
         "File number",
