@@ -3,11 +3,10 @@
 #include <iomanip>
 #include <iostream>
 
-class Printer
-{
+class Printer {
 public:
     explicit Printer(int s)
-        : size{s}
+        : size { s }
     {
     }
     template <typename T>
@@ -22,12 +21,11 @@ private:
 
 int get_max();
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     if (argc < 2)
         return 1;
-    try
-    {
+    try {
         sedaman::ISEGD segd(argv[1]);
         int max = get_max();
         Printer p(max);
@@ -35,13 +33,11 @@ int main(int argc, char *argv[])
         using name = sedaman::CommonSEGD::ChannelSetHeader::Name;
         auto name_as_string = sedaman::CommonSEGD::ChannelSetHeader::name_as_string;
         decltype(ch_sets.size()) scan_counter = 0, ch_set_counter;
-        for (auto &scan : ch_sets)
-        {
+        for (auto& scan : ch_sets) {
             ch_set_counter = 0;
             std::cout << std::setw(max + 30) << std::setfill('*') << '\0';
             std::cout << "\nScan sequence number: " << ++scan_counter << "\n\n";
-            for (auto &hdr : scan)
-            {
+            for (auto& hdr : scan) {
                 std::cout << std::setw(max + 30) << std::setfill('=') << '\0';
                 std::cout << "\nChannel set sequence number: " << ++ch_set_counter << "\n";
                 p(hdr.scan_type_number, name_as_string(name::SCAN_TYPE_NUMBER));
@@ -66,8 +62,7 @@ int main(int argc, char *argv[])
                 p(hdr.vert_stack, name_as_string(name::VERT_STACK));
                 p(hdr.streamer_no, name_as_string(name::STREAMER_NO));
                 p(hdr.array_forming, name_as_string(name::ARRAY_FORMING));
-                if (segd.general_header().add_gen_hdr_blocks && segd.general_header2()->segd_rev_major > 2)
-                {
+                if (segd.general_header().add_gen_hdr_blocks && segd.general_header2()->segd_rev_major > 2) {
                     p(*hdr.number_of_samples(), name_as_string(name::NUMBER_OF_SAMPLES));
                     p(*hdr.samp_int(), name_as_string(name::SAMPLE_INTERVAL));
                     p(*hdr.filter_phase(), name_as_string(name::FILTER_PHASE));
@@ -78,9 +73,7 @@ int main(int argc, char *argv[])
                 std::cout << '\n';
             }
         }
-    }
-    catch (std::exception &e)
-    {
+    } catch (std::exception& e) {
         std::cerr << e.what() << '\n';
         return 1;
     }
@@ -90,8 +83,7 @@ int get_max()
 {
     int result = 0;
     for (int i = static_cast<int>(sedaman::CommonSEGD::ChannelSetHeader::Name::SCAN_TYPE_NUMBER);
-         i != static_cast<int>(sedaman::CommonSEGD::ChannelSetHeader::Name::DESCRIPTION); ++i)
-    {
+         i != static_cast<int>(sedaman::CommonSEGD::ChannelSetHeader::Name::DESCRIPTION); ++i) {
         int len = strlen(sedaman::CommonSEGD::ChannelSetHeader::name_as_string(static_cast<sedaman::CommonSEGD::ChannelSetHeader::Name>(i)));
         if (result < len)
             result = len;
