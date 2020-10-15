@@ -92,7 +92,7 @@ void ISEGY::Impl::initialization(bool override_bin_hdr)
 {
     char text_buf[CommonSEGY::TEXT_HEADER_SIZE];
     common.file.read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
-    common.text_headers.push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
+    common.text_headers.emplace_back(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
     char bin_buf[CommonSEGY::BIN_HEADER_SIZE];
     common.file.read(bin_buf, CommonSEGY::BIN_HEADER_SIZE);
     check_tr_hdr_over();
@@ -312,14 +312,14 @@ void ISEGY::Impl::read_ext_text_headers()
         string end_stanza = "((SEG: EndText))";
         while (1) {
             common.file.read(buf, CommonSEGY::TEXT_HEADER_SIZE);
-            common.text_headers.push_back(string(buf, CommonSEGY::TEXT_HEADER_SIZE));
+            common.text_headers.emplace_back(buf, CommonSEGY::TEXT_HEADER_SIZE);
             if (!end_stanza.compare(0, end_stanza.size(), buf, end_stanza.size()))
                 return;
         }
     } else {
         for (int i = common.binary_header.ext_text_headers_num; i; --i) {
             common.file.read(buf, CommonSEGY::TEXT_HEADER_SIZE);
-            common.text_headers.push_back(string(buf, CommonSEGY::TEXT_HEADER_SIZE));
+            common.text_headers.emplace_back(buf, CommonSEGY::TEXT_HEADER_SIZE);
         }
     }
 }
@@ -337,7 +337,7 @@ void ISEGY::Impl::read_trailer_stanzas()
             string end_stanza = "((SEG: EndText))";
             while (1) {
                 common.file.read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
-                common.trailer_stanzas.push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
+                common.trailer_stanzas.emplace_back(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
                 if (!end_stanza.compare(0, end_stanza.size(), text_buf, end_stanza.size()))
                     return;
             }
@@ -369,7 +369,7 @@ void ISEGY::Impl::read_trailer_stanzas()
             string end_stanza = "((SEG: EndText))";
             while (1) {
                 common.file.read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
-                common.trailer_stanzas.push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
+                common.trailer_stanzas.emplace_back(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
                 if (!end_stanza.compare(0, end_stanza.size(), text_buf, end_stanza.size()))
                     return;
             }
@@ -380,7 +380,7 @@ void ISEGY::Impl::read_trailer_stanzas()
         end_of_data = common.file.tellg();
         for (int32_t i = common.binary_header.num_of_trailer_stanza; i; --i) {
             common.file.read(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
-            common.trailer_stanzas.push_back(string(text_buf, CommonSEGY::TEXT_HEADER_SIZE));
+            common.trailer_stanzas.emplace_back(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
         }
     }
 }

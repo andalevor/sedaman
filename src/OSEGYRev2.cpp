@@ -36,7 +36,7 @@ OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs, vector<string> trlr
 {
     if (txt_hdrs.empty()) {
         string txt_hdr = string(CommonSEGY::default_text_header, CommonSEGY::TEXT_HEADER_SIZE);
-        txt_hdrs.push_back(move(txt_hdr));
+        txt_hdrs.emplace_back(move(txt_hdr));
     } else {
         for (string& s : txt_hdrs)
             if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)

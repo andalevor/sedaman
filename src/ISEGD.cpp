@@ -135,7 +135,7 @@ void ISEGD::Impl::read_headers_before_traces()
         for (int j = ch_sets_per_scan_type_num; j; --j) {
             CommonSEGD::ChannelSetHeader hdr = read_ch_set_hdr();
             chans_in_record += hdr.number_of_channels;
-            common.channel_sets[i].push_back(move(hdr));
+            common.channel_sets[i].emplace_back(move(hdr));
         }
         uint16_t skew_blks = common.general_header.skew_blocks == 165 ? common.general_header2.extended_skew_blocks : common.general_header.skew_blocks;
         file_skip_bytes(skew_blks * CommonSEGD::SKEW_BLOCK_SIZE);

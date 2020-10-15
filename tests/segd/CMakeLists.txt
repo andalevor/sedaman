@@ -13,3 +13,7 @@ target_link_libraries(print_trc_hdr sedaman)
 add_executable(print_trc_samples print_trace_samples.cpp)
 #add_test(print_trc_samples_test print_trc_samples)
 target_link_libraries(print_trc_samples sedaman)
+
+add_executable(write_and_check write_and_check.cpp)
+#add_test(print_trc_samples_test print_trc_samples)
+target_link_libraries(write_and_check sedaman)

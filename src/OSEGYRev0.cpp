@@ -40,7 +40,7 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
         throw Exception(__FILE__, __LINE__, "size of text header should be 3200 bytes");
     }
     sgy.common().file.write(txt_hdr.c_str(), CommonSEGY::TEXT_HEADER_SIZE);
-    sgy.common().text_headers.push_back(move(txt_hdr));
+    sgy.common().text_headers.emplace_back(move(txt_hdr));
     if (sgy.common().binary_header.format_code == 0)
         sgy.common().binary_header.format_code = 1;
     sgy.assign_raw_writers();

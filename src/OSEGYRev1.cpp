@@ -36,7 +36,7 @@ OSEGYRev1::Impl::Impl(OSEGYRev1& s, vector<string> txt_hdrs)
         auto pos = txt_hdr.find(to_replace);
         // change revision
         txt_hdr.replace(pos, to_replace.size(), string("SEG Y REV1  "));
-        txt_hdrs.push_back(move(txt_hdr));
+        txt_hdrs.emplace_back(move(txt_hdr));
     } else {
         for (string& s : txt_hdrs)
             if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
