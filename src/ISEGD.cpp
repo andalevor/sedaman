@@ -5,8 +5,10 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <type_traits>
 
 using std::array;
+using std::endian;
 using std::fstream;
 using std::function;
 using std::get;
@@ -147,7 +149,7 @@ void ISEGD::Impl::read_headers_before_traces()
 
 void ISEGD::Impl::assign_raw_readers()
 {
-    if (is_big_endian()) {
+    if (endian::native == endian::big) {
         read_u16 = [](char const** buf) { return read<uint16_t>(buf); };
         read_i16 = [](char const** buf) { return read<int16_t>(buf); };
         read_u24 = [](char const** buf) { return read<uint16_t>(buf) << 8 | read<uint8_t>(buf); };
@@ -845,7 +847,7 @@ void ISEGD::Impl::assign_sample_reading()
         break;
     case 9036:
         common.bits_per_sample = 24;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             read_sample = [this](char const** buf) { return swap(read_i24(buf)); };
         else
             read_sample = [](char const** buf) {
@@ -855,14 +857,14 @@ void ISEGD::Impl::assign_sample_reading()
         break;
     case 9038:
         common.bits_per_sample = 32;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             read_sample = [this](char const** buf) { return swap(read_i32(buf)); };
         else
             read_sample = [](char const** buf) { return read<int32_t>(buf); };
         break;
     case 9058:
         common.bits_per_sample = 32;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             read_sample = [this](char const** buf) {
                 uint32_t tmp = read_u32(buf);
                 tmp = swap(tmp);
@@ -880,7 +882,7 @@ void ISEGD::Impl::assign_sample_reading()
         break;
     case 9080:
         common.bits_per_sample = 64;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             read_sample = [this](char const** buf) {
                 uint64_t tmp = read_u64(buf);
                 tmp = swap(tmp);
@@ -905,14 +907,14 @@ CommonSEGD::ChannelSetHeader ISEGD::Impl::read_ch_set_hdr()
 {
     fill_buf_from_file(common.ch_set_hdr_buf.data(), common.ch_set_hdr_buf.size());
     char const* buf = common.ch_set_hdr_buf.data();
-    int scan_type_number, subscans_per_ch_set;
+    int scan_type_number, subscans_per_ch_set = 0;
     uint8_t channel_type, channel_gain, ext_hdr_flag, trc_hdr_ext,
-        vert_stack, streamer_no, array_forming, filter_phase, physical_unit;
-    uint16_t channel_set_number, ext_ch_set_num;
+        vert_stack, streamer_no, array_forming, filter_phase = 0, physical_unit = 0;
+    uint16_t channel_set_number, ext_ch_set_num = 0;
     uint32_t channel_set_start_time, channel_set_end_time, number_of_channels,
         alias_filter_freq, alias_filter_slope, low_cut_filter_freq, low_cut_filter_slope,
         first_notch_filter, second_notch_filter, third_notch_filter,
-        number_of_samples, samp_int, filter_delay;
+        number_of_samples = 0, samp_int = 0, filter_delay = 0;
     double descale_multiplier;
     array<char, 27> description;
     if (!common.general_header.add_gen_hdr_blocks || common.general_header2.segd_rev_major < 3) {

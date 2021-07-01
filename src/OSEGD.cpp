@@ -1,8 +1,11 @@
 #include "OSEGD.hpp"
 #include "Exception.hpp"
 #include "util.hpp"
+#include <functional>
+#include <type_traits>
 
 using std::abs;
+using std::endian;
 using std::fstream;
 using std::function;
 using std::get;
@@ -73,7 +76,7 @@ private:
 
 void OSEGD::Impl::assign_raw_writers()
 {
-    if (is_big_endian()) {
+    if (endian::native == endian::big) {
         write_u16 = [](char** buf, uint16_t val) { write<uint16_t>(buf, val); };
         write_i16 = [](char** buf, int16_t val) { write<int16_t>(buf, val); };
         write_u24 = [](char** buf, uint32_t val) {
@@ -937,7 +940,7 @@ void OSEGD::Impl::assign_sample_writers()
         break;
     case 9036:
         common.bits_per_sample = 24;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             write_sample = [this](char** buf, double val) { return write_i24(buf, swap(static_cast<int32_t>(val))); };
         else
             write_sample = [](char** buf, double val) {
@@ -947,14 +950,14 @@ void OSEGD::Impl::assign_sample_writers()
         break;
     case 9038:
         common.bits_per_sample = 32;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             write_sample = [this](char** buf, double val) { return write_i32(buf, swap(static_cast<int32_t>(val))); };
         else
             write_sample = [](char** buf, double val) { return write<int32_t>(buf, val); };
         break;
     case 9058:
         common.bits_per_sample = 32;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             write_sample = [this](char** buf, double val) {
                 uint32_t result;
                 float tmp = val;
@@ -971,7 +974,7 @@ void OSEGD::Impl::assign_sample_writers()
         break;
     case 9080:
         common.bits_per_sample = 64;
-        if (is_big_endian())
+        if (endian::native == endian::big)
             write_sample = [this](char** buf, double val) {
                 uint64_t result;
                 memcpy(&result, &val, sizeof(result));

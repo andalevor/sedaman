@@ -146,16 +146,6 @@ void to_bcd(char** buf, T val, bool skip_first, int num)
         --num;
     }
 }
-
-constexpr bool is_big_endian(void)
-{
-    union {
-        uint32_t i;
-        char c[4];
-    } bint = { 0x01020304 };
-
-    return bint.c[0] == 1;
-}
 } // namespace sedaman
 
 #endif // SEDAMAN_UTIL_HPP
