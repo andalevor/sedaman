@@ -11,7 +11,6 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <valarray>
 #include <variant>
 #include <vector>
 
@@ -62,7 +61,7 @@ public:
     /// \param hdr Header values
     /// \param smpl Samples values
     Trace(std::unordered_map<std::string, Header::Value> hdr,
-        std::valarray<double> smpl);
+        std::vector<double> smpl);
     ~Trace();
     Trace& operator=(Trace const& other);
     Trace& operator=(Trace&& other) noexcept;
@@ -73,7 +72,7 @@ public:
     /// \fn samples
     /// \brief Trace samples getter
     /// \return Samples values
-    std::valarray<double> const& samples() const;
+    std::vector<double> const& samples() const;
 
 private:
     class Impl;

@@ -24,7 +24,6 @@ using std::streamsize;
 using std::string;
 using std::unique_ptr;
 using std::unordered_map;
-using std::valarray;
 using std::vector;
 
 namespace sedaman {
@@ -32,7 +31,7 @@ class ISEGD::Impl {
 public:
     Impl(CommonSEGD com);
     unordered_map<string, Trace::Header::Value> read_trace_header();
-    valarray<double> read_trace_samples(unordered_map<string, Trace::Header::Value>& hdr);
+    vector<double> read_trace_samples(unordered_map<string, Trace::Header::Value>& hdr);
     void read_headers_before_traces();
     void read_trailer();
     CommonSEGD common;
@@ -100,7 +99,7 @@ bool ISEGD::has_trace()
 Trace ISEGD::read_trace()
 {
     unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trace_header();
-    valarray<double> samples = pimpl->read_trace_samples(hdr);
+    vector<double> samples = pimpl->read_trace_samples(hdr);
     ++pimpl->chans_read;
     if (pimpl->chans_in_record == pimpl->chans_read) {
         pimpl->chans_in_record = pimpl->chans_read = 0;
@@ -1046,7 +1045,7 @@ unordered_map<string, Trace::Header::Value> ISEGD::Impl::read_trace_header()
     return hdr;
 } // namespace sedaman
 
-valarray<double> ISEGD::Impl::read_trace_samples(unordered_map<string, Trace::Header::Value>& hdr)
+vector<double> ISEGD::Impl::read_trace_samples(unordered_map<string, Trace::Header::Value>& hdr)
 {
     uint32_t samp_num;
     CommonSEGD::ChannelSetHeader curr_ch_set = common.channel_sets[get<int16_t>(hdr["SCAN_TYPE_NUM"]) - 1]
@@ -1061,7 +1060,7 @@ valarray<double> ISEGD::Impl::read_trace_samples(unordered_map<string, Trace::He
         common.trc_samp_buf.resize((samp_num * common.bits_per_sample) / 8);
     fill_buf_from_file(common.trc_samp_buf.data(), common.trc_samp_buf.size());
     char const* buf = common.trc_samp_buf.data();
-    valarray<double> result(samp_num);
+    vector<double> result(samp_num);
     double descale = pow(2, curr_ch_set.descale_multiplier);
     for (uint32_t i = 0; i < samp_num; ++i)
         result[i] = read_sample(&buf) * descale;

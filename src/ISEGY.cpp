@@ -4,12 +4,12 @@
 #include "Trace.hpp"
 #include "util.hpp"
 #include <cfloat>
+#include <cmath>
 #include <fstream>
 #include <functional>
 #include <ios>
 #include <string>
 #include <unordered_map>
-#include <valarray>
 #include <variant>
 
 using std::fstream;
@@ -27,7 +27,6 @@ using std::streamsize;
 using std::string;
 using std::to_string;
 using std::unordered_map;
-using std::valarray;
 using std::vector;
 
 namespace sedaman {
@@ -56,9 +55,9 @@ public:
     streampos end_of_data;
     vector<map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>> tr_hdr_io_map;
     unordered_map<string, Trace::Header::Value> read_trc_header();
-    function<valarray<double>(unordered_map<string, Trace::Header::Value>&)> read_trc_smpls;
-    valarray<double> read_trc_smpls_fix();
-    valarray<double> read_trc_smpls_var(unordered_map<string, Trace::Header::Value>& hdr);
+    function<vector<double>(unordered_map<string, Trace::Header::Value>&)> read_trc_smpls;
+    vector<double> read_trc_smpls_fix();
+    vector<double> read_trc_smpls_var(unordered_map<string, Trace::Header::Value>& hdr);
     void file_skip_bytes(streamoff off);
     vector<map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>> tr_hdr_default_io_map();
 
@@ -754,17 +753,17 @@ Trace::Header ISEGY::read_header()
     return Trace::Header(hdr);
 }
 
-valarray<double> ISEGY::Impl::read_trc_smpls_fix()
+vector<double> ISEGY::Impl::read_trc_smpls_fix()
 {
     fill_buf_from_file(common.samp_buf.data(), common.samp_buf.size());
     char const* buf = common.samp_buf.data();
-    valarray<double> result(common.samp_buf.size() / common.bytes_per_sample);
+    vector<double> result(common.samp_buf.size() / common.bytes_per_sample);
     for (decltype(result.size()) i = 0; i < result.size(); ++i)
         result[i] = read_sample(&buf);
     return result;
 }
 
-valarray<double> ISEGY::Impl::read_trc_smpls_var(unordered_map<string, Trace::Header::Value>& hdr)
+vector<double> ISEGY::Impl::read_trc_smpls_var(unordered_map<string, Trace::Header::Value>& hdr)
 {
     uint32_t samp_num;
     Trace::Header::Value v = hdr["SAMP_NUM"];
@@ -780,7 +779,7 @@ valarray<double> ISEGY::Impl::read_trc_smpls_var(unordered_map<string, Trace::He
 Trace ISEGY::read_trace()
 {
     unordered_map<string, Trace::Header::Value> hdr = pimpl->read_trc_header();
-    valarray<double> samples = pimpl->read_trc_smpls(hdr);
+    vector<double> samples = pimpl->read_trc_smpls(hdr);
     return Trace(move(hdr), move(samples));
 }
 

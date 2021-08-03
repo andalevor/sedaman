@@ -21,7 +21,6 @@ using std::optional;
 using std::pair;
 using std::streampos;
 using std::string;
-using std::valarray;
 using std::vector;
 
 namespace sedaman {
@@ -596,7 +595,7 @@ void OSEGY::Impl::write_trace_samples_var(Trace const& t)
 void OSEGY::Impl::write_trace_samples_fix(Trace const& t)
 {
     char* buf = common.samp_buf.data();
-    valarray<double> const& samples = t.samples();
+    vector<double> const& samples = t.samples();
     for (auto samp : samples)
         write_sample(&buf, samp);
     common.file.write(common.samp_buf.data(), common.samp_buf.size());

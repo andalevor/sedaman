@@ -7,7 +7,6 @@ using std::optional;
 using std::pair;
 using std::string;
 using std::unordered_map;
-using std::valarray;
 using std::vector;
 
 namespace sedaman {
@@ -22,22 +21,22 @@ public:
 
 class Trace::Impl {
 public:
-    Impl(Trace::Header h, valarray<double> s)
+    Impl(Trace::Header h, vector<double> s)
         : d_header { move(h) }
         , d_samples { move(s) }
     {
     }
-    Impl(unordered_map<string, Header::Value> hdr, valarray<double> s)
+    Impl(unordered_map<string, Header::Value> hdr, vector<double> s)
         : d_header { move(hdr) }
         , d_samples { move(s) }
     {
     }
     Trace::Header d_header;
-    valarray<double> d_samples;
+    vector<double> d_samples;
 };
 
 Trace::Header const& Trace::header() const { return pimpl->d_header; }
-valarray<double> const& Trace::samples() const { return pimpl->d_samples; }
+vector<double> const& Trace::samples() const { return pimpl->d_samples; }
 
 optional<Trace::Header::Value> Trace::Header::get(string key) const
 {
@@ -97,7 +96,7 @@ Trace::Trace(Trace&& t) noexcept
 {
 }
 
-Trace::Trace(unordered_map<string, Header::Value> hdr, valarray<double> s)
+Trace::Trace(unordered_map<string, Header::Value> hdr, vector<double> s)
     : pimpl { make_unique<Impl>(move(hdr), move(s)) }
 {
 }

@@ -1,6 +1,7 @@
 #include "OSEGD.hpp"
 #include "Exception.hpp"
 #include "util.hpp"
+#include <cmath>
 #include <functional>
 #include <type_traits>
 
@@ -15,7 +16,6 @@ using std::move;
 using std::optional;
 using std::string;
 using std::unique_ptr;
-using std::valarray;
 using std::vector;
 
 namespace sedaman {
@@ -830,7 +830,7 @@ void OSEGD::Impl::write_trace_samples(Trace const& trc)
     if (common.trc_samp_buf.size() != trc.samples().size() * common.bits_per_sample)
         common.trc_samp_buf.resize(trc.samples().size() * common.bits_per_sample);
     char* buf = common.trc_samp_buf.data();
-    valarray<double> const& samples = trc.samples();
+    vector<double> const& samples = trc.samples();
     for (auto samp : samples)
         write_sample(&buf, samp);
     common.file.write(common.trc_samp_buf.data(), common.trc_samp_buf.size());
