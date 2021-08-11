@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
             sedaman::Trace t = segy.read_trace();
             if (first)
             {
+				first = false;
                 reference = std::deque<double>(t.samples().begin(), t.samples().end());
                 double sum = std::accumulate(t.samples().begin(), t.samples().end(), 0.0);
                 if (sum != sum_ref)
