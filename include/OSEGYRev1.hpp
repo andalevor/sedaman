@@ -17,15 +17,15 @@ namespace sedaman {
 class OSEGYRev1 : public OSEGY {
 public:
     /// \param file_name Name of SEGY file.
-    /// \param text_headers Vector with SEGY text header and extended text\
-	headers.
+    /// \param text_headers Vector with SEGY text header and extended text
+	///                     headers.
     /// \param bin_header Could be used to set some files in binary header.
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
     /// \brief Creates SEGY rev 1 object.
     /// Size of text header must be 3200 bytes.
-    /// First string in vector will be the main text header. Other will be\
-	considered extended.
+    /// First string in vector will be the main text header. Other will be
+	/// considered extended.
     /// CommonSegy::ascii_to_ebcdic could be used for transformation.
     /// By default will be used text header from standard.
     OSEGYRev1(std::string file_name, std::vector<std::string> text_headers =

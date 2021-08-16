@@ -647,8 +647,8 @@ public:
         virtual ~GeneralHeaderSaux() override { }
     };
     /// \class GeneralHeaderCoord
-    /// \brief Class for general header for coordinate reference system \
-	identification
+    /// \brief Class for general header for coordinate reference system
+	///        identification
     class GeneralHeaderCoord : public AdditionalGeneralHeader {
     public:
         char crs[31];

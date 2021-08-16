@@ -8,7 +8,6 @@
 using std::function;
 using std::get;
 using std::holds_alternative;
-using std::ios_base;
 using std::make_unique;
 using std::memcmp;
 using std::move;
