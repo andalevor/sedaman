@@ -92,7 +92,8 @@ Trace::Trace(Trace const& t)
 }
 
 Trace::Trace(Trace&& t) noexcept
-    : pimpl { make_unique<Impl>(move(t.pimpl->d_header), move(t.pimpl->d_samples)) }
+    : pimpl { make_unique<Impl>(move(t.pimpl->d_header),
+							   	move(t.pimpl->d_samples)) }
 {
 }
 

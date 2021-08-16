@@ -647,7 +647,8 @@ public:
         virtual ~GeneralHeaderSaux() override { }
     };
     /// \class GeneralHeaderCoord
-    /// \brief Class for general header for coordinate reference system identification
+    /// \brief Class for general header for coordinate reference system \
+	identification
     class GeneralHeaderCoord : public AdditionalGeneralHeader {
     public:
         char crs[31];
@@ -942,17 +943,18 @@ public:
     };
     class ChannelSetHeader {
     public:
-        ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht,
-            uint32_t chsstm, uint32_t chsetm, double dm, uint32_t noch, int spchs,
-            uint8_t chg, uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
-            uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn, uint8_t ehf,
-            uint8_t the, uint8_t vs, uint8_t sn, uint8_t af);
-        ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht,
-            uint32_t chsstm, uint32_t chsetm, double dm, uint32_t noch, int spchs,
-            uint8_t chg, uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
-            uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn, uint8_t ehf,
-            uint8_t the, uint8_t vs, uint8_t sn, uint8_t af, uint32_t nos,
-            uint32_t si, uint8_t fph, uint8_t phu, uint32_t fd, std::array<char, 27> d);
+        ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht, uint32_t chsstm,
+			uint32_t chsetm, double dm, uint32_t noch, int spchs, uint8_t chg,
+		   	uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
+		   	uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn,
+		   	uint8_t ehf, uint8_t the, uint8_t vs, uint8_t sn, uint8_t af);
+        ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht, uint32_t chsstm,
+			uint32_t chsetm, double dm, uint32_t noch, int spchs, uint8_t chg,
+		   	uint32_t aff, uint32_t afs, uint32_t lcff, uint32_t lcfs,
+		   	uint32_t fnf, uint32_t snf, uint32_t tnf, uint16_t echsn,
+		   	uint8_t ehf, uint8_t the, uint8_t vs, uint8_t sn, uint8_t af,
+		   	uint32_t nos, uint32_t si, uint8_t fph, uint8_t phu, uint32_t fd,
+		   	std::array<char, 27> d);
         int scan_type_number;
         uint16_t channel_set_number;
         uint8_t channel_type;
@@ -1037,7 +1039,8 @@ public:
     /// \param file_name Name of file.
     /// \param mode Choose input or output.
     CommonSEGD(std::string file_name, std::fstream::openmode mode,
-        GeneralHeader gh = {}, GeneralHeader2 gh2 = {}, GeneralHeader3 gh3 = {},
+        GeneralHeader gh = {}, GeneralHeader2 gh2 = {},
+	   	GeneralHeader3 gh3 = {},
         std::vector<std::unique_ptr<AdditionalGeneralHeader>> add_ghs = {},
         std::vector<std::vector<ChannelSetHeader>> ch_sets = {});
     std::string file_name;
@@ -1046,7 +1049,8 @@ public:
     std::vector<char> ch_set_hdr_buf;
     char trc_hdr_buf[CommonSEGD::TRACE_HEADER_SIZE];
     std::vector<char> trc_samp_buf;
-    std::map<AdditionalGeneralHeader::ADD_GEN_HDR_BLKS, std::unique_ptr<AdditionalGeneralHeader>> add_gen_hdr_blks_map;
+    std::map<AdditionalGeneralHeader::ADD_GEN_HDR_BLKS,
+	   	std::unique_ptr<AdditionalGeneralHeader>> add_gen_hdr_blks_map;
     std::vector<std::vector<ChannelSetHeader>> channel_sets;
     int bits_per_sample;
 };

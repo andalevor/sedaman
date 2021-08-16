@@ -25,7 +25,8 @@ public:
     /// \brief Trace header class
     class Header {
     public:
-        typedef std::variant<int8_t, int16_t, int32_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t, float, double> Value;
+        typedef std::variant<int8_t, int16_t, int32_t, int64_t, uint8_t,
+			   	uint16_t, uint32_t, uint64_t, float, double> Value;
         /// \param hdr Header to copy data from
         Header(Header const& hdr);
         /// \param hdr Header to move data from

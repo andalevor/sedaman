@@ -151,10 +151,13 @@ public:
     static std::map<std::string, std::string> trace_header_description;
     /// \param file_name Name of SEGY file.
     /// \param mode Used to switch between input and output
-    /// \param bh Can be used to override binary header values. Usefull for OSegy.
-    /// \param add_tr_hdrs_map Each item of vector is pair of headers name and map.
+    /// \param bh Can be used to override binary header values.\
+	Usefull for OSegy.
+    /// \param add_tr_hdrs_map Each item of vector is pair of headers name \
+	and map.
     CommonSEGY(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
-        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
+        std::vector<std::pair<std::string, std::map<uint32_t,
+	   	std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
     std::string file_name;
     std::fstream file;
     std::vector<std::string> text_headers;
@@ -163,7 +166,8 @@ public:
     char hdr_buf[TR_HEADER_SIZE];
     int bytes_per_sample;
     int32_t samp_per_tr;
-    std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, TrHdrValueType>>>> add_tr_hdr_map;
+    std::vector<std::pair<std::string, std::map<uint32_t,
+	   	std::pair<std::string, TrHdrValueType>>>> add_tr_hdr_map;
 };
 } // namespace sedaman
 

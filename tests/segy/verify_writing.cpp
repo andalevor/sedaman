@@ -11,7 +11,8 @@ int main(int argc, char *argv[])
     {
         sedaman::ISEGY in(argv[1]);
         std::string const &text_header = in.text_headers()[0];
-        sedaman::CommonSEGY::BinaryHeader const &binary_header = in.binary_header();
+        sedaman::CommonSEGY::BinaryHeader const &binary_header =
+		   	in.binary_header();
         sedaman::OSEGYRev0 out(argv[2], text_header, binary_header);
         while (in.has_trace())
         {
@@ -27,8 +28,10 @@ int main(int argc, char *argv[])
     }
     try
     {
-        std::fstream ref(argv[1], std::ios_base::binary | std::ios_base::in);
-        std::fstream test(argv[2], std::ios_base::binary | std::ios_base::in);
+        std::fstream ref(argv[1], std::ios_base::binary |
+						 std::ios_base::in);
+        std::fstream test(argv[2], std::ios_base::binary |
+						  std::ios_base::in);
         size_t counter = 0;
         while (ref)
         {

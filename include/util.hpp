@@ -52,7 +52,8 @@ T swap(T const val)
 {
     T result;
     unsigned char* to = reinterpret_cast<unsigned char*>(&result);
-    unsigned char const* from = reinterpret_cast<unsigned char const*>(&val) + sizeof(T) - 1;
+    unsigned char const* from = reinterpret_cast<unsigned char const*>(&val) +
+	   	sizeof(T) - 1;
     for (int counter = sizeof(T); counter; --counter)
         *to++ = *from--;
     return result;
@@ -125,23 +126,27 @@ void to_bcd(char** buf, T val, bool skip_first, int num)
         }
         storage <<= 1;
     }
-    bcd_dig = ((storage & bcd_dig_mask[num - 1]) >> shifts[num - 1]).to_ullong();
+    bcd_dig = ((storage & bcd_dig_mask[num - 1]) >>
+			   shifts[num - 1]).to_ullong();
     if (skip_first) {
         **buf |= bcd_dig;
         ++(*buf);
         --num;
     }
     while (num > 1) {
-        bcd_dig = ((storage & bcd_dig_mask[num - 1]) >> shifts[num - 1]).to_ullong();
+        bcd_dig = ((storage & bcd_dig_mask[num - 1]) >>
+				   shifts[num - 1]).to_ullong();
         **buf = bcd_dig << 4;
         --num;
-        bcd_dig = ((storage & bcd_dig_mask[num - 1]) >> shifts[num - 1]).to_ullong();
+        bcd_dig = ((storage & bcd_dig_mask[num - 1]) >>
+				   shifts[num - 1]).to_ullong();
         **buf |= bcd_dig;
         --num;
         ++(*buf);
     }
     if (num) {
-        bcd_dig = ((storage & bcd_dig_mask[num - 1]) >> shifts[num - 1]).to_ullong();
+        bcd_dig = ((storage & bcd_dig_mask[num - 1]) >>
+				   shifts[num - 1]).to_ullong();
         **buf = bcd_dig << 4;
         --num;
     }

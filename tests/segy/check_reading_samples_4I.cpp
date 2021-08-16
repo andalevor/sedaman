@@ -20,8 +20,10 @@ int main(int argc, char *argv[])
             if (first)
             {
 				first = false;
-                reference = std::deque<double>(t.samples().begin(), t.samples().end());
-                double sum = std::accumulate(t.samples().begin(), t.samples().end(), 0.0);
+                reference = std::deque<double>(t.samples().begin(),
+											   t.samples().end());
+                double sum = std::accumulate(t.samples().begin(),
+											 t.samples().end(), 0.0);
                 if (sum != sum_ref)
                 {
                     std::cerr << "first trace:\n"
@@ -32,8 +34,10 @@ int main(int argc, char *argv[])
             }
             reference.pop_front();
             reference.push_back(0);
-            double sum_ref = std::accumulate(reference.begin(), reference.end(), 0.0);
-            double sum_curr = std::accumulate(t.samples().begin(), t.samples().end(), 0.0);
+            double sum_ref = std::accumulate(reference.begin(),
+											 reference.end(), 0.0);
+            double sum_curr = std::accumulate(t.samples().begin(),
+											  t.samples().end(), 0.0);
             if (sum_curr != sum_ref)
             {
                 std::cerr << sum_curr << " not equal to " << sum_ref << '\n';

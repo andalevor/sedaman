@@ -20,15 +20,21 @@ public:
     /// \param file_name Name of SEGY file.
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
-    ISEGY(std::string file_name, std::vector<std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>> tr_hdr_over = {},
-        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map = {});
+    ISEGY(std::string file_name, std::vector<std::map<uint32_t,
+		  std::pair<std::string, CommonSEGY::TrHdrValueType>>> tr_hdr_over =
+		  {}, std::vector<std::pair<std::string, std::map<uint32_t,
+		  std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map =
+		  {});
     /// \param file_name Name of SEGY file.
     /// \param binary_header Could be used to override values in binary header.
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
     ISEGY(std::string file_name, CommonSEGY::BinaryHeader binary_header,
-        std::vector<std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>> tr_hdr_over = {},
-        std::vector<std::pair<std::string, std::map<uint32_t, std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map = {});
+        std::vector<std::map<uint32_t, std::pair<std::string,
+	   	CommonSEGY::TrHdrValueType>>> tr_hdr_over = {},
+        std::vector<std::pair<std::string, std::map<uint32_t,
+	   	std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map =
+	   	{});
     /// \param file_name Name of SEGY file.
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception

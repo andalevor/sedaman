@@ -13,7 +13,8 @@ int main(int argc, char *argv[])
         while (segy.has_trace())
         {
             sedaman::Trace::Header hdr = segy.read_header();
-            std::optional<sedaman::Trace::Header::Value> opt = hdr.get("TRC_SEQ_LINE");
+            std::optional<sedaman::Trace::Header::Value> opt =
+			   	hdr.get("TRC_SEQ_LINE");
             sedaman::Trace::Header::Value v;
             if (opt) {
                 v = *opt;
@@ -27,7 +28,8 @@ int main(int argc, char *argv[])
 			}
             if (std::get<int32_t>(v) != val++)
             {
-                std::cerr << std::get<int32_t>(v) << " not equal to " << val - 1 << '\n';
+                std::cerr << std::get<int32_t>(v) << " not equal to "
+				   	<< val - 1 << '\n';
                 return 1;
             }
         }

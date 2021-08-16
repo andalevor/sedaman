@@ -65,7 +65,8 @@ void OSEGY::Impl::assign_raw_writers()
     write_i8 = [](char** buf, int8_t val) { write<int8_t>(buf, val); };
     switch (common.binary_header.endianness) {
     case 0x01020304:
-        write_u16 = [](char** buf, uint16_t val) { write<uint16_t>(buf, val); };
+        write_u16 = [](char** buf, uint16_t val)
+	   	{ write<uint16_t>(buf, val); };
         write_i16 = [](char** buf, int16_t val) { write<int16_t>(buf, val); };
         write_u24 = [](char** buf, uint32_t val) {
             write<uint16_t>(buf, val);
@@ -75,15 +76,19 @@ void OSEGY::Impl::assign_raw_writers()
             write<int16_t>(buf, val);
             write<int8_t>(buf, static_cast<int32_t>(val) >> 16);
         };
-        write_u32 = [](char** buf, uint32_t val) { write<uint32_t>(buf, val); };
+        write_u32 = [](char** buf, uint32_t val)
+	   	{ write<uint32_t>(buf, val); };
         write_i32 = [](char** buf, int32_t val) { write<int32_t>(buf, val); };
-        write_u64 = [](char** buf, uint64_t val) { write<uint64_t>(buf, val); };
+        write_u64 = [](char** buf, uint64_t val)
+	   	{ write<uint64_t>(buf, val); };
         write_i64 = [](char** buf, int64_t val) { write<int64_t>(buf, val); };
         break;
     case 0:
     case 0x04030201:
-        write_u16 = [](char** buf, uint16_t val) { write<uint16_t>(buf, swap(val)); };
-        write_i16 = [](char** buf, int16_t val) { write<int16_t>(buf, swap(val)); };
+        write_u16 = [](char** buf, uint16_t val)
+	   	{ write<uint16_t>(buf, swap(val)); };
+        write_i16 = [](char** buf, int16_t val)
+	   	{ write<int16_t>(buf, swap(val)); };
         write_u24 = [](char** buf, uint32_t val) {
             uint32_t tmp = swap(val);
             write<uint16_t>(buf, tmp);
@@ -94,10 +99,14 @@ void OSEGY::Impl::assign_raw_writers()
             write<int16_t>(buf, tmp);
             write<int8_t>(buf, tmp >> 16);
         };
-        write_u32 = [](char** buf, uint32_t val) { write<uint32_t>(buf, swap(val)); };
-        write_i32 = [](char** buf, int32_t val) { write<int32_t>(buf, swap(val)); };
-        write_u64 = [](char** buf, uint64_t val) { write<uint64_t>(buf, swap(val)); };
-        write_i64 = [](char** buf, int64_t val) { write<int64_t>(buf, swap(val)); };
+        write_u32 = [](char** buf, uint32_t val)
+	   	{ write<uint32_t>(buf, swap(val)); };
+        write_i32 = [](char** buf, int32_t val)
+	   	{ write<int32_t>(buf, swap(val)); };
+        write_u64 = [](char** buf, uint64_t val)
+	   	{ write<uint64_t>(buf, swap(val)); };
+        write_i64 = [](char** buf, int64_t val)
+	   	{ write<int64_t>(buf, swap(val)); };
         break;
     default:
         throw Exception(__FILE__, __LINE__, "unsupported endianness");
@@ -117,25 +126,32 @@ void OSEGY::Impl::assign_raw_writers()
         write_IEEE_float = [this](char** buf, double val) {
             uint32_t sign = val < 0 ? 1 : 0;
             double abs_val = abs(val);
-            uint32_t exp = static_cast<uint32_t>((log(abs_val) / log(2) + 1 + 127)) & 0xff;
-            uint32_t fraction = abs_val / pow(2, static_cast<int>(exp) - 127) * pow(2, 23) - 1;
+            uint32_t exp = static_cast<uint32_t>((log(abs_val) /
+												  log(2) + 1 + 127)) & 0xff;
+            uint32_t fraction = abs_val / pow(2, static_cast<int>(exp) - 127) *
+			   	pow(2, 23) - 1;
             uint32_t result = sign << 31 | exp << 23 | (fraction & 0x007fffff);
             write_u32(buf, result);
         };
         write_IEEE_double = [this](char** buf, double val) {
             uint64_t sign = val < 0 ? 1 : 0;
             double abs_val = abs(val);
-            uint64_t exp = static_cast<uint64_t>(log(abs_val) / log(2) + 1 + 1023) & 0x7ff;
-            uint64_t fraction = abs_val / pow(2, static_cast<int>(exp) - 1023) * pow(2, 52) - 1;
-            uint64_t result = sign << 63 | exp << 52 | (fraction & 0xfffffffffffff);
+            uint64_t exp = static_cast<uint64_t>(log(abs_val) /
+												 log(2) + 1 + 1023) & 0x7ff;
+            uint64_t fraction = abs_val / pow(2, static_cast<int>(exp) - 1023)
+			   	* pow(2, 52) - 1;
+            uint64_t result = sign << 63 | exp << 52 |
+			   	(fraction & 0xfffffffffffff);
             write_u64(buf, result);
         };
     }
     write_ibm_float = [this](char** buf, double val) {
         uint32_t sign = val < 0 ? 1 : 0;
         double abs_val = abs(val);
-        uint32_t exp = static_cast<uint32_t>(log(abs_val) / log(2) / 4 + 1 + 64) & 0x7f;
-        uint32_t fraction = abs_val / pow(16, static_cast<int>(exp) - 64) * pow(2, 24);
+        uint32_t exp = static_cast<uint32_t>(log(abs_val) / log(2) / 4 +
+											 1 + 64) & 0x7f;
+        uint32_t fraction = abs_val / pow(16, static_cast<int>(exp) - 64) *
+		   	pow(2, 24);
         uint32_t result = sign << 31 | exp << 24 | (fraction & 0x00ffffff);
         write_u32(buf, result);
     };
@@ -504,7 +520,8 @@ void OSEGY::Impl::write_additional_trace_headers(Trace::Header const& hdr)
     write_u64(&buf, tmp ? get<int32_t>(*tmp) : 0);
     tmp = hdr.get("ADD_TRC_HDR_NUM");
     uint16_t add_trc_hdr_num = tmp ? get<uint16_t>(*tmp) : 0;
-    add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num : common.binary_header.max_num_add_tr_headers;
+    add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
+	   	common.binary_header.max_num_add_tr_headers;
     write_u64(&buf, add_trc_hdr_num);
     tmp = hdr.get("LAST_TRC_FLAG");
     write_u64(&buf, tmp ? get<int16_t>(*tmp) : 0);
@@ -567,7 +584,8 @@ void OSEGY::Impl::write_ext_text_headers()
     int hdrs_num = common.text_headers.size() - 1;
     common.binary_header.ext_text_headers_num = hdrs_num;
     for (int i = 1; i < hdrs_num + 1; ++i)
-        common.file.write(common.text_headers[i].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
+        common.file.write(common.text_headers[i].c_str(),
+						  CommonSEGY::TEXT_HEADER_SIZE);
 }
 
 void OSEGY::Impl::write_trailer_stanzas()
@@ -575,7 +593,8 @@ void OSEGY::Impl::write_trailer_stanzas()
     int stanzas_num = common.trailer_stanzas.size();
     common.binary_header.num_of_trailer_stanza = stanzas_num;
     for (int i = 0; i < stanzas_num; ++i)
-        common.file.write(common.trailer_stanzas[i].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
+        common.file.write(common.trailer_stanzas[i].c_str(),
+						  CommonSEGY::TEXT_HEADER_SIZE);
 }
 
 void OSEGY::Impl::write_trace_samples_var(Trace const& t)
@@ -602,8 +621,10 @@ void OSEGY::Impl::write_trace_samples_fix(Trace const& t)
 }
 
 OSEGY::OSEGY(string name, CommonSEGY::BinaryHeader bh,
-    vector<pair<string, map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>>> add_hdr_map)
-    : pimpl { make_unique<Impl>(CommonSEGY { move(name), fstream::out | fstream::binary, move(bh), move(add_hdr_map) }) }
+    vector<pair<string, map<uint32_t, pair<string,
+   	CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+    : pimpl { make_unique<Impl>(CommonSEGY { move(name),
+	   	fstream::out | fstream::binary, move(bh), move(add_hdr_map) }) }
 {
 }
 

@@ -14,7 +14,8 @@
 namespace sedaman {
 /// \class OSEGD
 /// \brief Abstract class for SEGD writing.
-/// Declares common methods for all revisions to write information to SEGD files.
+/// Declares common methods for all revisions to write information to SEGD
+///  files.
 class OSEGD {
 public:
     /// \param file_name Name of SEGD file.
@@ -23,7 +24,8 @@ public:
     OSEGD(std::string file_name, CommonSEGD::GeneralHeader gh,
         CommonSEGD::GeneralHeader2 gh2, CommonSEGD::GeneralHeader3 gh3,
         std::vector<std::vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-        std::vector<std::unique_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs = {});
+        std::vector<std::unique_ptr<CommonSEGD::AdditionalGeneralHeader>>
+	   	add_ghs = {});
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.
     virtual void write_trace(Trace& tr) = 0;
