@@ -283,6 +283,7 @@ void OSEGY::Impl::write_bin_header()
     write_u64(&ptr, common.binary_header.num_of_tr_in_file);
     write_u64(&ptr, common.binary_header.byte_off_of_first_tr);
     write_i32(&ptr, common.binary_header.num_of_trailer_stanza);
+	common.file.seekg(CommonSEGY::TEXT_HEADER_SIZE, ios_base::beg);
     common.file.write(buf, CommonSEGY::BIN_HEADER_SIZE);
 }
 

@@ -30,6 +30,7 @@ PYBIND11_MODULE(pysedaman, m) {
 
 	py::class_<CommonSEGY::BinaryHeader> BinaryHeader_py(CommonSEGY_py,
 														 "BinaryHeader");
+	BinaryHeader_py.def(py::init<>());
 	BinaryHeader_py.def("name_as_string",
 					   	&CommonSEGY::BinaryHeader::name_as_string);
 	BinaryHeader_py.def_readwrite("job_id", &CommonSEGY::BinaryHeader::job_id);

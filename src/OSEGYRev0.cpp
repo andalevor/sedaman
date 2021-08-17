@@ -2,8 +2,6 @@
 #include "Exception.hpp"
 #include <cstring>
 #include <functional>
-#include <ios>
-#include <iostream>
 
 using std::function;
 using std::get;
@@ -47,9 +45,11 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
         sgy.common().binary_header.format_code = 1;
     sgy.assign_raw_writers();
     sgy.write_bin_header();
+	first_trace_pos = sgy.common().file.tellg();
     sgy.assign_sample_writer();
     sgy.assign_bytes_per_sample();
     CommonSEGY::BinaryHeader zero = {};
+	zero.format_code = 1;
     if (memcmp(&sgy.common().binary_header, &zero,
 			   sizeof(CommonSEGY::BinaryHeader))) {
         sgy.common().samp_buf.resize(sgy.common().binary_header.samp_per_tr *
@@ -88,6 +88,7 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
                     sgy.common().binary_header.samp_int = samp_int;
                 sgy.common().samp_buf.resize(samp_num *
 											 sgy.common().bytes_per_sample);
+				sgy.write_bin_header();
             }
             sgy.write_trace_header(tr.header());
             sgy.write_trace_samples_fix(tr);
