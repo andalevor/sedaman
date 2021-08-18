@@ -3,12 +3,10 @@
 #include <cstring>
 #include <functional>
 #include <ios>
-#include <iostream>
 
 using std::function;
 using std::get;
 using std::holds_alternative;
-using std::ios_base;
 using std::make_unique;
 using std::memcmp;
 using std::move;
@@ -43,17 +41,19 @@ OSEGYRev1::Impl::Impl(OSEGYRev1& s, vector<string> txt_hdrs)
             if (s.size() != CommonSEGY::TEXT_HEADER_SIZE)
                 throw Exception(__FILE__, __LINE__,
 							   	"size of text header should be 3200 bytes");
-        sgy.common().text_headers = txt_hdrs;
     }
+	sgy.common().text_headers = txt_hdrs;
     sgy.common().file.write(txt_hdrs[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
     if (sgy.common().binary_header.format_code == 0)
         sgy.common().binary_header.format_code = 5;
     sgy.assign_raw_writers();
     sgy.write_bin_header();
     sgy.write_ext_text_headers();
+	first_trace_pos = sgy.common().file.tellg();
     sgy.assign_sample_writer();
     sgy.assign_bytes_per_sample();
     CommonSEGY::BinaryHeader zero = {};
+	zero.format_code = 5;
     if (memcmp(&sgy.common().binary_header, &zero,
 			   sizeof(CommonSEGY::BinaryHeader))) {
         if (sgy.common().binary_header.fixed_tr_length) {
@@ -138,6 +138,7 @@ OSEGYRev1::Impl::Impl(OSEGYRev1& s, vector<string> txt_hdrs)
                         sgy.common().binary_header.samp_int = samp_int;
                     sgy.common().samp_buf.resize
 						(samp_num * sgy.common().bytes_per_sample);
+					sgy.write_bin_header();
                 }
                 sgy.write_trace_header(tr.header());
                 sgy.write_trace_samples_var(tr);
