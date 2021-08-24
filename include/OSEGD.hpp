@@ -24,7 +24,7 @@ public:
     OSEGD(std::string file_name, CommonSEGD::GeneralHeader gh,
         CommonSEGD::GeneralHeader2 gh2, CommonSEGD::GeneralHeader3 gh3,
         std::vector<std::vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-        std::vector<std::unique_ptr<CommonSEGD::AdditionalGeneralHeader>>
+        std::vector<std::shared_ptr<CommonSEGD::AdditionalGeneralHeader>>
 	   	add_ghs = {});
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.

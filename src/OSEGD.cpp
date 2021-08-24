@@ -16,6 +16,7 @@ using std::move;
 using std::optional;
 using std::string;
 using std::unique_ptr;
+using std::shared_ptr;
 using std::vector;
 
 namespace sedaman {
@@ -48,35 +49,36 @@ private:
     function<void(char**, uint32_t)> write_u32;
     function<void(char**, uint32_t)> write_i32;
     function<void(char**, uint32_t)> write_u64;
-    void write_vessel_crew_id(char* buf, CommonSEGD::GeneralHeaderVes hdr);
-    void write_survey_area_name(char* buf, CommonSEGD::GeneralHeaderSur hdr);
-    void write_client_name(char* buf, CommonSEGD::GeneralHeaderCli hdr);
-    void write_job_id(char* buf, CommonSEGD::GeneralHeaderJob hdr);
-    void write_line_id(char* buf, CommonSEGD::GeneralHeaderLin hdr);
-    void write_vibrator_hdr(char* buf, CommonSEGD::GeneralHeaderVib hdr);
-    void write_explosive_hdr(char* buf, CommonSEGD::GeneralHeaderExp hdr);
-    void write_airgun_hdr(char* buf, CommonSEGD::GeneralHeaderAir hdr);
-    void write_watergun_hdr(char* buf, CommonSEGD::GeneralHeaderWat hdr);
+    void write_vessel_crew_id(char* buf, CommonSEGD::GeneralHeaderVes* hdr);
+    void write_survey_area_name(char* buf, CommonSEGD::GeneralHeaderSur* hdr);
+    void write_client_name(char* buf, CommonSEGD::GeneralHeaderCli* hdr);
+    void write_job_id(char* buf, CommonSEGD::GeneralHeaderJob* hdr);
+    void write_line_id(char* buf, CommonSEGD::GeneralHeaderLin* hdr);
+    void write_vibrator_hdr(char* buf, CommonSEGD::GeneralHeaderVib* hdr);
+    void write_explosive_hdr(char* buf, CommonSEGD::GeneralHeaderExp* hdr);
+    void write_airgun_hdr(char* buf, CommonSEGD::GeneralHeaderAir* hdr);
+    void write_watergun_hdr(char* buf, CommonSEGD::GeneralHeaderWat* hdr);
     void write_electromagnetic_hdr(char* buf,
-								   CommonSEGD::GeneralHeaderEle hdr);
-    void write_other_source_hdr(char* buf, CommonSEGD::GeneralHeaderOth hdr);
+								   CommonSEGD::GeneralHeaderEle* hdr);
+    void write_other_source_hdr(char* buf, CommonSEGD::GeneralHeaderOth* hdr);
     void write_additional_source_hdr(char* buf,
-									 CommonSEGD::GeneralHeaderAdd hdr);
-    void write_source_aux_hdr(char* buf, CommonSEGD::GeneralHeaderSaux hdr);
-    void write_crs_hdr(char* buf, CommonSEGD::GeneralHeaderCoord hdr);
-    void write_position1_hdr(char* buf, CommonSEGD::GeneralHeaderPos1 hdr);
-    void write_position2_hdr(char* buf, CommonSEGD::GeneralHeaderPos2 hdr);
-    void write_position3_hdr(char* buf, CommonSEGD::GeneralHeaderPos3 hdr);
+									 CommonSEGD::GeneralHeaderAdd* hdr);
+    void write_source_aux_hdr(char* buf, CommonSEGD::GeneralHeaderSaux* hdr);
+    void write_crs_hdr(char* buf, CommonSEGD::GeneralHeaderCoord* hdr);
+    void write_position1_hdr(char* buf, CommonSEGD::GeneralHeaderPos1* hdr);
+    void write_position2_hdr(char* buf, CommonSEGD::GeneralHeaderPos2* hdr);
+    void write_position3_hdr(char* buf, CommonSEGD::GeneralHeaderPos3* hdr);
     void write_relative_position_hdr(char* buf,
-									 CommonSEGD::GeneralHeaderRel hdr);
-    void write_sensor_info_hdr(char* buf, CommonSEGD::GeneralHeaderSen hdr);
+									 CommonSEGD::GeneralHeaderRel* hdr);
+    void write_sensor_info_hdr(char* buf, CommonSEGD::GeneralHeaderSen* hdr);
     void write_sensor_calibration_hdr(char* buf,
-									  CommonSEGD::GeneralHeaderSCa hdr);
-    void write_time_drift_hdr(char* buf, CommonSEGD::GeneralHeaderTim hdr);
-    void write_electromagnetic_src_recv_hdr(char* buf,
-										   	CommonSEGD::GeneralHeaderElSR hdr);
-    void write_orientation_hdr(char* buf, CommonSEGD::GeneralHeaderOri hdr);
-    void write_measurement_hdr(char* buf, CommonSEGD::GeneralHeaderMeas hdr);
+									  CommonSEGD::GeneralHeaderSCa* hdr);
+    void write_time_drift_hdr(char* buf, CommonSEGD::GeneralHeaderTim* hdr);
+    void write_electromagnetic_src_recv_hdr
+		(char* buf, CommonSEGD::GeneralHeaderElSR* hdr);
+    void write_orientation_hdr(char* buf, CommonSEGD::GeneralHeaderOri* hdr);
+    void write_measurement_hdr(char* buf,
+							   CommonSEGD::GeneralHeaderMeas* hdr);
 };
 
 void OSEGD::Impl::assign_raw_writers()
@@ -263,100 +265,101 @@ void OSEGD::Impl::write_rev3_add_gen_hdrs()
         memset(buf, 0, CommonSEGD::GEN_HDR_SIZE);
         switch (it->first) {
         case CommonSEGD::AdditionalGeneralHeader::VESSEL_CREW_ID:
-            write_vessel_crew_id(buf, *dynamic_cast<CommonSEGD::
+            write_vessel_crew_id(buf, dynamic_cast<CommonSEGD::
 								 GeneralHeaderVes*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::SURVEY_AREA_NAME:
-            write_survey_area_name(buf, *dynamic_cast<CommonSEGD::
+            write_survey_area_name(buf, dynamic_cast<CommonSEGD::
 								   GeneralHeaderSur*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::CLIENT_NAME:
-            write_client_name(buf, *dynamic_cast<CommonSEGD::
+            write_client_name(buf, dynamic_cast<CommonSEGD::
 							  GeneralHeaderCli*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::JOB_ID:
-            write_job_id(buf, *dynamic_cast<CommonSEGD::
+            write_job_id(buf, dynamic_cast<CommonSEGD::
 						 GeneralHeaderJob*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::LINE_ID:
-            write_line_id(buf, *dynamic_cast<CommonSEGD::
+            write_line_id(buf, dynamic_cast<CommonSEGD::
 						  GeneralHeaderLin*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::VIBRATOR_SOURCE_INFO:
-            write_vibrator_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_vibrator_hdr(buf, dynamic_cast<CommonSEGD::
 							   GeneralHeaderVib*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::EXPLOSIVE_SOURCE_INFO:
-            write_explosive_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_explosive_hdr(buf, dynamic_cast<CommonSEGD::
 								GeneralHeaderExp*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::AIRGUN_SOURCE_INFO:
-            write_airgun_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_airgun_hdr(buf, dynamic_cast<CommonSEGD::
 							 GeneralHeaderAir*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::WATERGUN_SOURCE_INFO:
-            write_watergun_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_watergun_hdr(buf, dynamic_cast<CommonSEGD::
 							   GeneralHeaderWat*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::ELECTROMAGNETIC_SOURCE:
-            write_electromagnetic_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_electromagnetic_hdr(buf, dynamic_cast<CommonSEGD::
 									  GeneralHeaderEle*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::OTHER_SOURCE_TYPE_INFO:
-            write_other_source_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_other_source_hdr(buf, dynamic_cast<CommonSEGD::
 								   GeneralHeaderOth*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::ADD_SOURCE_INFO:
-            write_additional_source_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_additional_source_hdr(buf, dynamic_cast<CommonSEGD::
 										GeneralHeaderAdd*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::SOU_AUX_CHAN_REF:
-            write_source_aux_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_source_aux_hdr(buf, dynamic_cast<CommonSEGD::
 								 GeneralHeaderSaux*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::COORD_REF_SYSTEM:
-            write_crs_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_crs_hdr(buf, dynamic_cast<CommonSEGD::
 						  GeneralHeaderCoord*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::POSITION_BLK1:
-            write_position1_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_position1_hdr(buf, dynamic_cast<CommonSEGD::
 								GeneralHeaderPos1*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::POSITION_BLK2:
-            write_position2_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_position2_hdr(buf, dynamic_cast<CommonSEGD::
 								GeneralHeaderPos2*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::POSITION_BLK3:
-            write_position3_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_position3_hdr(buf, dynamic_cast<CommonSEGD::
 								GeneralHeaderPos3*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::RELATIVE_POS_BLK:
-            write_relative_position_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_relative_position_hdr(buf, dynamic_cast<CommonSEGD::
 										GeneralHeaderRel*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::SENSOR_INFO_HDR_EXT_BLK:
-            write_sensor_info_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_sensor_info_hdr(buf, dynamic_cast<CommonSEGD::
 								  GeneralHeaderSen*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::SENSOR_CALIBRATION_BLK:
-            write_sensor_calibration_hdr(buf, *dynamic_cast<CommonSEGD::
-										 GeneralHeaderSCa*>(it->second.get()));
+            write_sensor_calibration_hdr
+				(buf, dynamic_cast<CommonSEGD::
+				 GeneralHeaderSCa*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::TIME_DRIFT_BLK:
-            write_time_drift_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_time_drift_hdr(buf, dynamic_cast<CommonSEGD::
 								 GeneralHeaderTim*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::ELECTROMAG_SRC_REC_DESC_BLK:
             write_electromagnetic_src_recv_hdr
-				(buf, *dynamic_cast<CommonSEGD::GeneralHeaderElSR*>
+				(buf, dynamic_cast<CommonSEGD::GeneralHeaderElSR*>
 				 (it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::ORIENT_HDR_BLK:
-            write_orientation_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_orientation_hdr(buf, dynamic_cast<CommonSEGD::
 								  GeneralHeaderOri*>(it->second.get()));
             break;
         case CommonSEGD::AdditionalGeneralHeader::MEASUREMENT_BLK:
-            write_measurement_hdr(buf, *dynamic_cast<CommonSEGD::
+            write_measurement_hdr(buf, dynamic_cast<CommonSEGD::
 								  GeneralHeaderMeas*>(it->second.get()));
             break;
         default:
@@ -367,395 +370,397 @@ void OSEGD::Impl::write_rev3_add_gen_hdrs()
 }
 
 void OSEGD::Impl::write_vessel_crew_id(char* buf,
-									   CommonSEGD::GeneralHeaderVes hdr)
+									   CommonSEGD::GeneralHeaderVes* hdr)
 {
-    size_t size = sizeof(hdr.abbr_vessel_crew_name);
-    memcpy(buf, hdr.abbr_vessel_crew_name, size);
+    size_t size = sizeof(hdr->abbr_vessel_crew_name);
+    memcpy(buf, hdr->abbr_vessel_crew_name, size);
     buf += size;
-    size = sizeof(hdr.vessel_crew_name);
-    memcpy(buf, hdr.vessel_crew_name, size);
+    size = sizeof(hdr->vessel_crew_name);
+    memcpy(buf, hdr->vessel_crew_name, size);
     buf += size;
-    *buf = sizeof(hdr.gen_hdr_block_type);
+    *buf = sizeof(hdr->gen_hdr_block_type);
 }
 
 void OSEGD::Impl::write_survey_area_name(char* buf,
-										 CommonSEGD::GeneralHeaderSur hdr)
+										 CommonSEGD::GeneralHeaderSur* hdr)
 {
-    size_t size = sizeof(hdr.survey_area_name);
-    memcpy(buf, hdr.survey_area_name, size);
+    size_t size = sizeof(hdr->survey_area_name);
+    memcpy(buf, hdr->survey_area_name, size);
     buf += size;
-    *buf = sizeof(hdr.gen_hdr_block_type);
+    *buf = sizeof(hdr->gen_hdr_block_type);
 }
 
 void OSEGD::Impl::write_client_name(char* buf,
-								   	CommonSEGD::GeneralHeaderCli hdr)
+								   	CommonSEGD::GeneralHeaderCli* hdr)
 {
-    size_t size = sizeof(hdr.client_name);
-    memcpy(buf, hdr.client_name, size);
+    size_t size = sizeof(hdr->client_name);
+    memcpy(buf, hdr->client_name, size);
     buf += size;
-    *buf = sizeof(hdr.gen_hdr_block_type);
+    *buf = sizeof(hdr->gen_hdr_block_type);
 }
 
 void OSEGD::Impl::write_job_id(char* buf,
-							   CommonSEGD::GeneralHeaderJob hdr)
+							   CommonSEGD::GeneralHeaderJob* hdr)
 {
-    size_t size = sizeof(hdr.abbr_job_id);
-    memcpy(buf, hdr.abbr_job_id, size);
+    size_t size = sizeof(hdr->abbr_job_id);
+    memcpy(buf, hdr->abbr_job_id, size);
     buf += size;
-    size = sizeof(hdr.job_id);
-    memcpy(buf, hdr.job_id, size);
+    size = sizeof(hdr->job_id);
+    memcpy(buf, hdr->job_id, size);
     buf += size;
-    *buf = sizeof(hdr.gen_hdr_block_type);
+    *buf = sizeof(hdr->gen_hdr_block_type);
 }
 
-void OSEGD::Impl::write_line_id(char* buf, CommonSEGD::GeneralHeaderLin hdr)
+void OSEGD::Impl::write_line_id(char* buf, CommonSEGD::GeneralHeaderLin* hdr)
 {
-    size_t size = sizeof(hdr.line_abbr);
-    memcpy(buf, hdr.line_abbr, size);
+    size_t size = sizeof(hdr->line_abbr);
+    memcpy(buf, hdr->line_abbr, size);
     buf += size;
-    size = sizeof(hdr.line_id);
-    memcpy(buf, hdr.line_id, size);
+    size = sizeof(hdr->line_id);
+    memcpy(buf, hdr->line_id, size);
     buf += size;
-    *buf = sizeof(hdr.gen_hdr_block_type);
+    *buf = sizeof(hdr->gen_hdr_block_type);
 }
 
 void OSEGD::Impl::write_vibrator_hdr(char* buf,
-									 CommonSEGD::GeneralHeaderVib hdr)
+									 CommonSEGD::GeneralHeaderVib* hdr)
 {
-    write_u32(&buf, hdr.expanded_file_number);
-    uint32_t integer = hdr.sou_line_num;
-    double frac = hdr.sou_line_num - integer;
+    write_u32(&buf, hdr->expanded_file_number);
+    uint32_t integer = hdr->sou_line_num;
+    double frac = hdr->sou_line_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    integer = hdr.sou_point_num;
-    frac = hdr.sou_point_num - integer;
+    integer = hdr->sou_point_num;
+    frac = hdr->sou_point_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    *buf++ = hdr.sou_point_index;
-    *buf++ = hdr.phase_control;
-    *buf++ = hdr.type_vibrator;
-    write_i16(&buf, hdr.phase_angle);
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_set_num;
-    *buf++ = hdr.reshoot_idx;
-    *buf++ = hdr.group_idx;
-    *buf++ = hdr.depth_idx;
-    *buf++ = hdr.offset_crossline;
-    *buf++ = hdr.offset_inline;
-    *buf++ = hdr.size;
-    *buf++ = hdr.offset_depth;
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->sou_point_index;
+    *buf++ = hdr->phase_control;
+    *buf++ = hdr->type_vibrator;
+    write_i16(&buf, hdr->phase_angle);
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_set_num;
+    *buf++ = hdr->reshoot_idx;
+    *buf++ = hdr->group_idx;
+    *buf++ = hdr->depth_idx;
+    *buf++ = hdr->offset_crossline;
+    *buf++ = hdr->offset_inline;
+    *buf++ = hdr->size;
+    *buf++ = hdr->offset_depth;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_explosive_hdr(char* buf,
-									  CommonSEGD::GeneralHeaderExp hdr)
+									  CommonSEGD::GeneralHeaderExp* hdr)
 {
-    write_u32(&buf, hdr.expanded_file_number);
-    uint32_t integer = hdr.sou_line_num;
-    double frac = hdr.sou_line_num - integer;
+    write_u32(&buf, hdr->expanded_file_number);
+    uint32_t integer = hdr->sou_line_num;
+    double frac = hdr->sou_line_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    integer = hdr.sou_point_num;
-    frac = hdr.sou_point_num - integer;
+    integer = hdr->sou_point_num;
+    frac = hdr->sou_point_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    *buf++ = hdr.sou_point_index;
-    write_u16(&buf, hdr.depth);
-    *buf++ = hdr.charge_length;
-    *buf++ = hdr.soil_type;
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_set_num;
-    *buf++ = hdr.reshoot_idx;
-    *buf++ = hdr.group_idx;
-    *buf++ = hdr.depth_idx;
-    *buf++ = hdr.offset_crossline;
-    *buf++ = hdr.offset_inline;
-    *buf++ = hdr.size;
-    *buf++ = hdr.offset_depth;
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->sou_point_index;
+    write_u16(&buf, hdr->depth);
+    *buf++ = hdr->charge_length;
+    *buf++ = hdr->soil_type;
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_set_num;
+    *buf++ = hdr->reshoot_idx;
+    *buf++ = hdr->group_idx;
+    *buf++ = hdr->depth_idx;
+    *buf++ = hdr->offset_crossline;
+    *buf++ = hdr->offset_inline;
+    *buf++ = hdr->size;
+    *buf++ = hdr->offset_depth;
+    *buf = hdr->gen_hdr_block_type;
 }
 
-void OSEGD::Impl::write_airgun_hdr(char* buf, CommonSEGD::GeneralHeaderAir hdr)
+void OSEGD::Impl::write_airgun_hdr(char* buf,
+								   CommonSEGD::GeneralHeaderAir* hdr)
 {
-    write_u32(&buf, hdr.expanded_file_number);
-    uint32_t integer = hdr.sou_line_num;
-    double frac = hdr.sou_line_num - integer;
+    write_u32(&buf, hdr->expanded_file_number);
+    uint32_t integer = hdr->sou_line_num;
+    double frac = hdr->sou_line_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    integer = hdr.sou_point_num;
-    frac = hdr.sou_point_num - integer;
+    integer = hdr->sou_point_num;
+    frac = hdr->sou_point_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    *buf++ = hdr.sou_point_index;
-    write_u16(&buf, hdr.depth);
-    write_u16(&buf, hdr.air_pressure);
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_set_num;
-    *buf++ = hdr.reshoot_idx;
-    *buf++ = hdr.group_idx;
-    *buf++ = hdr.depth_idx;
-    *buf++ = hdr.offset_crossline;
-    *buf++ = hdr.offset_inline;
-    *buf++ = hdr.size;
-    *buf++ = hdr.offset_depth;
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->sou_point_index;
+    write_u16(&buf, hdr->depth);
+    write_u16(&buf, hdr->air_pressure);
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_set_num;
+    *buf++ = hdr->reshoot_idx;
+    *buf++ = hdr->group_idx;
+    *buf++ = hdr->depth_idx;
+    *buf++ = hdr->offset_crossline;
+    *buf++ = hdr->offset_inline;
+    *buf++ = hdr->size;
+    *buf++ = hdr->offset_depth;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_watergun_hdr(char* buf,
-									 CommonSEGD::GeneralHeaderWat hdr)
+									 CommonSEGD::GeneralHeaderWat* hdr)
 {
-    write_u32(&buf, hdr.expanded_file_number);
-    uint32_t integer = hdr.sou_line_num;
-    double frac = hdr.sou_line_num - integer;
+    write_u32(&buf, hdr->expanded_file_number);
+    uint32_t integer = hdr->sou_line_num;
+    double frac = hdr->sou_line_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    integer = hdr.sou_point_num;
-    frac = hdr.sou_point_num - integer;
+    integer = hdr->sou_point_num;
+    frac = hdr->sou_point_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    *buf++ = hdr.sou_point_index;
-    write_u16(&buf, hdr.depth);
-    write_u16(&buf, hdr.air_pressure);
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_set_num;
-    *buf++ = hdr.reshoot_idx;
-    *buf++ = hdr.group_idx;
-    *buf++ = hdr.depth_idx;
-    *buf++ = hdr.offset_crossline;
-    *buf++ = hdr.offset_inline;
-    *buf++ = hdr.size;
-    *buf++ = hdr.offset_depth;
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->sou_point_index;
+    write_u16(&buf, hdr->depth);
+    write_u16(&buf, hdr->air_pressure);
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_set_num;
+    *buf++ = hdr->reshoot_idx;
+    *buf++ = hdr->group_idx;
+    *buf++ = hdr->depth_idx;
+    *buf++ = hdr->offset_crossline;
+    *buf++ = hdr->offset_inline;
+    *buf++ = hdr->size;
+    *buf++ = hdr->offset_depth;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_electromagnetic_hdr(char* buf,
-										   	CommonSEGD::GeneralHeaderEle hdr)
+										   	CommonSEGD::GeneralHeaderEle* hdr)
 {
-    write_u32(&buf, hdr.expanded_file_number);
-    uint32_t integer = hdr.sou_line_num;
-    double frac = hdr.sou_line_num - integer;
+    write_u32(&buf, hdr->expanded_file_number);
+    uint32_t integer = hdr->sou_line_num;
+    double frac = hdr->sou_line_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    integer = hdr.sou_point_num;
-    frac = hdr.sou_point_num - integer;
+    integer = hdr->sou_point_num;
+    frac = hdr->sou_point_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    *buf++ = hdr.sou_point_index;
-    *buf++ = hdr.source_type;
-    write_u24(&buf, hdr.moment);
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_set_num;
-    *buf++ = hdr.reshoot_idx;
-    *buf++ = hdr.group_idx;
-    *buf++ = hdr.depth_idx;
-    *buf++ = hdr.offset_crossline;
-    *buf++ = hdr.offset_inline;
-    *buf++ = hdr.size;
-    *buf++ = hdr.offset_depth;
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->sou_point_index;
+    *buf++ = hdr->source_type;
+    write_u24(&buf, hdr->moment);
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_set_num;
+    *buf++ = hdr->reshoot_idx;
+    *buf++ = hdr->group_idx;
+    *buf++ = hdr->depth_idx;
+    *buf++ = hdr->offset_crossline;
+    *buf++ = hdr->offset_inline;
+    *buf++ = hdr->size;
+    *buf++ = hdr->offset_depth;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_other_source_hdr(char* buf,
-										 CommonSEGD::GeneralHeaderOth hdr)
+										 CommonSEGD::GeneralHeaderOth* hdr)
 {
-    write_u32(&buf, hdr.expanded_file_number);
-    uint32_t integer = hdr.sou_line_num;
-    double frac = hdr.sou_line_num - integer;
+    write_u32(&buf, hdr->expanded_file_number);
+    uint32_t integer = hdr->sou_line_num;
+    double frac = hdr->sou_line_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    integer = hdr.sou_point_num;
-    frac = hdr.sou_point_num - integer;
+    integer = hdr->sou_point_num;
+    frac = hdr->sou_point_num - integer;
     write_i24(&buf, integer);
     write_u16(&buf, frac * pow(2, 16));
-    *buf++ = hdr.sou_point_index;
+    *buf++ = hdr->sou_point_index;
     buf += 4;
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_set_num;
-    *buf++ = hdr.reshoot_idx;
-    *buf++ = hdr.group_idx;
-    *buf++ = hdr.depth_idx;
-    *buf++ = hdr.offset_crossline;
-    *buf++ = hdr.offset_inline;
-    *buf++ = hdr.size;
-    *buf++ = hdr.offset_depth;
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_set_num;
+    *buf++ = hdr->reshoot_idx;
+    *buf++ = hdr->group_idx;
+    *buf++ = hdr->depth_idx;
+    *buf++ = hdr->offset_crossline;
+    *buf++ = hdr->offset_inline;
+    *buf++ = hdr->size;
+    *buf++ = hdr->offset_depth;
+    *buf = hdr->gen_hdr_block_type;
 }
 
-void OSEGD::Impl::write_additional_source_hdr(char* buf,
-											  CommonSEGD::GeneralHeaderAdd hdr)
+void OSEGD::Impl::write_additional_source_hdr
+(char* buf, CommonSEGD::GeneralHeaderAdd* hdr)
 {
-    write_u64(&buf, hdr.time);
-    *buf++ = hdr.source_status;
-    *buf++ = hdr.source_id;
-    *buf++ = hdr.source_moving;
-    size_t size = sizeof(hdr.error_description);
-    memcpy(buf, hdr.error_description, size);
+    write_u64(&buf, hdr->time);
+    *buf++ = hdr->source_status;
+    *buf++ = hdr->source_id;
+    *buf++ = hdr->source_moving;
+    size_t size = sizeof(hdr->error_description);
+    memcpy(buf, hdr->error_description, size);
     buf += size;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_source_aux_hdr(char* buf,
-									   CommonSEGD::GeneralHeaderSaux hdr)
+									   CommonSEGD::GeneralHeaderSaux* hdr)
 {
-    *buf++ = hdr.source_id;
-    to_bcd(&buf, hdr.scan_type_num_1, false, 2);
-    write_u16(&buf, hdr.ch_set_num_1);
-    write_u24(&buf, hdr.trace_num_1);
-    to_bcd(&buf, hdr.scan_type_num_2, false, 2);
-    write_u16(&buf, hdr.ch_set_num_2);
-    write_u24(&buf, hdr.trace_num_2);
-    to_bcd(&buf, hdr.scan_type_num_3, false, 2);
-    write_u16(&buf, hdr.ch_set_num_3);
-    write_u24(&buf, hdr.trace_num_3);
-    to_bcd(&buf, hdr.scan_type_num_4, false, 2);
-    write_u16(&buf, hdr.ch_set_num_4);
-    write_u24(&buf, hdr.trace_num_4);
-    to_bcd(&buf, hdr.scan_type_num_5, false, 2);
-    write_u16(&buf, hdr.ch_set_num_5);
-    write_u24(&buf, hdr.trace_num_5);
-    *buf = hdr.gen_hdr_block_type;
+    *buf++ = hdr->source_id;
+    to_bcd(&buf, hdr->scan_type_num_1, false, 2);
+    write_u16(&buf, hdr->ch_set_num_1);
+    write_u24(&buf, hdr->trace_num_1);
+    to_bcd(&buf, hdr->scan_type_num_2, false, 2);
+    write_u16(&buf, hdr->ch_set_num_2);
+    write_u24(&buf, hdr->trace_num_2);
+    to_bcd(&buf, hdr->scan_type_num_3, false, 2);
+    write_u16(&buf, hdr->ch_set_num_3);
+    write_u24(&buf, hdr->trace_num_3);
+    to_bcd(&buf, hdr->scan_type_num_4, false, 2);
+    write_u16(&buf, hdr->ch_set_num_4);
+    write_u24(&buf, hdr->trace_num_4);
+    to_bcd(&buf, hdr->scan_type_num_5, false, 2);
+    write_u16(&buf, hdr->ch_set_num_5);
+    write_u24(&buf, hdr->trace_num_5);
+    *buf = hdr->gen_hdr_block_type;
 }
 
-void OSEGD::Impl::write_crs_hdr(char* buf, CommonSEGD::GeneralHeaderCoord hdr)
+void OSEGD::Impl::write_crs_hdr(char* buf,
+							   	CommonSEGD::GeneralHeaderCoord* hdr)
 {
-    size_t size = sizeof(hdr.crs);
-    memcpy(buf, hdr.crs, size);
+    size_t size = sizeof(hdr->crs);
+    memcpy(buf, hdr->crs, size);
     buf += size;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_position1_hdr(char* buf,
-									  CommonSEGD::GeneralHeaderPos1 hdr)
+									  CommonSEGD::GeneralHeaderPos1* hdr)
 {
-    write_u64(&buf, hdr.time_of_position);
-    write_u64(&buf, hdr.time_of_measurement);
-    write_u32(&buf, hdr.vert_error);
-    write_u32(&buf, hdr.hor_error_semi_major);
-    write_u32(&buf, hdr.hor_error_semi_minor);
-    write_u16(&buf, hdr.hor_error_orientation);
-    *buf++ = hdr.position_type;
-    *buf = hdr.gen_hdr_block_type;
+    write_u64(&buf, hdr->time_of_position);
+    write_u64(&buf, hdr->time_of_measurement);
+    write_u32(&buf, hdr->vert_error);
+    write_u32(&buf, hdr->hor_error_semi_major);
+    write_u32(&buf, hdr->hor_error_semi_minor);
+    write_u16(&buf, hdr->hor_error_orientation);
+    *buf++ = hdr->position_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_position2_hdr(char* buf,
-									  CommonSEGD::GeneralHeaderPos2 hdr)
+									  CommonSEGD::GeneralHeaderPos2* hdr)
 {
-    write_u64(&buf, hdr.crs_a_coord1);
-    write_u64(&buf, hdr.crs_a_coord2);
-    write_u64(&buf, hdr.crs_a_coord3);
-    write_u16(&buf, hdr.crs_a_crsref);
-    *buf++ = hdr.pos1_valid;
-    *buf++ = hdr.pos1_quality;
+    write_u64(&buf, hdr->crs_a_coord1);
+    write_u64(&buf, hdr->crs_a_coord2);
+    write_u64(&buf, hdr->crs_a_coord3);
+    write_u16(&buf, hdr->crs_a_crsref);
+    *buf++ = hdr->pos1_valid;
+    *buf++ = hdr->pos1_quality;
     buf += 3;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_position3_hdr(char* buf,
-									  CommonSEGD::GeneralHeaderPos3 hdr)
+									  CommonSEGD::GeneralHeaderPos3* hdr)
 {
-    write_u64(&buf, hdr.crs_b_coord1);
-    write_u64(&buf, hdr.crs_b_coord2);
-    write_u64(&buf, hdr.crs_b_coord3);
-    write_u16(&buf, hdr.crs_b_crsref);
-    *buf++ = hdr.pos2_valid;
-    *buf++ = hdr.pos2_quality;
+    write_u64(&buf, hdr->crs_b_coord1);
+    write_u64(&buf, hdr->crs_b_coord2);
+    write_u64(&buf, hdr->crs_b_coord3);
+    write_u16(&buf, hdr->crs_b_crsref);
+    *buf++ = hdr->pos2_valid;
+    *buf++ = hdr->pos2_quality;
     buf += 3;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
-void OSEGD::Impl::write_relative_position_hdr(char* buf,
-											  CommonSEGD::GeneralHeaderRel hdr)
+void OSEGD::Impl::write_relative_position_hdr
+(char* buf, CommonSEGD::GeneralHeaderRel* hdr)
 {
-    write_u32(&buf, hdr.offset_east);
-    write_u32(&buf, hdr.offset_north);
-    write_u32(&buf, hdr.offset_vert);
-    size_t size = sizeof(hdr.description);
-    memcpy(buf, hdr.description, size);
+    write_u32(&buf, hdr->offset_east);
+    write_u32(&buf, hdr->offset_north);
+    write_u32(&buf, hdr->offset_vert);
+    size_t size = sizeof(hdr->description);
+    memcpy(buf, hdr->description, size);
     buf += size;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_sensor_info_hdr(char* buf,
-									   	CommonSEGD::GeneralHeaderSen hdr)
+									   	CommonSEGD::GeneralHeaderSen* hdr)
 {
-    write_u64(&buf, hdr.instrument_test_time);
-    write_u32(&buf, hdr.sensor_sensitivity);
-    *buf++ = hdr.instr_test_result;
-    size_t size = sizeof(hdr.serial_number);
-    memcpy(buf, hdr.serial_number, size);
+    write_u64(&buf, hdr->instrument_test_time);
+    write_u32(&buf, hdr->sensor_sensitivity);
+    *buf++ = hdr->instr_test_result;
+    size_t size = sizeof(hdr->serial_number);
+    memcpy(buf, hdr->serial_number, size);
     buf += size;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_sensor_calibration_hdr
-(char* buf, CommonSEGD::GeneralHeaderSCa hdr)
+(char* buf, CommonSEGD::GeneralHeaderSCa* hdr)
 {
-    write_u32(&buf, hdr.freq1);
-    write_u32(&buf, hdr.amp1);
-    write_u32(&buf, hdr.phase1);
-    write_u32(&buf, hdr.freq2);
-    write_u32(&buf, hdr.amp2);
-    write_u32(&buf, hdr.phase2);
-    *buf++ = hdr.calib_applied;
+    write_u32(&buf, hdr->freq1);
+    write_u32(&buf, hdr->amp1);
+    write_u32(&buf, hdr->phase1);
+    write_u32(&buf, hdr->freq2);
+    write_u32(&buf, hdr->amp2);
+    write_u32(&buf, hdr->phase2);
+    *buf++ = hdr->calib_applied;
     buf += 6;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_time_drift_hdr(char* buf,
-									   CommonSEGD::GeneralHeaderTim hdr)
+									   CommonSEGD::GeneralHeaderTim* hdr)
 {
-    write_u64(&buf, hdr.time_of_depl);
-    write_u64(&buf, hdr.time_of_retr);
-    write_u32(&buf, hdr.timer_offset_depl);
-    write_u32(&buf, hdr.time_offset_retr);
-    *buf++ = hdr.timedrift_corr;
-    *buf++ = hdr.corr_method;
+    write_u64(&buf, hdr->time_of_depl);
+    write_u64(&buf, hdr->time_of_retr);
+    write_u32(&buf, hdr->timer_offset_depl);
+    write_u32(&buf, hdr->time_offset_retr);
+    *buf++ = hdr->timedrift_corr;
+    *buf++ = hdr->corr_method;
     buf += 5;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_electromagnetic_src_recv_hdr
-(char* buf, CommonSEGD::GeneralHeaderElSR hdr)
+(char* buf, CommonSEGD::GeneralHeaderElSR* hdr)
 {
-    write_u24(&buf, hdr.equip_dim_x);
-    write_u24(&buf, hdr.equip_dim_y);
-    write_u24(&buf, hdr.equip_dim_z);
-    *buf++ = hdr.pos_term;
-    write_u24(&buf, hdr.equip_offset_x);
-    write_u24(&buf, hdr.equip_offset_y);
-    write_u24(&buf, hdr.equip_offset_z);
+    write_u24(&buf, hdr->equip_dim_x);
+    write_u24(&buf, hdr->equip_dim_y);
+    write_u24(&buf, hdr->equip_dim_z);
+    *buf++ = hdr->pos_term;
+    write_u24(&buf, hdr->equip_offset_x);
+    write_u24(&buf, hdr->equip_offset_y);
+    write_u24(&buf, hdr->equip_offset_z);
     buf += 12;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_orientation_hdr(char* buf,
-									   	CommonSEGD::GeneralHeaderOri hdr)
+									   	CommonSEGD::GeneralHeaderOri* hdr)
 {
-    write_u32(&buf, hdr.rot_x);
-    write_u32(&buf, hdr.rot_y);
-    write_u32(&buf, hdr.rot_z);
-    write_u32(&buf, hdr.ref_orientation);
-    write_u64(&buf, hdr.time_stamp);
-    *buf++ = hdr.ori_type;
-    *buf++ = hdr.ref_orient_valid;
-    *buf++ = hdr.rot_applied;
-    *buf++ = hdr.rot_north_applied;
+    write_u32(&buf, hdr->rot_x);
+    write_u32(&buf, hdr->rot_y);
+    write_u32(&buf, hdr->rot_z);
+    write_u32(&buf, hdr->ref_orientation);
+    write_u64(&buf, hdr->time_stamp);
+    *buf++ = hdr->ori_type;
+    *buf++ = hdr->ref_orient_valid;
+    *buf++ = hdr->rot_applied;
+    *buf++ = hdr->rot_north_applied;
     buf += 3;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_measurement_hdr(char* buf,
-									   	CommonSEGD::GeneralHeaderMeas hdr)
+									   	CommonSEGD::GeneralHeaderMeas* hdr)
 {
-    write_u64(&buf, hdr.timestamp);
-    write_u32(&buf, hdr.measurement_value);
-    write_u32(&buf, hdr.maximum_value);
-    write_u32(&buf, hdr.minimum_value);
-    write_u16(&buf, hdr.quantity_class);
-    write_u16(&buf, hdr.unit_of_measure);
-    write_u16(&buf, hdr.measurement_description);
+    write_u64(&buf, hdr->timestamp);
+    write_u32(&buf, hdr->measurement_value);
+    write_u32(&buf, hdr->maximum_value);
+    write_u32(&buf, hdr->minimum_value);
+    write_u16(&buf, hdr->quantity_class);
+    write_u16(&buf, hdr->unit_of_measure);
+    write_u16(&buf, hdr->measurement_description);
     buf += 5;
-    *buf = hdr.gen_hdr_block_type;
+    *buf = hdr->gen_hdr_block_type;
 }
 
 void OSEGD::Impl::write_ch_set_hdr(CommonSEGD::ChannelSetHeader& hdr)
@@ -1115,7 +1120,7 @@ void OSEGD::write_trace_samples(Trace const& trc)
 OSEGD::OSEGD(string file_name, CommonSEGD::GeneralHeader gh,
     CommonSEGD::GeneralHeader2 gh2, CommonSEGD::GeneralHeader3 gh3,
     vector<vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-    vector<unique_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs)
+    vector<shared_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs)
     : pimpl { make_unique<Impl>(CommonSEGD(move(file_name), fstream::out |
 										   fstream::binary, move(gh),
         move(gh2), move(gh3), move(add_ghs), move(ch_sets))) }

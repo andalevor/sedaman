@@ -22,9 +22,10 @@ public:
     OSEGDRev2_1(std::string file_name, CommonSEGD::GeneralHeader gh,
         CommonSEGD::GeneralHeader2 gh2,
         std::vector<std::vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-        std::vector<std::unique_ptr<CommonSEGD::AdditionalGeneralHeader>>
+        std::vector<std::shared_ptr<CommonSEGD::AdditionalGeneralHeader>>
 	   	add_ghs = {});
     void write_trace(Trace& t) override;
+    virtual ~OSEGDRev2_1();
 
 private:
     class Impl;

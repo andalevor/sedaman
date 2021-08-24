@@ -1041,7 +1041,7 @@ public:
     CommonSEGD(std::string file_name, std::fstream::openmode mode,
         GeneralHeader gh = {}, GeneralHeader2 gh2 = {},
 	   	GeneralHeader3 gh3 = {},
-        std::vector<std::unique_ptr<AdditionalGeneralHeader>> add_ghs = {},
+        std::vector<std::shared_ptr<AdditionalGeneralHeader>> add_ghs = {},
         std::vector<std::vector<ChannelSetHeader>> ch_sets = {});
     std::string file_name;
     std::fstream file;

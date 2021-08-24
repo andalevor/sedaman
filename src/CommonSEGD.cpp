@@ -11,13 +11,14 @@ using std::move;
 using std::nullopt;
 using std::optional;
 using std::string;
+using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
 namespace sedaman {
 CommonSEGD::CommonSEGD(string name, fstream::openmode mode,
     GeneralHeader gh, GeneralHeader2 gh2, GeneralHeader3 gh3,
-    vector<unique_ptr<AdditionalGeneralHeader>> add_ghs,
+    vector<shared_ptr<AdditionalGeneralHeader>> add_ghs,
     std::vector<std::vector<ChannelSetHeader>> ch_sets)
     : general_header { gh }
     , general_header2 { gh2 }
@@ -31,7 +32,7 @@ CommonSEGD::CommonSEGD(string name, fstream::openmode mode,
     fl.exceptions(fstream::failbit | fstream::badbit);
     fl.open(file_name, mode);
     file = move(fl);
-    for (unique_ptr<AdditionalGeneralHeader>& item : add_ghs) {
+    for (shared_ptr<AdditionalGeneralHeader>& item : add_ghs) {
         switch (item->type()) {
         case AdditionalGeneralHeader::VESSEL_CREW_ID:
             add_gen_hdr_blks_map[AdditionalGeneralHeader::VESSEL_CREW_ID] =

@@ -14,7 +14,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11/include)
 file(GLOB SOURCES "src/*.cpp")
 
 add_subdirectory(extern/pybind11)
-pybind11_add_module(pysedaman ${SOURCES})
+pybind11_add_module(pysedaman ${SOURCES} "src/pybind/pybind.cpp")
 add_library(${PROJ_NAME} SHARED ${SOURCES})
 add_library(${PROJ_NAME}_static STATIC ${SOURCES})
 target_link_libraries(${PROJ_NAME} ${PYTHON_LIBRARIES})

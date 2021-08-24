@@ -6,7 +6,7 @@ using std::fstream;
 using std::make_unique;
 using std::move;
 using std::string;
-using std::unique_ptr;
+using std::shared_ptr;
 using std::vector;
 
 namespace sedaman {
@@ -80,10 +80,12 @@ void OSEGDRev2_1::write_trace(Trace& t)
 OSEGDRev2_1::OSEGDRev2_1(string file_name, CommonSEGD::GeneralHeader gh,
     CommonSEGD::GeneralHeader2 gh2,
     vector<vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-    vector<unique_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs)
+    vector<shared_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs)
     : OSEGD { move(file_name), move(gh), move(gh2), {}, move(ch_sets),
 	   	move(add_ghs) }
     , pimpl { make_unique<Impl>(*this) }
 {
 }
+
+OSEGDRev2_1::~OSEGDRev2_1() = default;
 } // namespace sedaman
