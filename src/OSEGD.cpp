@@ -1125,7 +1125,7 @@ OSEGD::OSEGD(string file_name, CommonSEGD::GeneralHeader gh,
 										   fstream::binary, move(gh),
         move(gh2), move(gh3), move(add_ghs), move(ch_sets))) }
 {
-    if (ch_sets.size() != static_cast<size_t>(gh.scan_types_per_record))
+    if (common().channel_sets.size() != static_cast<size_t>(gh.scan_types_per_record))
         throw Exception(__FILE__, __LINE__,
 						"Size of vector with vectors of channel set header "
 						"not equal to number of scan types in general header");
