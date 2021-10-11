@@ -50,7 +50,7 @@ PYBIND11_MODULE(pysedaman, m) {
 									  &CommonSEGY::TR_HEADER_SIZE);
 	CommonSEGY_py.def_readonly_static("trace_header_description",
 									  &CommonSEGY::trace_header_description);
-	py::enum_<CommonSEGY::TrHdrValueType>(CommonSEGY_py, "TrHdrValueType");
+	py::enum_<Trace::Header::ValueType>(CommonSEGY_py, "TrHdrValueType");
 
 	py::class_<CommonSEGY::BinaryHeader> BinaryHeader_py(CommonSEGY_py,
 														 "BinaryHeader");
@@ -149,14 +149,14 @@ PYBIND11_MODULE(pysedaman, m) {
 	py::class_<ISEGY> ISEGY_py(m, "ISEGY");
 	ISEGY_py.def(py::init<string,
 				 vector<map<uint32_t,
-				 pair<string, CommonSEGY::TrHdrValueType>>>,
+				 pair<string, Trace::Header::ValueType>>>,
 				 vector<pair<string, map<uint32_t,
-				 pair<string, CommonSEGY::TrHdrValueType>>>>>(),
+				 pair<string, Trace::Header::ValueType>>>>>(),
 				 py::arg("file_name"), py::arg("tr_hdr_over") =
 				 vector<map<uint32_t,
-				 pair<string, CommonSEGY::TrHdrValueType>>>(),
+				 pair<string, Trace::Header::ValueType>>>(),
 				 py::arg("add_hdr_map") = vector<pair<string,
-				 map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>>>());
+				 map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
 	ISEGY_py.def("read_binary_header", &ISEGY::read_binary_header,
 				 "creates ISegy instance internally and "
 				 "returns binary header.");
@@ -197,14 +197,14 @@ PYBIND11_MODULE(pysedaman, m) {
 	py::class_<OSEGYRev2, OSEGY> OSEGYRev2_py(m, "OSEGYRev2");
 	OSEGYRev2_py.def(py::init<string, vector<string>, CommonSEGY::BinaryHeader,
 					 vector<string>, vector<pair<string, map<uint32_t,
-					 pair<string, CommonSEGY::TrHdrValueType>>>>>(),
+					 pair<string, Trace::Header::ValueType>>>>>(),
 					 py::arg("file_name"),
 					 py::arg("text_headers") = vector<string>(),
 					 py::arg("bin_header") = CommonSEGY::BinaryHeader(),
 					 py::arg("trailer_stanzas") = vector<string>(),
 					 py::arg("add_hdr_map") = vector<pair<string,
 					 map<uint32_t, pair<string,
-					 CommonSEGY::TrHdrValueType>>>>());
+					 Trace::Header::ValueType>>>>());
 
 	py::class_<CommonSEGD> CommonSEGD_py(m, "CommonSEGD");
 	CommonSEGD_py.def_readonly_static("GEN_HDR_SIZE",

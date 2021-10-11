@@ -25,7 +25,11 @@ public:
         CommonSEGD::GeneralHeader2 gh2, CommonSEGD::GeneralHeader3 gh3,
         std::vector<std::vector<CommonSEGD::ChannelSetHeader>> ch_sets,
         std::vector<std::shared_ptr<CommonSEGD::AdditionalGeneralHeader>>
-	   	add_ghs = {});
+        add_ghs = {},
+        std::vector<std::vector<char>> extended_headers = {},
+        std::vector<std::vector<char>> external_headers = {},
+        std::vector<std::map<uint32_t, std::pair<std::string,
+        Trace::Header::ValueType>>> trc_hdr_ext = {});
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.
     virtual void write_trace(Trace& tr) = 0;
@@ -42,7 +46,7 @@ protected:
     void write_rev3_add_gen_hdrs();
     void write_ch_set_hdr(CommonSEGD::ChannelSetHeader& hdr);
     void write_trace_header(Trace::Header const& hdr);
-    void write_ext_trace_header(Trace::Header const& hdr);
+    void write_ext_trace_headers(Trace::Header const& hdr);
     void write_trace_samples(Trace const& trc);
     uint64_t chans_in_record();
 

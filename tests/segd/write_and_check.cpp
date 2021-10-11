@@ -1,3 +1,4 @@
+#include "CommonSEGD.hpp"
 #include "ISEGD.hpp"
 #include "OSEGDRev2_1.hpp"
 #include <iostream>
@@ -7,19 +8,20 @@ int main(int argc, char** argv)
     if (argc < 3)
         return 1;
     try {
-        sedaman::ISEGD isgd(argv[1]);
-		std::vector<std::shared_ptr<
-			sedaman::CommonSEGD::AdditionalGeneralHeader>> v;
-		for (auto &i : isgd.general_headerN())
-			v.push_back
-				(std::make_shared<sedaman::CommonSEGD::GeneralHeaderN>(i));
+        sedaman::ISEGD isgd(argv[1], sedaman::CommonSEGD::sercel_428xl);
+        std::vector<std::shared_ptr<
+            sedaman::CommonSEGD::AdditionalGeneralHeader>>
+            v;
+        for (auto& i : isgd.general_headerN())
+            v.push_back(std::make_shared<sedaman::CommonSEGD::GeneralHeaderN>(i));
         sedaman::OSEGDRev2_1
-		   	osgd (argv[2], isgd.general_header(),
-				  isgd.general_header2().value(),
-	 			  isgd.channel_set_headers(), v);
+            osgd(argv[2], isgd.general_header(),
+                isgd.general_header2().value(),
+                isgd.channel_set_headers(), v, isgd.extended_headers(),
+                isgd.external_headers(), sedaman::CommonSEGD::sercel_428xl);
         while (isgd.has_record()) {
             auto trace = isgd.read_trace();
-			osgd.write_trace(trace);
+            osgd.write_trace(trace);
         }
     } catch (std::exception& e) {
         std::cerr << "exception on reading and writing\n"

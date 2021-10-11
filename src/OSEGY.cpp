@@ -54,7 +54,7 @@ private:
     function<void(char**, uint64_t)> write_u64;
     function<void(char**, uint64_t)> write_i64;
     function<void(char**, double)> write_sample;
-    function<void(char**, float)> write_ibm_float;
+    function<void(char**, double)> write_ibm_float;
     function<void(char**, float)> write_IEEE_float;
     function<void(char**, double)> write_IEEE_double;
 };
@@ -90,12 +90,12 @@ void OSEGY::Impl::assign_raw_writers()
         write_i16 = [](char** buf, int16_t val)
 	   	{ write<int16_t>(buf, swap(val)); };
         write_u24 = [](char** buf, uint32_t val) {
-            uint32_t tmp = swap(val);
+            uint32_t tmp = swap(val) >> 8;
             write<uint16_t>(buf, tmp);
             write<uint8_t>(buf, tmp >> 16);
         };
         write_i24 = [](char** buf, int32_t val) {
-            uint32_t tmp = swap(static_cast<uint32_t>(val));
+            uint32_t tmp = swap(static_cast<uint32_t>(val)) >> 8;
             write<int16_t>(buf, tmp);
             write<int8_t>(buf, tmp >> 16);
         };
@@ -488,35 +488,35 @@ void OSEGY::Impl::write_additional_trace_headers(Trace::Header const& hdr)
     tmp = hdr.get("ENS_NO");
     write_u64(&buf, tmp ? get<uint64_t>(*tmp) : 0);
     tmp = hdr.get("R_ELEV");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("R_DEPTH");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("S_DEPTH");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("R_DATUM");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("S_DATUM");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("R_WATER");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("S_WATER");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("SOU_X");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("SOU_Y");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("REC_X");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("REC_Y");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("OFFSET");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("SAMP_NUM");
     write_u64(&buf, tmp ? get<uint32_t>(*tmp) : 0);
     tmp = hdr.get("NANOSECOND");
     write_u64(&buf, tmp ? get<int32_t>(*tmp) : 0);
     tmp = hdr.get("SAMP_INT");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("CABLE_NUM");
     write_u64(&buf, tmp ? get<int32_t>(*tmp) : 0);
     tmp = hdr.get("ADD_TRC_HDR_NUM");
@@ -527,55 +527,67 @@ void OSEGY::Impl::write_additional_trace_headers(Trace::Header const& hdr)
     tmp = hdr.get("LAST_TRC_FLAG");
     write_u64(&buf, tmp ? get<int16_t>(*tmp) : 0);
     tmp = hdr.get("CDP_X");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     tmp = hdr.get("CDP_Y");
-    write_u64(&buf, tmp ? get<double>(*tmp) : 0);
+    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
     common.file.write(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
-    // for each item in vector
-    for (auto& p : common.add_tr_hdr_map) {
+    for (int i = 0; i < add_trc_hdr_num - 1; ++i) {
         std::memset(common.hdr_buf, 0, CommonSEGY::TR_HEADER_SIZE);
-        // for each item in map
-        for (auto& i : p.second) {
-            tmp = hdr.get(i.second.first);
-            char* pos = common.hdr_buf + i.first;
-            switch (i.second.second) {
-            case CommonSEGY::TrHdrValueType::int8_t:
-                write_i8(&pos, get<int8_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::uint8_t:
-                write_u8(&pos, get<uint8_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::int16_t:
-                write_i16(&pos, get<int16_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::uint16_t:
-                write_u16(&pos, get<uint16_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::int32_t:
-                write_i32(&pos, get<int32_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::uint32_t:
-                write_u32(&pos, get<uint32_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::int64_t:
-                write_i64(&pos, get<int64_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::uint64_t:
-                write_u64(&pos, get<uint64_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::ibm:
-                write_u64(&pos, get<uint64_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::ieee_single:
-                write_u64(&pos, get<uint64_t>(*tmp));
-                break;
-            case CommonSEGY::TrHdrValueType::ieee_double:
-                write_u64(&pos, get<uint64_t>(*tmp));
-                break;
+        if (common.add_tr_hdr_map.size()) {
+            // for each item in map
+            for (auto& item : common.add_tr_hdr_map[i].second) {
+                tmp = hdr.get(item.second.first);
+                if (tmp == std::nullopt)
+                    throw Exception(__FILE__, __LINE__,
+                    "no such header in trace");
+                char* pos = common.hdr_buf + item.first;
+                switch (item.second.second) {
+                case Trace::Header::ValueType::int8_t:
+                    write_i8(&pos, get<int8_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint8_t:
+                    write_u8(&pos, get<uint8_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int16_t:
+                    write_i16(&pos, get<int16_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint16_t:
+                    write_u16(&pos, get<uint16_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int24_t:
+                    write_i24(&pos, get<int32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint24_t:
+                    write_u24(&pos, get<uint32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int32_t:
+                    write_i32(&pos, get<int32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint32_t:
+                    write_u32(&pos, get<uint32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int64_t:
+                    write_i64(&pos, get<int64_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint64_t:
+                    write_u64(&pos, get<uint64_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::ibm:
+                    write_ibm_float(&pos, get<double>(*tmp));
+                    break;
+                case Trace::Header::ValueType::ieee_single:
+                    write_IEEE_float(&pos, get<double>(*tmp));
+                    break;
+                case Trace::Header::ValueType::ieee_double:
+                    write_IEEE_double(&pos, get<double>(*tmp));
+                    break;
+                }
             }
+            // copy additional trace header name
+            std::memcpy(common.hdr_buf + 232,
+            common.add_tr_hdr_map[i].first.c_str(),
+            common.add_tr_hdr_map[i].first.size());
         }
-        // copy additional trace header name
-        std::memcpy(common.hdr_buf + 232, p.first.c_str(), p.first.size());
         common.file.write(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
     }
 }
@@ -623,7 +635,7 @@ void OSEGY::Impl::write_trace_samples_fix(Trace const& t)
 
 OSEGY::OSEGY(string name, CommonSEGY::BinaryHeader bh,
     vector<pair<string, map<uint32_t, pair<string,
-   	CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+   	Trace::Header::ValueType>>>> add_hdr_map)
     : pimpl { make_unique<Impl>(CommonSEGY { move(name),
 	   	fstream::out | fstream::binary, move(bh), move(add_hdr_map) }) }
 {

@@ -1,5 +1,6 @@
 #include "CommonSEGY.hpp"
 #include "Exception.hpp"
+#include "Trace.hpp"
 
 using std::fstream;
 using std::ios_base;
@@ -15,7 +16,7 @@ namespace sedaman {
 static void check_add_tr_hdr_map(CommonSEGY* com);
 
 CommonSEGY::CommonSEGY(string name, ios_base::openmode mode, BinaryHeader bh,
-    vector<pair<string, map<uint32_t, pair<string, TrHdrValueType>>>>
+    vector<pair<string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>
    	add_hdr_map)
     : binary_header { move(bh) }
     , file_name { move(name) }
@@ -34,8 +35,9 @@ void check_add_tr_hdr_map(CommonSEGY* com)
     int first = 1, size = 0;
     uint32_t prev = 0;
     if (com->binary_header.max_num_add_tr_headers &&
-	   	static_cast<int32_t>(com->add_tr_hdr_map.size()) + 1 !=
-	   	com->binary_header.max_num_add_tr_headers)
+	   	com->add_tr_hdr_map.size() != 
+           static_cast<decltype(com->add_tr_hdr_map.size())>
+           						(com->binary_header.max_num_add_tr_headers))
         throw Exception(__FILE__, __LINE__,
             "number of additional trace headers not equal to max number of "
 		   	"headers in binary header");
@@ -50,37 +52,43 @@ void check_add_tr_hdr_map(CommonSEGY* com)
                 first = 0;
             } else {
                 switch (i.second.second) {
-                case CommonSEGY::TrHdrValueType::int8_t:
+                case Trace::Header::ValueType::int8_t:
                     size = 1;
                     break;
-                case CommonSEGY::TrHdrValueType::uint8_t:
+                case Trace::Header::ValueType::uint8_t:
                     size = 1;
                     break;
-                case CommonSEGY::TrHdrValueType::int16_t:
+                case Trace::Header::ValueType::int16_t:
                     size = 2;
                     break;
-                case CommonSEGY::TrHdrValueType::uint16_t:
+                case Trace::Header::ValueType::uint16_t:
                     size = 2;
                     break;
-                case CommonSEGY::TrHdrValueType::int32_t:
+                case Trace::Header::ValueType::int24_t:
+                    size = 3;
+                    break;
+                case Trace::Header::ValueType::uint24_t:
+                    size = 3;
+                    break;
+                case Trace::Header::ValueType::int32_t:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::uint32_t:
+                case Trace::Header::ValueType::uint32_t:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::int64_t:
+                case Trace::Header::ValueType::int64_t:
                     size = 8;
                     break;
-                case CommonSEGY::TrHdrValueType::uint64_t:
+                case Trace::Header::ValueType::uint64_t:
                     size = 8;
                     break;
-                case CommonSEGY::TrHdrValueType::ibm:
+                case Trace::Header::ValueType::ibm:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::ieee_single:
+                case Trace::Header::ValueType::ieee_single:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::ieee_double:
+                case Trace::Header::ValueType::ieee_double:
                     size = 8;
                     break;
                 default:
@@ -88,12 +96,12 @@ void check_add_tr_hdr_map(CommonSEGY* com)
 									"impossible, unexpected type in "
 									"TrHdrValueType");
                 }
-                if (i.first - prev != static_cast<uint32_t>(size))
+                if (i.first - prev < static_cast<uint32_t>(size))
                     throw Exception(__FILE__, __LINE__,
-									string("wrong type/offset in additional "
-										   "trace headers map: ") +
+									string("overlapping type/offset in "
+                                    "additional trace headers map: ") +
 								   	to_string(i.first));
-                if (i.first > 224 && i.first + size > 232)
+                if (i.first + size > 232)
                     throw Exception(__FILE__, __LINE__,
                         string("last 8 bytes should be used for header name"));
                 prev = i.first;

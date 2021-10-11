@@ -13,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "Trace.hpp"
 
 /// \namespace sedaman
 /// \brief General namespace for sedaman library.
@@ -121,6 +122,7 @@ public:
     class AdditionalGeneralHeader {
     public:
         enum ADD_GEN_HDR_BLKS {
+            RESERVED = 0x00,
             VESSEL_CREW_ID = 0x10,
             SURVEY_AREA_NAME = 0x11,
             CLIENT_NAME = 0x12,
@@ -1036,22 +1038,34 @@ public:
     static constexpr int EXTERNAL_HEADER_SIZE = 32;
     static constexpr int TRACE_HEADER_SIZE = 20;
     static constexpr int TRACE_HEADER_EXT_SIZE = 32;
+    static const std::vector<std::map<uint32_t, std::pair<std::string,
+    Trace::Header::ValueType>>> sercel_428xl, sercel_428, sercel_408;
+
     /// \param file_name Name of file.
     /// \param mode Choose input or output.
     CommonSEGD(std::string file_name, std::fstream::openmode mode,
         GeneralHeader gh = {}, GeneralHeader2 gh2 = {},
-	   	GeneralHeader3 gh3 = {},
+        GeneralHeader3 gh3 = {},
         std::vector<std::shared_ptr<AdditionalGeneralHeader>> add_ghs = {},
-        std::vector<std::vector<ChannelSetHeader>> ch_sets = {});
+        std::vector<std::vector<ChannelSetHeader>> ch_sets = {},
+        std::vector<std::vector<char>> extended_headers = {},
+        std::vector<std::vector<char>> external_headers = {},
+        std::vector<std::map<uint32_t, std::pair<std::string,
+        Trace::Header::ValueType>>> trc_hdr_ext = {});
     std::string file_name;
     std::fstream file;
     char gen_hdr_buf[CommonSEGD::GEN_HDR_SIZE];
     std::vector<char> ch_set_hdr_buf;
     char trc_hdr_buf[CommonSEGD::TRACE_HEADER_SIZE];
+    char trc_ext_hdr_buf[CommonSEGD::TRACE_HEADER_EXT_SIZE];
     std::vector<char> trc_samp_buf;
-    std::map<AdditionalGeneralHeader::ADD_GEN_HDR_BLKS,
-	   	std::unique_ptr<AdditionalGeneralHeader>> add_gen_hdr_blks_map;
+    std::map<int, std::unique_ptr<AdditionalGeneralHeader>>
+        add_gen_hdr_blks_map;
+    std::vector<std::vector<char>> extended_headers;
+    std::vector<std::vector<char>> external_headers;
     std::vector<std::vector<ChannelSetHeader>> channel_sets;
+    std::vector<std::map<uint32_t, std::pair<std::string,
+        Trace::Header::ValueType>>> trace_header_extension;
     int bits_per_sample;
 };
 } // namespace sedaman

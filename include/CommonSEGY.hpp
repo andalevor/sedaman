@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "Trace.hpp"
 
 /// \brief General namespace for sedaman library.
 namespace sedaman {
@@ -118,21 +119,6 @@ public:
         };
         static char const* name_as_string(Name n);
     } binary_header;
-    /// \enum
-    /// \brief Enumiration to set type of additional trace header values.
-    enum class TrHdrValueType {
-        int8_t,
-        uint8_t,
-        int16_t,
-        uint16_t,
-        int32_t,
-        uint32_t,
-        int64_t,
-        uint64_t,
-        ibm,
-        ieee_single,
-        ieee_double
-    };
     /// \brief Transform text header from ebcdic to ascii.
     /// \param ebcdic String in ebcdic encoding.
     static void ebcdic_to_ascii(std::string& ebcdic);
@@ -157,7 +143,7 @@ public:
 	///                        and map.
     CommonSEGY(std::string name, std::ios_base::openmode mode, BinaryHeader bh,
         std::vector<std::pair<std::string, std::map<uint32_t,
-	   	std::pair<std::string, TrHdrValueType>>>> add_tr_hdrs_map);
+	   	std::pair<std::string, Trace::Header::ValueType>>>> add_tr_hdrs_map);
     std::string file_name;
     std::fstream file;
     std::vector<std::string> text_headers;
@@ -167,7 +153,7 @@ public:
     int bytes_per_sample;
     int32_t samp_per_tr;
     std::vector<std::pair<std::string, std::map<uint32_t,
-	   	std::pair<std::string, TrHdrValueType>>>> add_tr_hdr_map;
+	   	std::pair<std::string, Trace::Header::ValueType>>>> add_tr_hdr_map;
 };
 } // namespace sedaman
 

@@ -23,7 +23,12 @@ public:
         CommonSEGD::GeneralHeader2 gh2,
         std::vector<std::vector<CommonSEGD::ChannelSetHeader>> ch_sets,
         std::vector<std::shared_ptr<CommonSEGD::AdditionalGeneralHeader>>
-	   	add_ghs = {});
+	   	add_ghs = {},
+        std::vector<std::vector<char>> extended_headers = {},
+        std::vector<std::vector<char>> external_headers = {},
+        std::vector<std::map<uint32_t, std::pair<std::string,
+        Trace::Header::ValueType>>> trc_hdr_ext = {}
+        );
     void write_trace(Trace& t) override;
     virtual ~OSEGDRev2_1();
 

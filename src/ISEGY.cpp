@@ -33,9 +33,9 @@ namespace sedaman {
 class ISEGY::Impl {
 public:
     Impl(string name, vector<map<uint32_t,
-		 pair<string, CommonSEGY::TrHdrValueType>>> tr_hdr_over,
+		 pair<string, Trace::Header::ValueType>>> tr_hdr_over,
 		 vector<pair<string, map<uint32_t,
- 		 pair<string, CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+ 		 pair<string, Trace::Header::ValueType>>>> add_hdr_map)
 		: common { move(name), fstream::in | fstream::binary, {},
 		   	move(add_hdr_map) }	, tr_hdr_io_map { tr_hdr_over }
     {
@@ -44,9 +44,9 @@ public:
 
     Impl(string name, CommonSEGY::BinaryHeader bh,
         vector<map<uint32_t, pair<string,
-	   	CommonSEGY::TrHdrValueType>>> tr_hdr_over,
+	   	Trace::Header::ValueType>>> tr_hdr_over,
         vector<pair<string, map<uint32_t, pair<string,
-	   	CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+	   	Trace::Header::ValueType>>>> add_hdr_map)
         : common { move(name), fstream::in | fstream::binary,
 		   	move(bh), move(add_hdr_map) }, tr_hdr_io_map { tr_hdr_over }
     {
@@ -58,7 +58,7 @@ public:
     streampos curr_pos;
     streampos end_of_data;
     vector<map<uint32_t, pair<string,
-	   	CommonSEGY::TrHdrValueType>>> tr_hdr_io_map;
+	   	Trace::Header::ValueType>>> tr_hdr_io_map;
     unordered_map<string, Trace::Header::Value> read_trc_header();
     function<vector<double>(unordered_map<string, Trace::Header::Value>&)>
 	   	read_trc_smpls;
@@ -66,7 +66,7 @@ public:
     vector<double> read_trc_smpls_var(unordered_map<string,
 									  Trace::Header::Value>& hdr);
     void file_skip_bytes(streamoff off);
-    vector<map<uint32_t, pair<string, CommonSEGY::TrHdrValueType>>>
+    vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>
 	   	tr_hdr_default_io_map();
 
 private:
@@ -93,6 +93,7 @@ private:
     void read_trailer_stanzas();
     void fill_buf_from_file(char* buf, streamsize n);
     void check_tr_hdr_over();
+    void check_add_tr_hdr_map();
 };
 
 void ISEGY::Impl::initialization(bool override_bin_hdr)
@@ -105,6 +106,7 @@ void ISEGY::Impl::initialization(bool override_bin_hdr)
     check_tr_hdr_over();
     if (!override_bin_hdr)
         fill_bin_header(bin_buf);
+    check_add_tr_hdr_map();
     assign_sample_reader();
     assign_bytes_per_sample();
     read_ext_text_headers();
@@ -206,10 +208,10 @@ void ISEGY::Impl::assign_raw_readers()
     case 0x01020304:
         read_u16 = [](char const** buf) { return read<uint16_t>(buf); };
         read_i16 = [](char const** buf) { return read<int16_t>(buf); };
-        read_u24 = [](char const** buf) { return read<uint16_t>(buf) << 8 |
-		   	read<uint8_t>(buf); };
+        read_u24 = [](char const** buf) { return read<uint16_t>(buf) |
+		   	read<uint8_t>(buf) << 16; };
         read_i24 = [](char const** buf) {
-            uint32_t result = read<uint16_t>(buf) << 8 | read<uint8_t>(buf);
+            uint32_t result = read<uint16_t>(buf) | read<uint8_t>(buf) << 16;
             return result & 0x800000 ? result | 0xff000000 : result;
         };
         read_u32 = [](char const** buf) { return read<uint32_t>(buf); };
@@ -221,11 +223,11 @@ void ISEGY::Impl::assign_raw_readers()
     case 0x04030201:
         read_u16 = [](char const** buf) { return swap(read<uint16_t>(buf)); };
         read_i16 = [](char const** buf) { return swap(read<int16_t>(buf)); };
-        read_u24 = [](char const** buf) { return swap(read<uint16_t>(buf)) |
-		   	read<uint8_t>(buf) << 16; };
+        read_u24 = [](char const** buf) { return swap(read<uint16_t>(buf)) << 8
+		   	| read<uint8_t>(buf); };
         read_i24 = [](char const** buf) {
-            uint32_t result = swap(read<uint16_t>(buf)) |
-			   	read<uint8_t>(buf) << 16;
+            uint32_t result = swap(read<uint16_t>(buf)) << 8 |
+			   	read<uint8_t>(buf);
             return result & 0x800000 ? result | 0xff000000 : result;
         };
         read_u32 = [](char const** buf) { return swap(read<uint32_t>(buf)); };
@@ -580,65 +582,58 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
             hdr["LAST_TRC_FLAG"] = read_i16(&buf);
             hdr["CDP_X"] = dbl_from_IEEE_double(&buf);
             hdr["CDP_Y"] = dbl_from_IEEE_double(&buf);
-            if (common.binary_header.max_num_add_tr_headers > 1) {
+            add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
+					   	common.binary_header.max_num_add_tr_headers;
+            for (int32_t i = 0; i < add_trc_hdr_num - 1; ++i) {
                 if (!common.add_tr_hdr_map.empty()) {
-                    if (common.add_tr_hdr_map.size() !=
-					   	static_cast<decltype(common.add_tr_hdr_map.size())>
-						(common.binary_header.max_num_add_tr_headers))
-                        throw Exception(__FILE__, __LINE__,
-										"size of additioanal trace headers "
-										"map should be equal to max number "
-										"of additional trace headers in "
-										"binary header");
-                    for (auto& i : common.add_tr_hdr_map) {
-                        fill_buf_from_file(common.hdr_buf,
-										   CommonSEGY::TR_HEADER_SIZE);
-                        for (auto& p : i.second) {
-                            char const* pos = common.hdr_buf + p.first;
-                            switch (p.second.second) {
-                            case CommonSEGY::TrHdrValueType::int8_t:
-                                hdr[p.second.first] = read_i8(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::uint8_t:
-                                hdr[p.second.first] = read_u8(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::int16_t:
-                                hdr[p.second.first] = read_i16(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::uint16_t:
-                                hdr[p.second.first] = read_u16(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::int32_t:
-                                hdr[p.second.first] = read_i32(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::uint32_t:
-                                hdr[p.second.first] = read_u32(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::int64_t:
-                                hdr[p.second.first] = read_i64(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::uint64_t:
-                                hdr[p.second.first] = read_u64(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::ibm:
-                                hdr[p.second.first] = dbl_from_ibm_float(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::ieee_single:
-                                hdr[p.second.first] =
-								   	dbl_from_IEEE_float(&pos);
-                                break;
-                            case CommonSEGY::TrHdrValueType::ieee_double:
-                                hdr[p.second.first] =
-								   	dbl_from_IEEE_double(&pos);
-                                break;
-                            }
+                    fill_buf_from_file(common.hdr_buf,
+                        CommonSEGY::TR_HEADER_SIZE);
+                    for (auto& p : common.add_tr_hdr_map[i].second) {
+                        char const* pos = common.hdr_buf + p.first;
+                        switch (p.second.second) {
+                        case Trace::Header::ValueType::int8_t:
+                            hdr[p.second.first] = read_i8(&pos);
+                            break;
+                        case Trace::Header::ValueType::uint8_t:
+                            hdr[p.second.first] = read_u8(&pos);
+                            break;
+                        case Trace::Header::ValueType::int16_t:
+                            hdr[p.second.first] = read_i16(&pos);
+                            break;
+                        case Trace::Header::ValueType::uint16_t:
+                            hdr[p.second.first] = read_u16(&pos);
+                            break;
+                        case Trace::Header::ValueType::int24_t:
+                            hdr[p.second.first] = read_i24(&pos);
+                            break;
+                        case Trace::Header::ValueType::uint24_t:
+                            hdr[p.second.first] = read_u24(&pos);
+                            break;
+                        case Trace::Header::ValueType::int32_t:
+                            hdr[p.second.first] = read_i32(&pos);
+                            break;
+                        case Trace::Header::ValueType::uint32_t:
+                            hdr[p.second.first] = read_u32(&pos);
+                            break;
+                        case Trace::Header::ValueType::int64_t:
+                            hdr[p.second.first] = read_i64(&pos);
+                            break;
+                        case Trace::Header::ValueType::uint64_t:
+                            hdr[p.second.first] = read_u64(&pos);
+                            break;
+                        case Trace::Header::ValueType::ibm:
+                            hdr[p.second.first] = dbl_from_ibm_float(&pos);
+                            break;
+                        case Trace::Header::ValueType::ieee_single:
+                            hdr[p.second.first] = dbl_from_IEEE_float(&pos);
+                            break;
+                        case Trace::Header::ValueType::ieee_double:
+                            hdr[p.second.first] = dbl_from_IEEE_double(&pos);
+                            break;
                         }
                     }
                 } else {
-                    add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
-					   	common.binary_header.max_num_add_tr_headers;
-                    file_skip_bytes(add_trc_hdr_num *
-								   	CommonSEGY::TR_HEADER_SIZE);
+                    file_skip_bytes(CommonSEGY::TR_HEADER_SIZE);
                 }
             }
         }
@@ -646,37 +641,43 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
         for (auto& p : tr_hdr_io_map[0]) {
             char const* pos = buf + p.first;
             switch (p.second.second) {
-            case CommonSEGY::TrHdrValueType::int8_t:
+            case Trace::Header::ValueType::int8_t:
                 hdr[p.second.first] = read_i8(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::uint8_t:
+            case Trace::Header::ValueType::uint8_t:
                 hdr[p.second.first] = read_u8(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::int16_t:
+            case Trace::Header::ValueType::int16_t:
                 hdr[p.second.first] = read_i16(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::uint16_t:
+            case Trace::Header::ValueType::uint16_t:
                 hdr[p.second.first] = read_u16(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::int32_t:
+            case Trace::Header::ValueType::int24_t:
+                hdr[p.second.first] = read_i24(&pos);
+                break;
+            case Trace::Header::ValueType::uint24_t:
+                hdr[p.second.first] = read_u24(&pos);
+                break;
+            case Trace::Header::ValueType::int32_t:
                 hdr[p.second.first] = read_i32(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::uint32_t:
+            case Trace::Header::ValueType::uint32_t:
                 hdr[p.second.first] = read_u32(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::int64_t:
+            case Trace::Header::ValueType::int64_t:
                 hdr[p.second.first] = read_i64(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::uint64_t:
+            case Trace::Header::ValueType::uint64_t:
                 hdr[p.second.first] = read_u64(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::ibm:
+            case Trace::Header::ValueType::ibm:
                 hdr[p.second.first] = dbl_from_ibm_float(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::ieee_single:
+            case Trace::Header::ValueType::ieee_single:
                 hdr[p.second.first] = dbl_from_IEEE_float(&pos);
                 break;
-            case CommonSEGY::TrHdrValueType::ieee_double:
+            case Trace::Header::ValueType::ieee_double:
                 hdr[p.second.first] = dbl_from_IEEE_double(&pos);
                 break;
             }
@@ -692,51 +693,49 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
             for (auto& p : tr_hdr_io_map[1]) {
                 char const* pos = buf + p.first;
                 switch (p.second.second) {
-                case CommonSEGY::TrHdrValueType::int8_t:
+                case Trace::Header::ValueType::int8_t:
                     hdr[p.second.first] = read_i8(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::uint8_t:
+                case Trace::Header::ValueType::uint8_t:
                     hdr[p.second.first] = read_u8(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::int16_t:
+                case Trace::Header::ValueType::int16_t:
                     hdr[p.second.first] = read_i16(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::uint16_t:
+                case Trace::Header::ValueType::uint16_t:
                     hdr[p.second.first] = read_u16(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::int32_t:
+                case Trace::Header::ValueType::int24_t:
+                    hdr[p.second.first] = read_i24(&pos);
+                    break;
+                case Trace::Header::ValueType::uint24_t:
+                    hdr[p.second.first] = read_u24(&pos);
+                    break;
+                case Trace::Header::ValueType::int32_t:
                     hdr[p.second.first] = read_i32(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::uint32_t:
+                case Trace::Header::ValueType::uint32_t:
                     hdr[p.second.first] = read_u32(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::int64_t:
+                case Trace::Header::ValueType::int64_t:
                     hdr[p.second.first] = read_i64(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::uint64_t:
+                case Trace::Header::ValueType::uint64_t:
                     hdr[p.second.first] = read_u64(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::ibm:
+                case Trace::Header::ValueType::ibm:
                     hdr[p.second.first] = dbl_from_ibm_float(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::ieee_single:
+                case Trace::Header::ValueType::ieee_single:
                     hdr[p.second.first] = dbl_from_IEEE_float(&pos);
                     break;
-                case CommonSEGY::TrHdrValueType::ieee_double:
+                case Trace::Header::ValueType::ieee_double:
                     hdr[p.second.first] = dbl_from_IEEE_double(&pos);
                     break;
                 }
             }
             if (common.binary_header.max_num_add_tr_headers > 1) {
                 if (!common.add_tr_hdr_map.empty()) {
-                    if (common.add_tr_hdr_map.size() !=
-					   	static_cast<decltype(common.add_tr_hdr_map.size())>
-						(common.binary_header.max_num_add_tr_headers))
-                        throw Exception(__FILE__, __LINE__,
-										"size of additioanal trace headers "
-										"map should be equal to max number "
-										"of additional trace headers in "
-										"binary header");
                     for (auto& i : common.add_tr_hdr_map) {
                         fill_buf_from_file(common.hdr_buf,
 										   CommonSEGY::TR_HEADER_SIZE);
@@ -744,38 +743,44 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
                         for (auto& p : i.second) {
                             char const* pos = buf + p.first;
                             switch (p.second.second) {
-                            case CommonSEGY::TrHdrValueType::int8_t:
+                            case Trace::Header::ValueType::int8_t:
                                 hdr[p.second.first] = read_i8(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::uint8_t:
+                            case Trace::Header::ValueType::uint8_t:
                                 hdr[p.second.first] = read_u8(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::int16_t:
+                            case Trace::Header::ValueType::int16_t:
                                 hdr[p.second.first] = read_i16(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::uint16_t:
+                            case Trace::Header::ValueType::uint16_t:
                                 hdr[p.second.first] = read_u16(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::int32_t:
+                            case Trace::Header::ValueType::int24_t:
+                                hdr[p.second.first] = read_i24(&pos);
+                                break;
+                            case Trace::Header::ValueType::uint24_t:
+                                hdr[p.second.first] = read_u24(&pos);
+                                break;
+                            case Trace::Header::ValueType::int32_t:
                                 hdr[p.second.first] = read_i32(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::uint32_t:
+                            case Trace::Header::ValueType::uint32_t:
                                 hdr[p.second.first] = read_u32(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::int64_t:
+                            case Trace::Header::ValueType::int64_t:
                                 hdr[p.second.first] = read_i64(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::uint64_t:
+                            case Trace::Header::ValueType::uint64_t:
                                 hdr[p.second.first] = read_u64(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::ibm:
+                            case Trace::Header::ValueType::ibm:
                                 hdr[p.second.first] = dbl_from_ibm_float(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::ieee_single:
+                            case Trace::Header::ValueType::ieee_single:
                                 hdr[p.second.first] =
 								   	dbl_from_IEEE_float(&pos);
                                 break;
-                            case CommonSEGY::TrHdrValueType::ieee_double:
+                            case Trace::Header::ValueType::ieee_double:
                                 hdr[p.second.first] =
 								   	dbl_from_IEEE_double(&pos);
                                 break;
@@ -865,37 +870,37 @@ void ISEGY::Impl::check_tr_hdr_over()
                 first = 0;
             } else {
                 switch (i.second.second) {
-                case CommonSEGY::TrHdrValueType::int8_t:
+                case Trace::Header::ValueType::int8_t:
                     size = 1;
                     break;
-                case CommonSEGY::TrHdrValueType::uint8_t:
+                case Trace::Header::ValueType::uint8_t:
                     size = 1;
                     break;
-                case CommonSEGY::TrHdrValueType::int16_t:
+                case Trace::Header::ValueType::int16_t:
                     size = 2;
                     break;
-                case CommonSEGY::TrHdrValueType::uint16_t:
+                case Trace::Header::ValueType::uint16_t:
                     size = 2;
                     break;
-                case CommonSEGY::TrHdrValueType::int32_t:
+                case Trace::Header::ValueType::int32_t:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::uint32_t:
+                case Trace::Header::ValueType::uint32_t:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::int64_t:
+                case Trace::Header::ValueType::int64_t:
                     size = 8;
                     break;
-                case CommonSEGY::TrHdrValueType::uint64_t:
+                case Trace::Header::ValueType::uint64_t:
                     size = 8;
                     break;
-                case CommonSEGY::TrHdrValueType::ibm:
+                case Trace::Header::ValueType::ibm:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::ieee_single:
+                case Trace::Header::ValueType::ieee_single:
                     size = 4;
                     break;
-                case CommonSEGY::TrHdrValueType::ieee_double:
+                case Trace::Header::ValueType::ieee_double:
                     size = 8;
                     break;
                 default:
@@ -907,6 +912,80 @@ void ISEGY::Impl::check_tr_hdr_over()
                     throw Exception(__FILE__, __LINE__,
 									string("wrong type/offset in trace header "
 										   "override map: ") +
+								   	to_string(i.first));
+                if (i.first > 224 && i.first + size > 232)
+                    throw Exception(__FILE__, __LINE__,
+                        string("last 8 bytes should be used for header name"));
+                prev = i.first;
+            }
+        }
+    }
+}
+
+void ISEGY::Impl::check_add_tr_hdr_map()
+{
+    int first = 1, size = 0;
+    uint32_t prev = 0;
+    if (common.binary_header.max_num_add_tr_headers &&
+	   	common.add_tr_hdr_map.size() != 
+           static_cast<decltype(common.add_tr_hdr_map.size())>
+           						(common.binary_header.max_num_add_tr_headers))
+        throw Exception(__FILE__, __LINE__,
+            "number of additional trace headers not equal to max number of "
+		   	"headers in binary header");
+    for (auto& p : common.add_tr_hdr_map) {
+        if (p.first.size() != 8)
+            throw Exception(__FILE__, __LINE__,
+						   	"additional trace header name must have "
+						   	"8 bytes length");
+        for (auto& i : p.second) {
+            if (first) {
+                prev = i.first;
+                first = 0;
+            } else {
+                switch (i.second.second) {
+                case Trace::Header::ValueType::int8_t:
+                    size = 1;
+                    break;
+                case Trace::Header::ValueType::uint8_t:
+                    size = 1;
+                    break;
+                case Trace::Header::ValueType::int16_t:
+                    size = 2;
+                    break;
+                case Trace::Header::ValueType::uint16_t:
+                    size = 2;
+                    break;
+                case Trace::Header::ValueType::int32_t:
+                    size = 4;
+                    break;
+                case Trace::Header::ValueType::uint32_t:
+                    size = 4;
+                    break;
+                case Trace::Header::ValueType::int64_t:
+                    size = 8;
+                    break;
+                case Trace::Header::ValueType::uint64_t:
+                    size = 8;
+                    break;
+                case Trace::Header::ValueType::ibm:
+                    size = 4;
+                    break;
+                case Trace::Header::ValueType::ieee_single:
+                    size = 4;
+                    break;
+                case Trace::Header::ValueType::ieee_double:
+                    size = 8;
+                    break;
+                default:
+                    throw Exception(__FILE__, __LINE__,
+									"impossible, unexpected type in "
+									"TrHdrValueType");
+                }
+                if (i.first - prev != static_cast<uint32_t>(size))
+                    throw Exception(__FILE__, __LINE__,
+									string("wrong type/offset in additional "
+										   "trace headers map: ") +
 								   	to_string(i.first));
                 if (i.first > 224 && i.first + size > 232)
                     throw Exception(__FILE__, __LINE__,
@@ -933,9 +1012,9 @@ CommonSEGY::BinaryHeader const& ISEGY::binary_header()
 }
 
 ISEGY::ISEGY(string name, vector<map<uint32_t, pair<string,
-			 CommonSEGY::TrHdrValueType>>> tr_hdr_over,
+			 Trace::Header::ValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string,
-   	CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+   	Trace::Header::ValueType>>>> add_hdr_map)
     : pimpl { make_unique<Impl>(move(name), move(tr_hdr_over),
 							   	move(add_hdr_map)) }
 {
@@ -943,9 +1022,9 @@ ISEGY::ISEGY(string name, vector<map<uint32_t, pair<string,
 
 ISEGY::ISEGY(string name, CommonSEGY::BinaryHeader bh,
     vector<map<uint32_t, pair<string,
-   	CommonSEGY::TrHdrValueType>>> tr_hdr_over,
+   	Trace::Header::ValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string,
-   	CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+   	Trace::Header::ValueType>>>> add_hdr_map)
 	: pimpl { make_unique<Impl>(move(name), move(bh), move(tr_hdr_over),
 							   	move(add_hdr_map)) }
 {

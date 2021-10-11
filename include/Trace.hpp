@@ -27,6 +27,23 @@ public:
     public:
         typedef std::variant<int8_t, int16_t, int32_t, int64_t, uint8_t,
 			   	uint16_t, uint32_t, uint64_t, float, double> Value;
+        /// \enum
+        /// \brief Enumiration to set type of additional trace header values.
+        enum class ValueType {
+            int8_t,
+            uint8_t,
+            int16_t,
+            uint16_t,
+            int24_t,
+            uint24_t,
+            int32_t,
+            uint32_t,
+            int64_t,
+            uint64_t,
+            ibm,
+            ieee_single,
+            ieee_double
+        };
         /// \param hdr Header to copy data from
         Header(Header const& hdr);
         /// \param hdr Header to move data from

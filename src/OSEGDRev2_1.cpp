@@ -4,7 +4,9 @@
 
 using std::fstream;
 using std::make_unique;
+using std::map;
 using std::move;
+using std::pair;
 using std::string;
 using std::shared_ptr;
 using std::vector;
@@ -28,7 +30,7 @@ OSEGDRev2_1::Impl::Impl(OSEGDRev2_1& s)
     sgd.write_general_header1();
     sgd.write_general_header2_rev2();
     sgd.write_rev2_add_gen_hdrs();
-    sgd.common().ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_R3_SIZE);
+    sgd.common().ch_set_hdr_buf.resize(CommonSEGD::CH_SET_HDR_SIZE);
     for (vector<CommonSEGD::ChannelSetHeader>& sets :
 		 sgd.common().channel_sets) {
         uint16_t ch_sets_per_scan_type_num =
@@ -42,9 +44,12 @@ OSEGDRev2_1::Impl::Impl(OSEGDRev2_1& s)
         for (CommonSEGD::ChannelSetHeader& hdr : sets) {
             sgd.write_ch_set_hdr(hdr);
         }
-        char* buf = sgd.common().gen_hdr_buf;
-        memset(buf, 0, CommonSEGD::SKEW_BLOCK_SIZE);
-        sgd.common().file.write(buf, CommonSEGD::SKEW_BLOCK_SIZE);
+        if (int skews = sgd.common().general_header.skew_blocks) {
+            char* buf = sgd.common().gen_hdr_buf;
+            memset(buf, 0, CommonSEGD::SKEW_BLOCK_SIZE);
+            for (int i = 0; i < skews; ++i)
+                sgd.common().file.write(buf, CommonSEGD::SKEW_BLOCK_SIZE);
+        }
     }
     uint32_t extended_blocks =
 	   	sgd.common().general_header.extended_hdr_blocks == 165 ?
@@ -54,15 +59,12 @@ OSEGDRev2_1::Impl::Impl(OSEGDRev2_1& s)
 	   	sgd.common().general_header.external_hdr_blocks == 165 ?
 	   	sgd.common().general_header2.external_hdr_blocks :
 	   	sgd.common().general_header.external_hdr_blocks;
-    for (uint64_t i = extended_blocks; i; --i) {
-        char* buf = sgd.common().gen_hdr_buf;
-        memset(buf, 0, CommonSEGD::EXTENDED_HEADER_SIZE);
-        sgd.common().file.write(buf, CommonSEGD::EXTENDED_HEADER_SIZE);
-    }
-    for (uint64_t i = external_blocks; i; --i) {
-        char* buf = sgd.common().gen_hdr_buf;
-        memset(buf, 0, CommonSEGD::EXTERNAL_HEADER_SIZE);
-        sgd.common().file.write(buf, CommonSEGD::EXTERNAL_HEADER_SIZE);
+    for (uint32_t i = 0; i < extended_blocks; ++i)
+        sgd.common().file.write(sgd.common().extended_headers[i].data(),
+        CommonSEGD::EXTENDED_HEADER_SIZE);
+    for (uint32_t i = 0; i < external_blocks; ++i) {
+        sgd.common().file.write(sgd.common().external_headers[i].data(),
+        CommonSEGD::EXTERNAL_HEADER_SIZE);
     }
 }
 
@@ -73,6 +75,7 @@ void OSEGDRev2_1::write_trace(Trace& t)
 						"you tring write more traces than specified "
 						"in channel set headers");
     write_trace_header(t.header());
+    write_ext_trace_headers(t.header());
     write_trace_samples(t);
     ++pimpl->chans_written;
 }
@@ -80,9 +83,11 @@ void OSEGDRev2_1::write_trace(Trace& t)
 OSEGDRev2_1::OSEGDRev2_1(string file_name, CommonSEGD::GeneralHeader gh,
     CommonSEGD::GeneralHeader2 gh2,
     vector<vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-    vector<shared_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs)
+    vector<shared_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs,
+    vector<vector<char>> extd_hdrs, vector<vector<char>> extl_hdrs,
+    vector<map<uint32_t, pair<string, Trace::Header::ValueType>>> trc_hdr_ext)
     : OSEGD { move(file_name), move(gh), move(gh2), {}, move(ch_sets),
-	   	move(add_ghs) }
+	   	move(add_ghs), move(extd_hdrs), move(extl_hdrs), move(trc_hdr_ext) }
     , pimpl { make_unique<Impl>(*this) }
 {
 }

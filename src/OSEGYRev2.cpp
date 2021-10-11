@@ -167,7 +167,7 @@ OSEGYRev2::OSEGYRev2(string name, vector<string> ths,
 					 CommonSEGY::BinaryHeader bh,
     vector<string> trlr_stnzs,
     vector<pair<string, map<uint32_t, pair<string,
-   	CommonSEGY::TrHdrValueType>>>> add_hdr_map)
+   	Trace::Header::ValueType>>>> add_hdr_map)
     : OSEGY { move(name), move(bh), move(add_hdr_map) }
     , pimpl { make_unique<Impl>(*this, move(ths), move(trlr_stnzs)) }
 {

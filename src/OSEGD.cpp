@@ -1,6 +1,7 @@
 #include "OSEGD.hpp"
 #include "Exception.hpp"
 #include "util.hpp"
+#include <cfloat>
 #include <cmath>
 #include <functional>
 #include <type_traits>
@@ -10,10 +11,12 @@ using std::endian;
 using std::fstream;
 using std::function;
 using std::get;
+using std::holds_alternative;
 using std::make_unique;
 using std::map;
 using std::move;
 using std::optional;
+using std::pair;
 using std::string;
 using std::unique_ptr;
 using std::shared_ptr;
@@ -32,7 +35,7 @@ public:
     void write_rev3_add_gen_hdrs();
     void write_ch_set_hdr(CommonSEGD::ChannelSetHeader& hdr);
     void write_trace_header(Trace::Header const& hdr);
-    void write_ext_trace_header(Trace::Header const& hdr);
+    void write_ext_trace_headers(Trace::Header const& hdr);
     void write_trace_samples(Trace const& trc);
     Impl(CommonSEGD com)
         : common { move(com) }
@@ -42,13 +45,19 @@ public:
 
 private:
     function<void(char**, double)> write_sample;
+    function<void(char**, uint8_t)> write_u8;
+    function<void(char**, uint8_t)> write_i8;
     function<void(char**, uint16_t)> write_u16;
     function<void(char**, uint16_t)> write_i16;
     function<void(char**, uint32_t)> write_u24;
     function<void(char**, uint32_t)> write_i24;
     function<void(char**, uint32_t)> write_u32;
     function<void(char**, uint32_t)> write_i32;
-    function<void(char**, uint32_t)> write_u64;
+    function<void(char**, uint64_t)> write_u64;
+    function<void(char**, uint64_t)> write_i64;
+    function<void(char**, double)> write_ibm_float;
+    function<void(char**, float)> write_IEEE_float;
+    function<void(char**, double)> write_IEEE_double;
     void write_vessel_crew_id(char* buf, CommonSEGD::GeneralHeaderVes* hdr);
     void write_survey_area_name(char* buf, CommonSEGD::GeneralHeaderSur* hdr);
     void write_client_name(char* buf, CommonSEGD::GeneralHeaderCli* hdr);
@@ -83,6 +92,8 @@ private:
 
 void OSEGD::Impl::assign_raw_writers()
 {
+    write_u8 = [](char** buf, uint8_t val) { write<uint8_t>(buf, val); };
+    write_i8 = [](char** buf, int8_t val) { write<int8_t>(buf, val); };
     if (endian::native == endian::big) {
         write_u16 = [](char** buf, uint16_t val)
 	   	{ write<uint16_t>(buf, val); };
@@ -100,18 +111,20 @@ void OSEGD::Impl::assign_raw_writers()
         write_u32 = [](char** buf, int32_t val) { write<int32_t>(buf, val); };
         write_u64 = [](char** buf, uint64_t val)
 	   	{ write<uint64_t>(buf, val); };
+        write_i64 = [](char** buf, int64_t val)
+	   	{ write<int64_t>(buf, val); };
     } else {
         write_u16 = [](char** buf, uint16_t val)
 	   	{ write<uint16_t>(buf, swap(val)); };
         write_i16 = [](char** buf, int16_t val)
 	   	{ write<int16_t>(buf, swap(val)); };
         write_u24 = [](char** buf, uint32_t val) {
-            uint32_t tmp = swap(val);
+            uint32_t tmp = swap(val) >> 8;
             write<uint16_t>(buf, tmp);
             write<uint8_t>(buf, tmp >> 16);
         };
         write_i24 = [](char** buf, int32_t val) {
-            uint32_t tmp = swap(static_cast<uint32_t>(val));
+            uint32_t tmp = swap(static_cast<uint32_t>(val)) >> 8;
             write<int16_t>(buf, tmp);
             write<int8_t>(buf, tmp >> 16);
         };
@@ -121,7 +134,53 @@ void OSEGD::Impl::assign_raw_writers()
 	   	{ write<int32_t>(buf, swap(val)); };
         write_u64 = [](char** buf, uint64_t val)
 	   	{ write<uint64_t>(buf, swap(val)); };
+        write_i64 = [](char** buf, int64_t val)
+	   	{ write<int64_t>(buf, swap(val)); };
     }
+        if (FLT_RADIX == 2 && DBL_MANT_DIG == 53) {
+        write_IEEE_float = [this](char** buf, float val) {
+            uint32_t tmp;
+            memcpy(&tmp, &val, sizeof(val));
+            write_u32(buf, tmp);
+        };
+        write_IEEE_double = [this](char** buf, double val) {
+            uint64_t tmp;
+            memcpy(&tmp, &val, sizeof(val));
+            write_u64(buf, tmp);
+        };
+    } else {
+        write_IEEE_float = [this](char** buf, double val) {
+            uint32_t sign = val < 0 ? 1 : 0;
+            double abs_val = abs(val);
+            uint32_t exp = static_cast<uint32_t>((log(abs_val) /
+												  log(2) + 1 + 127)) & 0xff;
+            uint32_t fraction = abs_val / pow(2, static_cast<int>(exp) - 127) *
+			   	pow(2, 23) - 1;
+            uint32_t result = sign << 31 | exp << 23 | (fraction & 0x007fffff);
+            write_u32(buf, result);
+        };
+        write_IEEE_double = [this](char** buf, double val) {
+            uint64_t sign = val < 0 ? 1 : 0;
+            double abs_val = abs(val);
+            uint64_t exp = static_cast<uint64_t>(log(abs_val) /
+												 log(2) + 1 + 1023) & 0x7ff;
+            uint64_t fraction = abs_val / pow(2, static_cast<int>(exp) - 1023)
+			   	* pow(2, 52) - 1;
+            uint64_t result = sign << 63 | exp << 52 |
+			   	(fraction & 0xfffffffffffff);
+            write_u64(buf, result);
+        };
+    }
+    write_ibm_float = [this](char** buf, double val) {
+        uint32_t sign = val < 0 ? 1 : 0;
+        double abs_val = abs(val);
+        uint32_t exp = static_cast<uint32_t>(log(abs_val) / log(2) / 4 +
+											 1 + 64) & 0x7f;
+        uint32_t fraction = abs_val / pow(16, static_cast<int>(exp) - 64) *
+		   	pow(2, 24);
+        uint32_t result = sign << 31 | exp << 24 | (fraction & 0x00ffffff);
+        write_u32(buf, result);
+    };
 }
 
 void OSEGD::Impl::write_general_header1()
@@ -147,12 +206,14 @@ void OSEGD::Impl::write_general_header1()
 										 scans_per_block)) & 0x0f;
     *ptr++ |= exp;
     *ptr++ = common.general_header.scans_per_block / pow(2, exp);
-    to_bcd(&ptr, common.general_header.record_type, false, 1);
     if (common.general_header.add_gen_hdr_blocks &&
-	   	common.general_header2.ext_record_len)
-        write_u16(&ptr, 0xfff0);
-    else
+	   	common.general_header2.ext_record_len) {
+        write_u16(&ptr, 0x0fff |
+        (static_cast<unsigned>(common.general_header.record_type) << 12));
+    } else {
+        to_bcd(&ptr, common.general_header.record_type, false, 1);
         to_bcd(&ptr, common.general_header.record_length, true, 3);
+    }
     common.general_header.scan_types_per_record > 99 ?
 	   	(void)(*ptr++ = static_cast<uint8_t>(0xff)) :
 	   	to_bcd(&ptr, common.general_header.scan_types_per_record, false, 2);
@@ -189,38 +250,29 @@ void OSEGD::Impl::write_general_header2_rev2()
 
 void OSEGD::Impl::write_rev2_add_gen_hdrs()
 {
-    for (map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS,
-		 unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it =
-		 common.add_gen_hdr_blks_map.begin(),
-		 end = common.add_gen_hdr_blks_map.end(); it != end; ++it) {
+    for (map<int, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it
+         = common.add_gen_hdr_blks_map.begin(),
+         end = common.add_gen_hdr_blks_map.end();
+         it != end; ++it) {
         char* buf = common.gen_hdr_buf;
         memset(buf, 0, CommonSEGD::GEN_HDR_SIZE);
-        write_u32(&buf, dynamic_cast<CommonSEGD::GeneralHeaderN*>
-				  (it->second.get())->expanded_file_number);
-        uint32_t integer = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->sou_line_num;
-        double frac = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->sou_line_num - integer;
+        CommonSEGD::GeneralHeaderN* hdr = dynamic_cast<CommonSEGD::GeneralHeaderN*>
+				  (it->second.get());
+        write_u24(&buf, hdr->expanded_file_number);
+        uint32_t integer = hdr->sou_line_num;
+        double frac = hdr->sou_line_num - integer;
         write_i24(&buf, integer);
         write_u16(&buf, frac * pow(2, 16));
-        integer = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->sou_point_num;
-        frac = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->sou_point_num - integer;
+        integer = hdr->sou_point_num;
+        frac = hdr->sou_point_num - integer;
         write_i24(&buf, integer);
         write_u16(&buf, frac * pow(2, 16));
-        *buf++ = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->sou_point_index;
-        *buf++ = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->phase_control;
-        *buf++ = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->type_vibrator;
-        write_i16(&buf, dynamic_cast<CommonSEGD::GeneralHeaderN*>
-				  (it->second.get())->phase_angle);
-        *buf++ = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->gen_hdr_block_num;
-        *buf++ = dynamic_cast<CommonSEGD::GeneralHeaderN*>
-			(it->second.get())->sou_set_num;
+        *buf++ = hdr->sou_point_index;
+        *buf++ = hdr->phase_control;
+        *buf++ = hdr->type_vibrator;
+        write_i16(&buf, hdr->phase_angle);
+        *buf++ = hdr->gen_hdr_block_num;
+        *buf++ = hdr->sou_set_num;
         common.file.write(common.gen_hdr_buf, CommonSEGD::GEN_HDR_SIZE);
     }
 }
@@ -257,10 +309,10 @@ void OSEGD::Impl::write_general_header2_and_3()
 void OSEGD::Impl::write_rev3_add_gen_hdrs()
 {
     char* buf;
-    for (map<CommonSEGD::AdditionalGeneralHeader::ADD_GEN_HDR_BLKS,
-		 unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it =
-		 common.add_gen_hdr_blks_map.begin(),
-		 end = common.add_gen_hdr_blks_map.end(); it != end; ++it) {
+    for (map<int, unique_ptr<CommonSEGD::AdditionalGeneralHeader>>::iterator it
+         = common.add_gen_hdr_blks_map.begin(),
+         end = common.add_gen_hdr_blks_map.end();
+         it != end; ++it) {
         buf = common.gen_hdr_buf;
         memset(buf, 0, CommonSEGD::GEN_HDR_SIZE);
         switch (it->first) {
@@ -780,7 +832,7 @@ void OSEGD::Impl::write_ch_set_hdr(CommonSEGD::ChannelSetHeader& hdr)
         to_bcd(&buf, hdr.number_of_channels, false, 4);
         to_bcd(&buf, hdr.channel_type, false, 1);
         ++buf;
-        to_bcd(&buf, log2(hdr.channel_set_number), false, 1);
+        to_bcd(&buf, log2(hdr.subscans_per_ch_set), false, 1);
         to_bcd(&buf, hdr.channel_gain, true, 1);
         to_bcd(&buf, hdr.alias_filter_freq, false, 4);
         to_bcd(&buf, hdr.alias_filter_slope, false, 4);
@@ -837,93 +889,198 @@ void OSEGD::Impl::write_trace_header(Trace::Header const& hdr)
     if (ffid && get<uint32_t>(*ffid) > 9999)
         write_u16(&buf, 0xffff);
     else
-        to_bcd(&buf, ffid ? get<int32_t>(*ffid) : 0, false, 4);
+        to_bcd(&buf, ffid ? get<uint32_t>(*ffid) : 0, false, 4);
     optional<Trace::Header::Value> tmp = hdr.get("SCAN_TYPE_NUM");
-    to_bcd(&buf, tmp ? get<int16_t>(*tmp) : 0, false, 2);
+    to_bcd(&buf, tmp ? get<uint16_t>(*tmp) : 0, false, 2);
     optional<Trace::Header::Value> ch_set = hdr.get("CH_SET_NUM");
     if (ch_set && get<uint16_t>(*ch_set) > 99)
-        (void)(*buf++ = static_cast<uint8_t>(0xff));
+        *buf++ = static_cast<uint8_t>(0xff);
     else
         to_bcd(&buf, get<uint16_t>(*ch_set), false, 2);
     tmp = hdr.get("TRACE_NUMBER");
-    if (tmp && get<int32_t>(*tmp) > 9999)
+    if (tmp && get<uint32_t>(*tmp) > 9999)
         write_u16(&buf, 0xffff);
     else
-        to_bcd(&buf, tmp ? get<int32_t>(*tmp) : 0, false, 4);
+        to_bcd(&buf, tmp ? get<uint32_t>(*tmp) : 0, false, 4);
     tmp = hdr.get("FIRST_TIMING_WORD");
-    write_u24(&buf, tmp ? get<int32_t>(*tmp) * pow(2, 8) : 0);
+    write_u24(&buf, tmp ? get<double>(*tmp) * pow(2, 8) : 0);
     tmp = hdr.get("TR_HDR_EXT");
     *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
     tmp = hdr.get("SAMPLE_SKEW");
-    *buf++ = tmp ? get<uint8_t>(*tmp) * pow(2, 8) : 0;
+    *buf++ = tmp ? get<double>(*tmp) * pow(2, 8) : 0;
     tmp = hdr.get("TRACE_EDIT");
     *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
     tmp = hdr.get("TIME_BREAK_WIN");
-    write_u24(&buf, tmp ? get<int32_t>(*tmp) * pow(2, 8) : 0);
-    write_u16(&buf, tmp ? get<uint16_t>(*ch_set) : 0);
-    write_u32(&buf, tmp ? get<uint32_t>(*ffid) : 0);
+    write_u24(&buf, tmp ? get<double>(*tmp) * pow(2, 8) : 0);
+    write_u16(&buf, ch_set && get<uint16_t>(*ch_set) < 100 ? 0 : get<uint16_t>(*ch_set));
+    write_u24(&buf, ffid ? get<uint32_t>(*ffid) : 0);
     common.file.write(common.trc_hdr_buf, CommonSEGD::TRACE_HEADER_SIZE);
 }
 
-void OSEGD::Impl::write_ext_trace_header(Trace::Header const& hdr)
+void OSEGD::Impl::write_ext_trace_headers(Trace::Header const& hdr)
 {
-    char* buf = common.trc_hdr_buf;
-    memset(buf, 0, CommonSEGD::TRACE_HEADER_SIZE);
-    optional<Trace::Header::Value> tmp = hdr.get("R_LINE");
-    write_u24(&buf, tmp ? get<uint32_t>(*tmp) : 0);
-    tmp = hdr.get("R_POINT");
-    write_u24(&buf, tmp ? get<uint32_t>(*tmp) : 0);
-    tmp = hdr.get("R_POINT_IDX");
-    *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
-    if (common.general_header2.segd_rev_major > 1) {
-        tmp = hdr.get("SAMP_NUM");
-        write_u24(&buf, tmp ? get<uint32_t>(*tmp) : 0);
-    } else {
-        tmp = hdr.get("RESHOOT_IDX");
-        *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
-        tmp = hdr.get("GROUP_IDX");
-        *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
-        tmp = hdr.get("DEPTH_IDX");
-        *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
-    }
-    if (common.general_header2.segd_rev_major > 1) {
-        tmp = hdr.get("R_LINE");
-        double r_line = tmp ? get<double>(*tmp) : 0;
-        uint32_t r_line_int = r_line;
-        write_u24(&buf, r_line_int);
-        write_u16(&buf, (r_line - r_line_int) * pow(2, 16));
-        tmp = hdr.get("R_POINT");
-        double r_point = tmp ? get<double>(*tmp) : 0;
-        uint32_t r_point_int = r_point;
-        write_u24(&buf, r_point_int);
-        write_u16(&buf, (r_point - r_point_int) * pow(2, 16));
-        tmp = hdr.get("SENSOR_TYPE");
-        *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
-    }
-    if (common.general_header2.segd_rev_major > 2) {
-        tmp = hdr.get("TRACE_NUMBER");
-        if (tmp && get<int32_t>(*tmp) > 9999)
-            write_u24(&buf, get<int32_t>(*tmp));
-        tmp = hdr.get("SAMP_NUM");
-        write_u32(&buf, tmp ? get<uint32_t>(*tmp) : 0);
-        tmp = hdr.get("SENSOR_MOVING");
-        *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
-        ++buf;
-        tmp = hdr.get("PHYSICAL_UNIT");
-        *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+    uint8_t ext_hdr_blks = get<uint8_t>(hdr.get("TR_HDR_EXT").value_or(0));
+    optional<Trace::Header::Value> tmp;
+    for (int i = 0; i < ext_hdr_blks; ++i) {
+        std::memset(common.trc_hdr_buf, 0, CommonSEGD::TRACE_HEADER_EXT_SIZE);
+        // for each item in map
+        if (common.trace_header_extension.size()) {
+            for (auto& item : common.trace_header_extension[i]) {
+                tmp = hdr.get(item.second.first);
+                if (tmp == std::nullopt)
+                    throw Exception(__FILE__, __LINE__,
+                        "no such header in trace");
+                char* pos = common.trc_hdr_buf + item.first;
+                switch (item.second.second) {
+                case Trace::Header::ValueType::int8_t:
+                    write_i8(&pos, get<int8_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint8_t:
+                    write_u8(&pos, get<uint8_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int16_t:
+                    write_i16(&pos, get<int16_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint16_t:
+                    write_u16(&pos, get<uint16_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int24_t:
+                    write_i24(&pos, get<int32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint24_t:
+                    write_u24(&pos, get<uint32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int32_t:
+                    write_i32(&pos, get<int32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint32_t:
+                    write_u32(&pos, get<uint32_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::int64_t:
+                    write_i64(&pos, get<int64_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::uint64_t:
+                    write_u64(&pos, get<uint64_t>(*tmp));
+                    break;
+                case Trace::Header::ValueType::ibm:
+                    write_ibm_float(&pos, get<double>(*tmp));
+                    break;
+                case Trace::Header::ValueType::ieee_single:
+                    write_IEEE_float(&pos, get<double>(*tmp));
+                    break;
+                case Trace::Header::ValueType::ieee_double:
+                    write_IEEE_double(&pos, get<double>(*tmp));
+                    break;
+                }
+            }
+        } else if (i == 0) {
+            char* buf = common.trc_hdr_buf;
+            tmp = hdr.get("R_LINE");
+            double r_line;
+            uint32_t r_line_int;
+            if (tmp && holds_alternative<double>(*tmp)) {
+                r_line = tmp ? get<double>(*tmp) : 0;
+                r_line_int = r_line;
+            } else {
+                r_line_int = tmp ? get<uint32_t>(*tmp) : 0;
+                r_line = r_line_int;
+            }
+            write_u24(&buf, r_line);
+            tmp = hdr.get("R_POINT");
+            double r_point;
+            uint32_t r_point_int;
+            if (tmp && holds_alternative<double>(*tmp)) {
+                r_point = tmp ? get<double>(*tmp) : 0;
+                r_point_int = r_point;
+            } else {
+                r_point_int = tmp ? get<uint32_t>(*tmp) : 0;
+                r_point = r_point_int;
+            }
+            write_u24(&buf, r_point);
+            tmp = hdr.get("R_POINT_IDX");
+            *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+            if (common.general_header2.segd_rev_major > 1) {
+                tmp = hdr.get("SAMP_NUM");
+                write_u24(&buf, tmp ? get<uint32_t>(*tmp) : 0);
+            } else {
+                tmp = hdr.get("RESHOOT_IDX");
+                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                tmp = hdr.get("GROUP_IDX");
+                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                tmp = hdr.get("DEPTH_IDX");
+                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+            }
+            if (common.general_header2.segd_rev_major > 1) {
+                tmp = hdr.get("R_LINE");
+                double r_line;
+                uint32_t r_line_int;
+                if (tmp && holds_alternative<double>(*tmp)) {
+                    r_line = tmp ? get<double>(*tmp) : 0;
+                    r_line_int = r_line;
+                } else {
+                    r_line_int = tmp ? get<uint32_t>(*tmp) : 0;
+                    r_line = r_line_int;
+                }
+                write_u24(&buf, r_line_int);
+                write_u16(&buf, (r_line - r_line_int) * pow(2, 16));
+                tmp = hdr.get("R_POINT");
+                double r_point;
+                uint32_t r_point_int;
+                if (tmp && holds_alternative<double>(*tmp)) {
+                    r_point = tmp ? get<double>(*tmp) : 0;
+                    r_point_int = r_point;
+                } else {
+                    r_point_int = tmp ? get<uint32_t>(*tmp) : 0;
+                    r_point = r_point_int;
+                }
+                write_u24(&buf, r_point_int);
+                write_u16(&buf, (r_point - r_point_int) * pow(2, 16));
+                tmp = hdr.get("SENSOR_TYPE");
+                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+            }
+            if (common.general_header2.segd_rev_major > 2) {
+                tmp = hdr.get("TRACE_NUMBER");
+                if (tmp && get<uint32_t>(*tmp) > 9999)
+                    write_u24(&buf, get<uint32_t>(*tmp));
+                tmp = hdr.get("SAMP_NUM");
+                write_u32(&buf, tmp ? get<uint32_t>(*tmp) : 0);
+                tmp = hdr.get("SENSOR_MOVING");
+                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                ++buf;
+                tmp = hdr.get("PHYSICAL_UNIT");
+                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+            }
+        }
+        common.file.write(common.trc_hdr_buf,
+            CommonSEGD::TRACE_HEADER_EXT_SIZE);
     }
 }
 
 void OSEGD::Impl::write_trace_samples(Trace const& trc)
 {
     if (common.trc_samp_buf.size() != trc.samples().size() *
-	   	common.bits_per_sample)
+	   	common.bits_per_sample / 8)
         common.trc_samp_buf.resize(trc.samples().size() *
-								   common.bits_per_sample);
+								   common.bits_per_sample / 8);
     char* buf = common.trc_samp_buf.data();
     vector<double> const& samples = trc.samples();
+    uint16_t scan_type;
+    std::optional<Trace::Header::Value> tmp = trc.header().get("SCAN_TYPE_NUM");
+    if (tmp == std::nullopt)
+        scan_type = 1;
+    else
+        scan_type = get<uint16_t>(*tmp);
+    uint16_t ch_set;
+    tmp = trc.header().get("CH_SET_NUM");
+    if (tmp == std::nullopt)
+        ch_set = 1;
+    else
+        ch_set = get<uint16_t>(*tmp);
+    double descale = common.channel_sets[scan_type - 1][ch_set - 1]
+    .descale_multiplier;
+    descale = pow(2, descale);
     for (auto samp : samples)
-        write_sample(&buf, samp);
+        write_sample(&buf, samp / descale);
     common.file.write(common.trc_samp_buf.data(), common.trc_samp_buf.size());
 }
 
@@ -1112,20 +1269,24 @@ void OSEGD::write_ch_set_hdr(CommonSEGD::ChannelSetHeader& hdr)
 { pimpl->write_ch_set_hdr(hdr); }
 void OSEGD::write_trace_header(Trace::Header const& hdr)
 { pimpl->write_trace_header(hdr); }
-void OSEGD::write_ext_trace_header(Trace::Header const& hdr)
-{ pimpl->write_ext_trace_header(hdr); }
+void OSEGD::write_ext_trace_headers(Trace::Header const& hdr)
+{ pimpl->write_ext_trace_headers(hdr); }
 void OSEGD::write_trace_samples(Trace const& trc)
 { pimpl->write_trace_samples(trc); }
 
 OSEGD::OSEGD(string file_name, CommonSEGD::GeneralHeader gh,
     CommonSEGD::GeneralHeader2 gh2, CommonSEGD::GeneralHeader3 gh3,
     vector<vector<CommonSEGD::ChannelSetHeader>> ch_sets,
-    vector<shared_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs)
-    : pimpl { make_unique<Impl>(CommonSEGD(move(file_name), fstream::out |
-										   fstream::binary, move(gh),
-        move(gh2), move(gh3), move(add_ghs), move(ch_sets))) }
+    vector<shared_ptr<CommonSEGD::AdditionalGeneralHeader>> add_ghs,
+    vector<vector<char>> extd_hdrs, vector<vector<char>> extl_hdrs,
+    vector<map<uint32_t, pair<string, Trace::Header::ValueType>>> trc_hdr_ext)
+    : pimpl { make_unique<Impl>(
+        CommonSEGD(move(file_name), fstream::out | fstream::binary, move(gh),
+        move(gh2), move(gh3), move(add_ghs), move(ch_sets), move(extd_hdrs),
+        move(extl_hdrs), move(trc_hdr_ext))) }
 {
-    if (common().channel_sets.size() != static_cast<size_t>(gh.scan_types_per_record))
+    if (common().channel_sets.size() !=
+    static_cast<size_t>(gh.scan_types_per_record))
         throw Exception(__FILE__, __LINE__,
 						"Size of vector with vectors of channel set header "
 						"not equal to number of scan types in general header");

@@ -23,7 +23,7 @@ public:
     /// \throws sedaman::Exception
     OSEGY(std::string file_name, CommonSEGY::BinaryHeader bin_header,
         std::vector<std::pair<std::string, std::map<uint32_t,
-	   	std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_tr_hdrs_map);
+	   	std::pair<std::string, Trace::Header::ValueType>>>> add_tr_hdrs_map);
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.
     virtual void write_trace(Trace& tr) = 0;

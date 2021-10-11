@@ -7,9 +7,11 @@
 using std::array;
 using std::fstream;
 using std::make_unique;
+using std::map;
 using std::move;
 using std::nullopt;
 using std::optional;
+using std::pair;
 using std::string;
 using std::shared_ptr;
 using std::unique_ptr;
@@ -19,14 +21,21 @@ namespace sedaman {
 CommonSEGD::CommonSEGD(string name, fstream::openmode mode,
     GeneralHeader gh, GeneralHeader2 gh2, GeneralHeader3 gh3,
     vector<shared_ptr<AdditionalGeneralHeader>> add_ghs,
-    std::vector<std::vector<ChannelSetHeader>> ch_sets)
+    vector<vector<ChannelSetHeader>> ch_sets,
+    vector<vector<char>> extd_hdrs,
+    vector<vector<char>> extl_hdrs,
+    std::vector<std::map<uint32_t, std::pair<std::string,
+    Trace::Header::ValueType>>> trc_hdr_ext)
     : general_header { gh }
     , general_header2 { gh2 }
     , general_header3 { gh3 }
     , file_name(move(name))
     , gen_hdr_buf {}
     , trc_hdr_buf {}
+    , extended_headers { extd_hdrs }
+    , external_headers { extl_hdrs }
     , channel_sets { ch_sets }
+    , trace_header_extension { trc_hdr_ext }
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
@@ -161,6 +170,11 @@ CommonSEGD::CommonSEGD(string name, fstream::openmode mode,
             add_gen_hdr_blks_map[AdditionalGeneralHeader::MEASUREMENT_BLK] =
 			   	make_unique<GeneralHeaderMeas>(
 					*dynamic_cast<GeneralHeaderMeas*>(item.get()));
+            break;
+        // for GeneralHeaderN from rev 2
+        default:
+            add_gen_hdr_blks_map[item->type()] = make_unique<GeneralHeaderN>(
+                *dynamic_cast<GeneralHeaderN*>(item.get()));
             break;
         }
     }
@@ -782,4 +796,199 @@ char const* CommonSEGD::ChannelSetHeader::name_as_string(Name n)
 {
     return ch_sets_names[static_cast<int>(n)];
 }
+
+const vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>
+CommonSEGD::sercel_428xl = {
+    {
+        { 0, { "R_LINE", Trace::Header::ValueType::uint24_t } },
+        { 3, { "R_POINT", Trace::Header::ValueType::uint24_t } },
+        { 6, { "R_POINT_IDX", Trace::Header::ValueType::uint8_t } },
+        { 7, { "SAMP_NUM", Trace::Header::ValueType::uint24_t } },
+        { 20, { "SENSOR_TYPE", Trace::Header::ValueType::uint8_t} }
+    },
+    {
+        { 0, { "REC_X", Trace::Header::ValueType::ieee_double } },
+        { 8, { "REC_Y", Trace::Header::ValueType::ieee_double } },
+        { 16, { "R_ELEV", Trace::Header::ValueType::ieee_single } },
+        { 20, { "SERCEL_SENSOR_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 28, { "TRACE_NUMBER", Trace::Header::ValueType::uint32_t } }
+    },
+    {
+        { 0, { "RESIST_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "RESIST_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 8, { "RESIST_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 12, { "TILT_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 16, { "TILT_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 20, { "RESIST_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 21, { "TILT_ERROR", Trace::Header::ValueType::uint8_t } },
+    },
+    {
+        { 0, { "CAPACIT_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "CAPACIT_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 8, { "CAPACIT_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 12, { "CUT_OFF_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 16, { "CUT_OFF_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 20, { "CUT_OFF_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 24, { "CAPACIT_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 25, { "CUT_OFF_ERROR", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "LEAKAGE_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "LEAKAGE_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 24, { "LEAKAGE_ERROR", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 1, { "UNIT_SERIAL_NUM", Trace::Header::ValueType::uint24_t } },
+        { 4, { "CHANNEL_NUM", Trace::Header::ValueType::uint8_t } },
+        { 8, { "FDU_ASS_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 9, { "FDU_ASS_SERIAL", Trace::Header::ValueType::uint24_t } },
+        { 12, { "FDU_ASS_LOC", Trace::Header::ValueType::uint8_t } },
+        { 16, { "FDU_UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 17, { "CHANNEL_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 20, { "SENSOR_SENSITIVITY", Trace::Header::ValueType::ieee_single } }
+    },
+    {
+        { 0, { "CONTROL_UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 1, { "CONTROL_UNIT_SERIAL", Trace::Header::ValueType::uint24_t } },
+        { 4, { "CHAN_GAIN_SCALE", Trace::Header::ValueType::uint8_t } },
+        { 5, { "CHAN_FILTER", Trace::Header::ValueType::uint8_t } },
+        { 6, { "CHAN_DATA_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 7, { "CHAN_EDIT_STATUS", Trace::Header::ValueType::uint8_t } },
+        { 8, { "SAMP_TO_V_CONV", Trace::Header::ValueType::ieee_single } },
+        { 12, { "NUM_OF_STACKS_NOISY", Trace::Header::ValueType::uint8_t } },
+        { 13, { "NUM_OF_STACKS_LOW", Trace::Header::ValueType::uint8_t } },
+        { 14, { "CHAN_TYPE_ID", Trace::Header::ValueType::uint8_t } },
+        { 15, { "CHAN_PROCESS", Trace::Header::ValueType::uint8_t } },
+        { 16, { "TRC_MAX_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 20, { "TRC_MAX_TIME", Trace::Header::ValueType::uint32_t } },
+        { 24, { "NUM_OF_INTERPOLAT", Trace::Header::ValueType::uint32_t } }
+    }
+};
+
+const vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>
+CommonSEGD::sercel_428 = {
+    {
+        { 0, { "R_LINE", Trace::Header::ValueType::uint24_t } },
+        { 3, { "R_POINT", Trace::Header::ValueType::uint24_t } },
+        { 6, { "R_POINT_IDX", Trace::Header::ValueType::uint8_t } },
+        { 7, { "SAMP_NUM", Trace::Header::ValueType::uint24_t } },
+        { 20, { "SENSOR_TYPE", Trace::Header::ValueType::uint8_t} }
+    },
+    {
+        { 0, { "REC_X", Trace::Header::ValueType::ieee_double } },
+        { 8, { "REC_Y", Trace::Header::ValueType::ieee_double } },
+        { 16, { "R_ELEV", Trace::Header::ValueType::ieee_single } },
+        { 20, { "SERCEL_SENSOR_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 28, { "TRACE_NUMBER", Trace::Header::ValueType::uint32_t } }
+    },
+    {
+        { 0, { "DC_OFFSET", Trace::Header::ValueType::ieee_single } }
+    },
+    {
+        { 0, { "CAPACIT_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "CAPACIT_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 8, { "CAPACIT_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 12, { "CUT_OFF_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 16, { "CUT_OFF_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 20, { "CUT_OFF_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 24, { "CAPACIT_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 25, { "CUT_OFF_ERROR", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "LEAKAGE_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "LEAKAGE_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 24, { "LEAKAGE_ERROR", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 1, { "UNIT_SERIAL_NUM", Trace::Header::ValueType::uint24_t } },
+        { 4, { "CHANNEL_NUM", Trace::Header::ValueType::uint8_t } },
+        { 8, { "FDU_ASS_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 9, { "FDU_ASS_SERIAL", Trace::Header::ValueType::uint24_t } },
+        { 12, { "FDU_ASS_LOC", Trace::Header::ValueType::uint8_t } },
+        { 16, { "FDU_UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 20, { "SENSOR_SENSITIVITY", Trace::Header::ValueType::ieee_single } },
+        { 24, { "EXT_UNIT_SERIAL", Trace::Header::ValueType::uint32_t } },
+        { 28, { "EXT_FDU_ASS_SERIAL", Trace::Header::ValueType::uint32_t } }
+    },
+    {
+        { 0, { "CONTROL_UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 1, { "CONTROL_UNIT_SERIAL", Trace::Header::ValueType::uint24_t } },
+        { 4, { "CHAN_GAIN_SCALE", Trace::Header::ValueType::uint8_t } },
+        { 5, { "CHAN_FILTER", Trace::Header::ValueType::uint8_t } },
+        { 6, { "CHAN_DATA_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 7, { "CHAN_EDIT_STATUS", Trace::Header::ValueType::uint8_t } },
+        { 8, { "SAMP_TO_V_CONV", Trace::Header::ValueType::ieee_single } },
+        { 13, { "REMOVED_OFFSET", Trace::Header::ValueType::uint8_t } },
+        { 14, { "CHAN_TYPE_ID", Trace::Header::ValueType::uint8_t } },
+        { 15, { "CHAN_PROCESS", Trace::Header::ValueType::uint8_t } },
+        { 16, { "ANAL_LOW_CUR_FILT", Trace::Header::ValueType::ieee_single } },
+        { 20, { "DIG_LOW_CUT_FILT", Trace::Header::ValueType::ieee_single } },
+        { 24, { "NUM_OF_EDITIONS", Trace::Header::ValueType::uint32_t } },
+        { 28, { "COMP_LOW_CUT_FILT", Trace::Header::ValueType::ieee_single } }
+    }
+};
+
+const vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>
+CommonSEGD::sercel_408 = {
+    {
+        { 0, { "R_LINE", Trace::Header::ValueType::uint24_t } },
+        { 3, { "R_POINT", Trace::Header::ValueType::uint24_t } },
+        { 6, { "R_POINT_IDX", Trace::Header::ValueType::uint8_t } },
+        { 7, { "SAMP_NUM", Trace::Header::ValueType::uint24_t } },
+        { 20, { "SENSOR_TYPE", Trace::Header::ValueType::uint8_t} }
+    },
+    {
+        { 0, { "REC_X", Trace::Header::ValueType::ieee_double } },
+        { 8, { "REC_Y", Trace::Header::ValueType::ieee_double } },
+        { 16, { "R_ELEV", Trace::Header::ValueType::ieee_single } },
+        { 20, { "SERCEL_SENSOR_TYPE", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "DC_OFFSET", Trace::Header::ValueType::ieee_single } }
+    },
+    {
+        { 0, { "CAPACIT_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "CAPACIT_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 8, { "CAPACIT_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 12, { "CUT_OFF_LOW_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 16, { "CUT_OFF_HIGH_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 20, { "CUT_OFF_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 24, { "CAPACIT_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 25, { "CUT_OFF_ERROR", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "LEAKAGE_LIMIT", Trace::Header::ValueType::ieee_single } },
+        { 4, { "LEAKAGE_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 24, { "LEAKAGE_ERROR", Trace::Header::ValueType::uint8_t } }
+    },
+    {
+        { 0, { "UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 1, { "UNIT_SERIAL_NUM", Trace::Header::ValueType::uint24_t } },
+        { 4, { "CHANNEL_NUM", Trace::Header::ValueType::uint8_t } },
+        { 8, { "FDU_ASS_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 9, { "FDU_ASS_SERIAL", Trace::Header::ValueType::uint24_t } },
+        { 12, { "FDU_ASS_LOC", Trace::Header::ValueType::uint8_t } },
+        { 16, { "FDU_UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 17, { "CHANNEL_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 20, { "SENSOR_SENSITIVITY", Trace::Header::ValueType::ieee_single } }
+    },
+    {
+        { 0, { "CONTROL_UNIT_TYPE", Trace::Header::ValueType::uint8_t } },
+        { 1, { "CONTROL_UNIT_SERIAL", Trace::Header::ValueType::uint24_t } },
+        { 4, { "CHAN_GAIN_SCALE", Trace::Header::ValueType::uint8_t } },
+        { 5, { "CHAN_FILTER", Trace::Header::ValueType::uint8_t } },
+        { 6, { "CHAN_DATA_ERROR", Trace::Header::ValueType::uint8_t } },
+        { 7, { "CHAN_EDIT_STATUS", Trace::Header::ValueType::uint8_t } },
+        { 8, { "SAMP_TO_V_CONV", Trace::Header::ValueType::ieee_single } },
+        { 14, { "CHAN_TYPE_ID", Trace::Header::ValueType::uint8_t } },
+        { 15, { "CHAN_PROCESS", Trace::Header::ValueType::uint8_t } },
+        { 16, { "TRC_MAX_VALUE", Trace::Header::ValueType::ieee_single } },
+        { 20, { "TRC_MAX_TIME", Trace::Header::ValueType::uint32_t } },
+        { 24, { "NUM_OF_INTERPOLAT", Trace::Header::ValueType::uint32_t } },
+        { 28, { "COMP_LOW_CUT_FILT", Trace::Header::ValueType::ieee_single } }
+    }
+};
+
 } // namespace sedaman

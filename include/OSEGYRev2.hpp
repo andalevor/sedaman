@@ -39,7 +39,7 @@ public:
 			  {}, CommonSEGY::BinaryHeader bin_header = {},
 	  		  std::vector<std::string> trailer_stanzas = {},
 	  		  std::vector<std::pair<std::string, std::map<uint32_t,
-			  std::pair<std::string, CommonSEGY::TrHdrValueType>>>> add_hdr_map
+			  std::pair<std::string, Trace::Header::ValueType>>>> add_hdr_map
 			  = {});
     /// \param tr Trace to write.
     /// \brief Writes trace to the end of file.

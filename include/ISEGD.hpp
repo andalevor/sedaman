@@ -18,7 +18,8 @@ namespace sedaman {
 class ISEGD {
 public:
     /// \param file_name Name of file to read from.
-    explicit ISEGD(std::string file_name);
+    ISEGD(std::string file_name, std::vector<std::map<uint32_t,
+    std::pair<std::string, Trace::Header::ValueType>>> trc_hdr_ext = {});
     /// \brief General header getter
     /// \return return constant reference to second general header
     CommonSEGD::GeneralHeader general_header();
@@ -147,6 +148,18 @@ public:
 	///                such header in file
     std::optional<CommonSEGD::GeneralHeaderMeas>
    	general_header_measurement_blk();
+    ///
+    /// \brief Extended headers getter
+    /// 
+    /// \return std::vector<std::vector<char>> 
+    ///
+    std::vector<std::vector<char>> extended_headers();
+    ///
+    /// \brief External headers getter
+    /// 
+    /// \return std::vector<std::vector<char>> 
+    ///
+    std::vector<std::vector<char>> external_headers();
     /// \brief Channel set headers getter
     /// \return return reference to channel sets
     std::vector<std::vector<CommonSEGD::ChannelSetHeader>> const&
