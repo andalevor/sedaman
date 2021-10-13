@@ -1,8 +1,13 @@
-/// \file util.hpp
+///
+/// @file util.hpp
+/// @author Andrei Voronin (andalevor@gmail.com)
 /// \brief header file with utility functions
-/// \author andalevor
-/// \date   2019/11/07
-
+/// @version 0.1
+/// \date 2019-11-07
+/// 
+/// @copyright Copyright (c) 2019
+/// 
+///
 #ifndef SEDAMAN_UTIL_HPP
 #define SEDAMAN_UTIL_HPP
 
@@ -10,9 +15,10 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
-
-/// \namespace sedaman
+///
 /// \brief General namespace for sedaman library.
+/// 
+///
 namespace sedaman {
 constexpr int32_t ceil(float num)
 {
@@ -21,10 +27,14 @@ constexpr int32_t ceil(float num)
         : static_cast<int32_t>(num) + ((num > 0) ? 1 : 0);
 }
 
+///
 /// \brief reads desired type
 /// Reads from buffer necessary quantity of bytes and converts them.
+/// 
+/// @tparam T 
 /// \param buf pointer to buffer to read from
-/// \return desired value
+/// \return T 
+///
 template <typename T>
 T read(char const** buf)
 {
@@ -34,9 +44,14 @@ T read(char const** buf)
     return result;
 }
 
+///
 /// \brief writes specified value to buffer
 /// Writes to buffer value converted of bytes.
+/// 
+/// @tparam T 
 /// \param buf pointer to buffer to write to
+/// \param val value to write
+///
 template <typename T>
 void write(char** buf, T val)
 {
@@ -44,9 +59,13 @@ void write(char** buf, T val)
     *buf += sizeof(T);
 }
 
+///
 /// \brief swaps bytes
-/// \param val
-/// \return swapped value
+/// 
+/// @tparam T 
+/// \param val value
+/// \return T 
+///
 template <typename T>
 T swap(T const val)
 {
@@ -59,6 +78,15 @@ T swap(T const val)
     return result;
 }
 
+///
+/// \brief convert number from BCD format
+/// 
+/// @tparam T 
+/// \param buf buffer to read from
+/// \param skip_first skip first half of byte
+/// \param num number of half bytes
+/// \return T 
+///
 template <typename T>
 T from_bcd(char const** buf, bool skip_first, int num)
 {
@@ -98,10 +126,18 @@ T from_bcd(char const** buf, bool skip_first, int num)
     return result;
 }
 
+///
+/// \brief convert number to BCD format
+/// 
+/// @tparam T 
+/// \param buf buffer to read from
+/// \param val value to convert
+/// \param skip_first skip first half of byte
+/// \param num number of half bytes
+///
 template <typename T>
 void to_bcd(char** buf, T val, bool skip_first, int num)
 {
-    //int num = std::to_string(val).size();
     assert(num <= 12);
     constexpr int val_size = sizeof(val);
     constexpr int bitset_size = ceil(val_size * 8 / 3.0) * 4 + val_size * 8;

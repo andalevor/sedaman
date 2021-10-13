@@ -1,26 +1,49 @@
-/// \file OSEGD.hpp
-/// \brief header file with OSEGD class declaration
-/// \author andalevor
-/// \date   2020/08/24
-
+///
+/// @file OSEGD.hpp
+/// @author Andrei Voronin (andalevor@gmail.com)
+/// \brief 
+/// @version 0.1
+/// \date 2020-08-24
+/// 
+/// @copyright Copyright (c) 2020
+/// 
+///
 #ifndef SEDAMAN_OSEGD_HPP
 #define SEDAMAN_OSEGD_HPP
 
 #include "CommonSEGD.hpp"
 #include "Trace.hpp"
-
-/// \namespace sedaman
+///
 /// \brief General namespace for sedaman library.
+/// \namespace sedaman
+/// 
+///
 namespace sedaman {
-/// \class OSEGD
+///
 /// \brief Abstract class for SEGD writing.
 /// Declares common methods for all revisions to write information to SEGD
-///  files.
+/// files.
+/// \class OSEGD
+/// 
+///
 class OSEGD {
 public:
+    ///
+    /// \brief Construct a new OSEGD object
+    /// 
     /// \param file_name Name of SEGD file.
+    /// \param gh General header.
+    /// \param gh2 General header 2.
+    /// \param gh3 General header 2
+    /// \param ch_sets Channel sets
+    /// \param add_ghs Additional general headers
+    /// \param extended_headers Extended headers
+    /// \param external_headers External headers
+    /// \param trc_hdr_ext Trace header extension
+    /// 
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
+    ///
     OSEGD(std::string file_name, CommonSEGD::GeneralHeader gh,
         CommonSEGD::GeneralHeader2 gh2, CommonSEGD::GeneralHeader3 gh3,
         std::vector<std::vector<CommonSEGD::ChannelSetHeader>> ch_sets,
@@ -30,8 +53,11 @@ public:
         std::vector<std::vector<char>> external_headers = {},
         std::vector<std::map<uint32_t, std::pair<std::string,
         Trace::Header::ValueType>>> trc_hdr_ext = {});
-    /// \param tr Trace to write.
+    ///
     /// \brief Writes trace to the end of file.
+    /// 
+    /// \param tr Trace to write.
+    ///
     virtual void write_trace(Trace& tr) = 0;
     virtual ~OSEGD();
 

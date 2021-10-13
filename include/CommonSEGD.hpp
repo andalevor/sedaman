@@ -1,8 +1,13 @@
-/// \file CommonSEGD.hpp
-/// \brief header file with CommonSEGD class declaration
-/// \author andalevor
-/// \date   2020/05/04
-
+///
+/// @file CommonSEGD.hpp
+/// @author Andrei Voronin (andalevor@gmail.com)
+/// \brief 
+/// @version 0.1
+/// \date 2020-05-04
+/// 
+/// @copyright Copyright (c) 2020
+/// 
+///
 #ifndef SEDAMAN_COMMON_SEGD_HPP
 #define SEDAMAN_COMMON_SEGD_HPP
 
@@ -14,19 +19,27 @@
 #include <string>
 #include <vector>
 #include "Trace.hpp"
-
-/// \namespace sedaman
+///
 /// \brief General namespace for sedaman library.
+/// \namespace sedaman
+/// 
+///
 namespace sedaman {
-/// \class CommonSEGD
+///
 /// \brief Class with common SEGD parts.
 /// Holds common data and members for ISEGD and OSEGD classes.
+/// \class CommonSEGD
 /// \see ISEGD
 /// \see OSEGD
+/// 
+///
 class CommonSEGD {
 public:
-    /// \class GeneralHeader
+    ///
     /// \brief Class for first general header
+    /// \class GeneralHeader
+    /// 
+    ///
     class GeneralHeader {
     public:
         int file_number;
@@ -51,9 +64,12 @@ public:
         int skew_blocks;
         int extended_hdr_blocks;
         int external_hdr_blocks;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             FILE_NUMBER,
             FORMAT_CODE,
@@ -78,11 +94,20 @@ public:
             EXTENDED_HEADER_BLOCKS,
             EXTERNAL_HEADER_BLOCKS
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
     } general_header;
-    /// \class GeneralHeader
+    ///
     /// \brief Class for second general header
     /// Mandatory from SEGD rev 1
+    /// \class GeneralHeader2
+    /// 
+    ///
     class GeneralHeader2 {
     public:
         uint32_t expanded_file_num;
@@ -99,9 +124,10 @@ public:
         uint32_t dominant_sampling_int;
         uint8_t gen_hdr_block_num;
         uint16_t sequence_number;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
-        /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             EXT_CH_SETS_PER_SCAN_TYPE,
@@ -117,10 +143,26 @@ public:
             DOMINANT_SAMPLING_INT,
             GEN_HEADER_BLOCK_NUM
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
     } general_header2;
+    ///
+    /// \brief Abstract class for additional general headers
+    /// \class AdditionalGeneralHeader
+    /// 
+    ///
     class AdditionalGeneralHeader {
     public:
+        ///
+        /// \brief Constants to use with names.
+        /// \enum
+        /// 
+        ///
         enum ADD_GEN_HDR_BLKS {
             RESERVED = 0x00,
             VESSEL_CREW_ID = 0x10,
@@ -154,12 +196,20 @@ public:
             MEASUREMENT_BLK = 0x61,
             GEN_TRAILER_DESC_BLK = 0x70
         };
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         virtual uint8_t type() = 0;
         virtual ~AdditionalGeneralHeader() { }
     };
-    /// \class GeneralHeader
+    ///
     /// \brief Class for N-th general header
     /// Optional from SEGD rev 1 till 2
+    /// \class GeneralHeaderN
+    /// 
+    ///
     class GeneralHeaderN : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -171,9 +221,12 @@ public:
         int16_t phase_angle;
         uint8_t gen_hdr_block_num;
         uint8_t sou_set_num;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -185,13 +238,27 @@ public:
             GEN_HEADER_BLOCK_NUM,
             SOURCE_SET_NUMBER
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Used to get type of AdditionalGeneralHeader
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_num; }
         virtual ~GeneralHeaderN() override { }
     };
-    /// \class GeneralHeader
+    ///
     /// \brief Class for second general header
     /// Mandatory from SEGD rev 3
+    /// \class GeneralHeader
+    /// 
+    ///
     class GeneralHeader3 {
     public:
         uint64_t time_zero;
@@ -201,9 +268,12 @@ public:
         uint8_t extd_rec_mode;
         uint8_t rel_time_mode;
         uint8_t gen_hdr_block_num;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             TIME_ZERO,
             RECORD_SIZE,
@@ -213,101 +283,195 @@ public:
             REL_TIME_MODE,
             GEN_HEADER_BLOCK_NUM
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
     } general_header3;
-    /// \class GeneralHeaderVes
+    ///
     /// \brief Class for general header vessel\crew information
+    /// \class GeneralHeaderVes
+    /// 
+    ///
     class GeneralHeaderVes : public AdditionalGeneralHeader {
     public:
         char abbr_vessel_crew_name[3];
         char vessel_crew_name[28];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             ABBR_VESSEL_OR_CREW_NAME,
             VESSEL_OR_CREW_NAME,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderVes() override { }
     };
-    /// \class GeneralHeaderSur
+    ///
     /// \brief Class for general header for Survea Area Name
+    /// \class GeneralHeaderSur
+    /// 
+    ///
     class GeneralHeaderSur : public AdditionalGeneralHeader {
     public:
         char survey_area_name[31];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             SURVEY_ARE_NAME,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderSur() override { }
     };
-    /// \class GeneralHeaderCli
+    ///
     /// \brief Class for general header for Client Name
+    /// \class GeneralHeaderCli
+    /// 
+    ///
     class GeneralHeaderCli : public AdditionalGeneralHeader {
     public:
         char client_name[31];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             CLIENT_NAME,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderCli() override { }
     };
-    /// \class GeneralHeaderJob
+    ///
     /// \brief Class for general header for Job ID
+    /// \class GeneralHeaderJob
+    /// 
+    ///
     class GeneralHeaderJob : public AdditionalGeneralHeader {
     public:
         char abbr_job_id[5];
         char job_id[26];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             ABBR_JOB_ID,
             JOB_ID,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderJob() override { }
     };
-    /// \class GeneralHeaderLin
+    ///
     /// \brief Class for general header for Line ID
+    /// \class GeneralHeaderLin
+    /// 
+    ///
     class GeneralHeaderLin : public AdditionalGeneralHeader {
     public:
         char line_abbr[7];
         char line_id[24];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             LINE_ABBR,
             LINE_ID,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderLin() override { }
     };
-    /// \class GeneralHeaderVib
+    ///
     /// \brief Class for general header for Vibrator source information
+    /// \class GeneralHeaderVib
+    /// 
+    ///
     class GeneralHeaderVib : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -327,9 +491,12 @@ public:
         uint16_t size;
         uint16_t offset_depth;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -349,12 +516,26 @@ public:
             OFFSET_DEPTH,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderVib() override { }
     };
-    /// \class GeneralHeaderExp
+    ///
     /// \brief Class for general header for Explosive source information
+    /// \class GeneralHeaderExp
+    /// 
+    ///
     class GeneralHeaderExp : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -374,9 +555,12 @@ public:
         uint16_t size;
         uint16_t offset_depth;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -396,12 +580,26 @@ public:
             OFFSET_DEPTH,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderExp() override { }
     };
-    /// \class GeneralHeaderAir
+    ///
     /// \brief Class for general header for Airgun source information
+    /// \class GeneralHeaderAir
+    /// 
+    ///
     class GeneralHeaderAir : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -420,9 +618,12 @@ public:
         uint16_t size;
         uint16_t offset_depth;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -441,12 +642,26 @@ public:
             OFFSET_DEPTH,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderAir() override { }
     };
-    /// \class GeneralHeaderWat
+    ///
     /// \brief Class for general header for Watergun source information
+    /// \class GeneralHeaderWat
+    /// 
+    ///
     class GeneralHeaderWat : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -465,9 +680,12 @@ public:
         uint16_t size;
         uint16_t offset_depth;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -486,12 +704,26 @@ public:
             OFFSET_DEPTH,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderWat() override { }
     };
-    /// \class GeneralHeaderEle
+    ///
     /// \brief Class for general header for Electromagnetic source information
+    /// \class GeneralHeaderEle
+    /// 
+    ///
     class GeneralHeaderEle : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -510,9 +742,12 @@ public:
         uint16_t size;
         uint16_t offset_depth;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -531,12 +766,26 @@ public:
             OFFSET_DEPTH,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderEle() override { }
     };
-    /// \class GeneralHeaderOth
+    ///
     /// \brief Class for general header for Other source information
+    /// \class GeneralHeaderOth
+    /// 
+    ///
     class GeneralHeaderOth : public AdditionalGeneralHeader {
     public:
         uint32_t expanded_file_number;
@@ -553,9 +802,12 @@ public:
         uint16_t size;
         uint16_t offset_depth;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EXPANDED_FILE_NUMBER,
             SOURCE_LINE_NUMBER,
@@ -572,12 +824,26 @@ public:
             OFFSET_DEPTH,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderOth() override { }
     };
-    /// \class GeneralHeaderAdd
+    ///
     /// \brief Class for general header for Additional source information
+    /// \class GeneralHeaderAdd
+    /// 
+    ///
     class GeneralHeaderAdd : public AdditionalGeneralHeader {
     public:
         uint64_t time;
@@ -586,9 +852,12 @@ public:
         uint8_t source_moving;
         char error_description[20];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             TIME,
             SOURCCE_STATUS,
@@ -597,12 +866,26 @@ public:
             ERROR_DESCRIPTION,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderAdd() override { }
     };
-    /// \class GeneralHeaderSaux
+    ///
     /// \brief Class for general header for Source Auxiliary information
+    /// \class GeneralHeaderSaux
+    /// 
+    ///
     class GeneralHeaderSaux : public AdditionalGeneralHeader {
     public:
         uint8_t source_id;
@@ -622,9 +905,12 @@ public:
         uint16_t ch_set_num_5;
         uint32_t trace_num_5;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             SOURCE_ID,
             SCAN_TYPE_NUM_1,
@@ -644,30 +930,61 @@ public:
             TRACE_NUM_5,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderSaux() override { }
     };
-    /// \class GeneralHeaderCoord
+    ///
     /// \brief Class for general header for coordinate reference system
-	///        identification
+	/// identification
+    /// \class GeneralHeaderCoord
+    /// 
+    ///
     class GeneralHeaderCoord : public AdditionalGeneralHeader {
     public:
         char crs[31];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             COORD_REF_SYS,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderCoord() override { }
     };
-    /// \class GeneralHeaderPos1
+    ///
     /// \brief Class for general header for position blocks 1 identification
+    /// \class GeneralHeaderPos1
+    /// 
+    ///
     class GeneralHeaderPos1 : public AdditionalGeneralHeader {
     public:
         uint64_t time_of_position;
@@ -678,9 +995,12 @@ public:
         uint16_t hor_error_orientation;
         uint8_t position_type;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             TIME_OF_POSITION,
             TIME_OF_MEASUREMENT,
@@ -691,12 +1011,26 @@ public:
             POSITION_TYPE,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderPos1() override { }
     };
-    /// \class GeneralHeaderPos2
+    ///
     /// \brief Class for general header for position blocks 2 identification
+    /// \class GeneralHeaderPos2
+    /// 
+    ///
     class GeneralHeaderPos2 : public AdditionalGeneralHeader {
     public:
         uint64_t crs_a_coord1;
@@ -706,9 +1040,12 @@ public:
         uint8_t pos1_valid;
         uint8_t pos1_quality;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             CRS_A_COORD1,
             CRS_A_COORD2,
@@ -718,12 +1055,26 @@ public:
             POS1_QUALITY,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderPos2() override { }
     };
-    /// \class GeneralHeaderPos3
+    ///
     /// \brief Class for general header for position blocks 3 identification
+    /// \class GeneralHeaderPos3
+    /// 
+    ///
     class GeneralHeaderPos3 : public AdditionalGeneralHeader {
     public:
         uint64_t crs_b_coord1;
@@ -733,9 +1084,12 @@ public:
         uint8_t pos2_valid;
         uint8_t pos2_quality;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             CRS_B_COORD1,
             CRS_B_COORD2,
@@ -745,12 +1099,26 @@ public:
             POS2_QUALITY,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderPos3() override { }
     };
-    /// \class GeneralHeaderRel
+    ///
     /// \brief Class for general header for relative position identification
+    /// \class GeneralHeaderRel
+    /// 
+    ///
     class GeneralHeaderRel : public AdditionalGeneralHeader {
     public:
         uint32_t offset_east;
@@ -758,9 +1126,12 @@ public:
         uint32_t offset_vert;
         char description[19];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             OFFSET_EAST,
             OFFSET_NORTH,
@@ -768,12 +1139,26 @@ public:
             DESCRIPTION,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderRel() override { }
     };
-    /// \class GeneralHeaderSen
+    ///
     /// \brief Class for general header for sensor info
+    /// \class GeneralHeaderSen
+    /// 
+    ///
     class GeneralHeaderSen : public AdditionalGeneralHeader {
     public:
         uint64_t instrument_test_time;
@@ -781,9 +1166,12 @@ public:
         uint8_t instr_test_result;
         char serial_number[28];
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             INSTRUMENT_TEST_TIME,
             SENSOR_SENSITIVITY,
@@ -791,12 +1179,26 @@ public:
             SERIAL_NUMBER,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderSen() override { }
     };
-    /// \class GeneralHeaderSCa
+    ///
     /// \brief Class for general header for sensor calibration
+    /// \class GeneralHeaderSCa
+    /// 
+    ///
     class GeneralHeaderSCa : public AdditionalGeneralHeader {
     public:
         uint32_t freq1;
@@ -807,9 +1209,12 @@ public:
         uint32_t phase2;
         uint8_t calib_applied;
         uint8_t gen_hdr_block_type;
+        ///
+        /// \brief 
         /// \enum
-        /// \brief Constants to use with names.
         /// \see names
+        /// 
+        ///
         enum class Name {
             FREQUENCY_1,
             AMPLITUDE_1,
@@ -820,12 +1225,26 @@ public:
             ALIBRATION_APPLIED,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderSCa() override { }
     };
-    /// \class GeneralHeaderTim
+    ///
     /// \brief Class for general header for time drift
+    /// \class GeneralHeaderTim
+    /// 
+    ///
     class GeneralHeaderTim : public AdditionalGeneralHeader {
     public:
         uint64_t time_of_depl;
@@ -835,9 +1254,12 @@ public:
         uint8_t timedrift_corr;
         uint8_t corr_method;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
         /// \see names
+        /// \enum
+        /// 
+        ///
         enum class Name {
             TIME_OF_DEPLOYMENT,
             TIME_OF_RETRIEVAL,
@@ -847,12 +1269,26 @@ public:
             CORRECTION_METHOD,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderTim() override { }
     };
-    /// \class GeneralHeaderElSR
+    ///
     /// \brief Class for general header for electomagnetic src/recv desc block
+    /// \class GeneralHeaderElSR
+    /// 
+    ///
     class GeneralHeaderElSR : public AdditionalGeneralHeader {
     public:
         uint32_t equip_dim_x;
@@ -863,9 +1299,12 @@ public:
         uint32_t equip_offset_y;
         uint32_t equip_offset_z;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             EQUIPMENT_DIMENTION_X,
             EQUIPMENT_DIMENTION_Y,
@@ -876,12 +1315,26 @@ public:
             EQUIPMENT_OFFSET_Z,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderElSR() override { }
     };
-    /// \class GeneralHeaderOri
+    ///
     /// \brief Class for general header for orientation block
+    /// \class GeneralHeaderOri
+    /// 
+    ///
     class GeneralHeaderOri : public AdditionalGeneralHeader {
     public:
         uint32_t rot_x;
@@ -894,9 +1347,12 @@ public:
         uint8_t rot_applied;
         uint8_t rot_north_applied;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             ROTATION_X_AXIS,
             ROTATION_Y_AXIS,
@@ -910,12 +1366,26 @@ public:
             APPLIED,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderOri() override { }
     };
-    /// \class GeneralHeaderMeas
+    ///
     /// \brief Class for general header for measurement block
+    /// \class GeneralHeaderMeas
+    /// 
+    ///
     class GeneralHeaderMeas : public AdditionalGeneralHeader {
     public:
         uint64_t timestamp;
@@ -926,9 +1396,12 @@ public:
         uint16_t unit_of_measure;
         uint16_t measurement_description;
         uint8_t gen_hdr_block_type;
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             TIMESTAMP,
             MEASUREMENT_VALUE,
@@ -939,10 +1412,26 @@ public:
             MEASUREMENT_DESCRIPTION,
             GEN_HEADER_TYPE
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
+        ///
+        /// \brief Returns type of additional general header
+        /// 
+        /// \return uint8_t 
+        ///
         uint8_t type() override { return gen_hdr_block_type; }
         virtual ~GeneralHeaderMeas() override { }
     };
+    ///
+    /// \brief Class for channel set header
+    /// \class ChannelSetHeader
+    /// 
+    ///
     class ChannelSetHeader {
     public:
         ChannelSetHeader(int stn, uint16_t chsn, uint8_t cht, uint32_t chsstm,
@@ -985,9 +1474,12 @@ public:
         std::optional<uint8_t> physical_unit();
         std::optional<uint32_t> filter_delay();
         std::optional<std::array<char, 27>> description();
-        /// \enum
+        ///
         /// \brief Constants to use with names.
+        /// \enum
         /// \see names
+        /// 
+        ///
         enum class Name {
             SCAN_TYPE_NUMBER,
             CHANNEL_SET_NUMBER,
@@ -1018,6 +1510,12 @@ public:
             FILTER_DELAY,
             DESCRIPTION
         };
+        ///
+        /// \brief Could be used to convert enum to string description
+        /// 
+        /// \param n Enum value
+        /// \return char const* 
+        ///
         static char const* name_as_string(Name n);
 
     private:
@@ -1040,9 +1538,6 @@ public:
     static constexpr int TRACE_HEADER_EXT_SIZE = 32;
     static const std::vector<std::map<uint32_t, std::pair<std::string,
     Trace::Header::ValueType>>> sercel_428xl, sercel_428, sercel_408;
-
-    /// \param file_name Name of file.
-    /// \param mode Choose input or output.
     CommonSEGD(std::string file_name, std::fstream::openmode mode,
         GeneralHeader gh = {}, GeneralHeader2 gh2 = {},
         GeneralHeader3 gh3 = {},

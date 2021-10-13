@@ -1,29 +1,32 @@
-/// \file OSEGYRev2.hpp
-/// \brief header file with OSEGYRev1 class declaration
-/// \author andalevor
-/// \date   2020/04/23
-
+///
+/// @file OSEGYRev2.hpp
+/// @author Andrei Voronin (andalevor@gmail.com)
+/// \brief 
+/// @version 0.1
+/// \date 2020-04-23
+/// 
+/// @copyright Copyright (c) 2020
+/// 
+///
 #ifndef SEDAMAN_OSEGYREV2_HPP
 #define SEDAMAN_OSEGYREV2_HPP
 
 #include "OSEGY.hpp"
-
-/// \namespace sedaman
+///
 /// \brief General namespace for sedaman library.
+/// \namespace sedaman
+/// 
+///
 namespace sedaman {
-/// \class OSEGYRev2
+///
 /// \brief Class for SEGY reading.
 /// Defines methods to write information to SEGY files.
+/// \class OSEGYRev2
+/// 
+///
 class OSEGYRev2 : public OSEGY {
 public:
-    /// \param file_name Name of SEGY file.
-    /// \param text_headers Vector with SEGY text header and extended text
-	///                     headers.
-    /// \param bin_header Could be used to set some files in binary header.
-    /// \param trailer_stanzas Vector with SEGY trailer stanzas.
-    /// \param add_hdr_map Map for additional trace headers reading.
-    /// \throws std::ifstream::failure In case of file operations falure
-    /// \throws sedaman::Exception
+    ///
     /// \brief Creates SEGY rev 2 object.
     /// Size of text header must be 3200 bytes.
     /// First string in vector will be the main text header. Other will be
@@ -35,14 +38,28 @@ public:
 	/// from 0.
     /// Header value should not overlap 240 bytes.
     /// Maps value is a pair of header values name and header values type.
+    /// 
+    /// \param file_name Name of SEGY file.
+    /// \param text_headers Vector with SEGY text header and extended text
+	/// headers.
+    /// \param bin_header Could be used to set write parameters.
+    /// \param trailer_stanzas Vector with SEGY trailer stanzas.
+    /// \param add_hdr_map Map for additional trace headers reading.
+    ///
+    /// \throws std::ifstream::failure In case of file operations falure
+    /// \throws sedaman::Exception
+    /// 
     OSEGYRev2(std::string file_name, std::vector<std::string> text_headers =
 			  {}, CommonSEGY::BinaryHeader bin_header = {},
 	  		  std::vector<std::string> trailer_stanzas = {},
 	  		  std::vector<std::pair<std::string, std::map<uint32_t,
 			  std::pair<std::string, Trace::Header::ValueType>>>> add_hdr_map
 			  = {});
-    /// \param tr Trace to write.
+    ///
     /// \brief Writes trace to the end of file.
+    /// 
+    /// \param trace Trace to write.
+    ///
     void write_trace(Trace& trace) override;
     virtual ~OSEGYRev2();
 
