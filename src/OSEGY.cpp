@@ -447,7 +447,7 @@ void OSEGY::Impl::write_trace_header(Trace::Header const& hdr)
     tmp = hdr.get("TR_VAL_UNIT");
     write_i16(&buf, tmp ? get<int16_t>(*tmp) : 0);
     tmp = hdr.get("TRANS_CONST");
-    double val = tmp ? get<double>(*tmp) : 0;
+    double val = tmp ? get<double>(*tmp) : 1;
     int16_t exp = log10(val);
     write_i32(&buf, val / pow(10, exp));
     write_i16(&buf, exp);
@@ -466,7 +466,7 @@ void OSEGY::Impl::write_trace_header(Trace::Header const& hdr)
     tmp = hdr.get("SOU_I_DIR");
     write_i16(&buf, tmp ? get<int16_t>(*tmp) : 0);
     tmp = hdr.get("SOURCE_MEASUREMENT");
-    val = tmp ? get<double>(*tmp) : 0;
+    val = tmp ? get<double>(*tmp) : 1;
     exp = log10(val);
     write_i32(&buf, val / pow(10, exp));
     write_i16(&buf, exp);
