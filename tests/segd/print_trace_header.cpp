@@ -11,35 +11,10 @@ public:
     }
     void operator()(sedaman::Trace::Header::Value v, std::string s)
     {
-        if (std::holds_alternative<int8_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<int8_t>(v) << '\n';
-        else if (std::holds_alternative<int16_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<int16_t>(v) << '\n';
-        else if (std::holds_alternative<int32_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<int32_t>(v) << '\n';
-        else if (std::holds_alternative<int64_t>(v))
+        if (std::holds_alternative<int64_t>(v))
             std::cout << std::left << std::setw(size) << std::setfill('.')
 			   	<< s << " = " << +std::get<int64_t>(v) << '\n';
-        else if (std::holds_alternative<uint8_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<uint8_t>(v) << '\n';
-        else if (std::holds_alternative<uint16_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<uint16_t>(v) << '\n';
-        else if (std::holds_alternative<uint32_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<uint32_t>(v) << '\n';
-        else if (std::holds_alternative<uint64_t>(v))
-            std::cout << std::left << std::setw(size) << std::setfill('.')
-			   	<< s << " = " << +std::get<uint64_t>(v) << '\n';
-        else if (std::holds_alternative<float>(v))
-            std::cout << std::fixed << std::left << std::setw(size) <<
-			   	std::setfill('.') << s << " = " << +std::get<float>(v) << '\n';
-        else if (std::holds_alternative<double>(v))
-            std::cout << std::fixed << std::left << std::setw(size) <<
+        else std::cout << std::fixed << std::left << std::setw(size) <<
 			   	std::setfill('.') << s << " = " << +std::get<double>(v)
 			   	<< '\n';
     }

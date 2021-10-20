@@ -886,40 +886,40 @@ void OSEGD::Impl::write_trace_header(Trace::Header const& hdr)
     char* buf = common.trc_hdr_buf;
     memset(buf, 0, CommonSEGD::TRACE_HEADER_SIZE);
     optional<Trace::Header::Value> ffid = hdr.get("FFID");
-    if (ffid && get<uint32_t>(*ffid) > 9999)
+    if (ffid && get<int64_t>(*ffid) > 9999)
         write_u16(&buf, 0xffff);
     else
-        to_bcd(&buf, ffid ? get<uint32_t>(*ffid) : 0, false, 4);
+        to_bcd(&buf, ffid ? get<int64_t>(*ffid) : 0, false, 4);
     optional<Trace::Header::Value> tmp = hdr.get("SCAN_TYPE_NUM");
-    to_bcd(&buf, tmp ? get<uint16_t>(*tmp) : 0, false, 2);
+    to_bcd(&buf, tmp ? get<int64_t>(*tmp) : 0, false, 2);
     optional<Trace::Header::Value> ch_set = hdr.get("CH_SET_NUM");
-    if (ch_set && get<uint16_t>(*ch_set) > 99)
+    if (ch_set && get<int64_t>(*ch_set) > 99)
         *buf++ = static_cast<uint8_t>(0xff);
     else
-        to_bcd(&buf, get<uint16_t>(*ch_set), false, 2);
+        to_bcd(&buf, get<int64_t>(*ch_set), false, 2);
     tmp = hdr.get("TRACE_NUMBER");
-    if (tmp && get<uint32_t>(*tmp) > 9999)
+    if (tmp && get<int64_t>(*tmp) > 9999)
         write_u16(&buf, 0xffff);
     else
-        to_bcd(&buf, tmp ? get<uint32_t>(*tmp) : 0, false, 4);
+        to_bcd(&buf, tmp ? get<int64_t>(*tmp) : 0, false, 4);
     tmp = hdr.get("FIRST_TIMING_WORD");
     write_u24(&buf, tmp ? get<double>(*tmp) * pow(2, 8) : 0);
     tmp = hdr.get("TR_HDR_EXT");
-    *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+    *buf++ = tmp ? get<int64_t>(*tmp) : 0;
     tmp = hdr.get("SAMPLE_SKEW");
     *buf++ = tmp ? get<double>(*tmp) * pow(2, 8) : 0;
     tmp = hdr.get("TRACE_EDIT");
-    *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+    *buf++ = tmp ? get<int64_t>(*tmp) : 0;
     tmp = hdr.get("TIME_BREAK_WIN");
     write_u24(&buf, tmp ? get<double>(*tmp) * pow(2, 8) : 0);
-    write_u16(&buf, ch_set && get<uint16_t>(*ch_set) < 100 ? 0 : get<uint16_t>(*ch_set));
-    write_u24(&buf, ffid ? get<uint32_t>(*ffid) : 0);
+    write_u16(&buf, ch_set && get<int64_t>(*ch_set) < 100 ? 0 : get<int64_t>(*ch_set));
+    write_u24(&buf, ffid ? get<int64_t>(*ffid) : 0);
     common.file.write(common.trc_hdr_buf, CommonSEGD::TRACE_HEADER_SIZE);
 }
 
 void OSEGD::Impl::write_ext_trace_headers(Trace::Header const& hdr)
 {
-    uint8_t ext_hdr_blks = get<uint8_t>(hdr.get("TR_HDR_EXT").value_or(0));
+    uint8_t ext_hdr_blks = get<int64_t>(hdr.get("TR_HDR_EXT").value_or(0));
     optional<Trace::Header::Value> tmp;
     for (int i = 0; i < ext_hdr_blks; ++i) {
         std::memset(common.trc_hdr_buf, 0, CommonSEGD::TRACE_HEADER_EXT_SIZE);
@@ -933,34 +933,34 @@ void OSEGD::Impl::write_ext_trace_headers(Trace::Header const& hdr)
                 char* pos = common.trc_hdr_buf + item.first;
                 switch (item.second.second) {
                 case Trace::Header::ValueType::int8_t:
-                    write_i8(&pos, get<int8_t>(*tmp));
+                    write_i8(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::uint8_t:
-                    write_u8(&pos, get<uint8_t>(*tmp));
+                    write_u8(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::int16_t:
-                    write_i16(&pos, get<int16_t>(*tmp));
+                    write_i16(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::uint16_t:
-                    write_u16(&pos, get<uint16_t>(*tmp));
+                    write_u16(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::int24_t:
-                    write_i24(&pos, get<int32_t>(*tmp));
+                    write_i24(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::uint24_t:
-                    write_u24(&pos, get<uint32_t>(*tmp));
+                    write_u24(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::int32_t:
-                    write_i32(&pos, get<int32_t>(*tmp));
+                    write_i32(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::uint32_t:
-                    write_u32(&pos, get<uint32_t>(*tmp));
+                    write_u32(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::int64_t:
                     write_i64(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::uint64_t:
-                    write_u64(&pos, get<uint64_t>(*tmp));
+                    write_u64(&pos, get<int64_t>(*tmp));
                     break;
                 case Trace::Header::ValueType::ibm:
                     write_ibm_float(&pos, get<double>(*tmp));
@@ -977,78 +977,78 @@ void OSEGD::Impl::write_ext_trace_headers(Trace::Header const& hdr)
             char* buf = common.trc_hdr_buf;
             tmp = hdr.get("R_LINE");
             double r_line;
-            uint32_t r_line_int;
+            int64_t r_line_int;
             if (tmp && holds_alternative<double>(*tmp)) {
                 r_line = tmp ? get<double>(*tmp) : 0;
                 r_line_int = r_line;
             } else {
-                r_line_int = tmp ? get<uint32_t>(*tmp) : 0;
+                r_line_int = tmp ? get<int64_t>(*tmp) : 0;
                 r_line = r_line_int;
             }
             write_u24(&buf, r_line);
             tmp = hdr.get("R_POINT");
             double r_point;
-            uint32_t r_point_int;
+            int64_t r_point_int;
             if (tmp && holds_alternative<double>(*tmp)) {
                 r_point = tmp ? get<double>(*tmp) : 0;
                 r_point_int = r_point;
             } else {
-                r_point_int = tmp ? get<uint32_t>(*tmp) : 0;
+                r_point_int = tmp ? get<int64_t>(*tmp) : 0;
                 r_point = r_point_int;
             }
             write_u24(&buf, r_point);
             tmp = hdr.get("R_POINT_IDX");
-            *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+            *buf++ = tmp ? get<int64_t>(*tmp) : 0;
             if (common.general_header2.segd_rev_major > 1) {
                 tmp = hdr.get("SAMP_NUM");
-                write_u24(&buf, tmp ? get<uint32_t>(*tmp) : 0);
+                write_u24(&buf, tmp ? get<int64_t>(*tmp) : 0);
             } else {
                 tmp = hdr.get("RESHOOT_IDX");
-                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                *buf++ = tmp ? get<int64_t>(*tmp) : 0;
                 tmp = hdr.get("GROUP_IDX");
-                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                *buf++ = tmp ? get<int64_t>(*tmp) : 0;
                 tmp = hdr.get("DEPTH_IDX");
-                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                *buf++ = tmp ? get<int64_t>(*tmp) : 0;
             }
             if (common.general_header2.segd_rev_major > 1) {
                 tmp = hdr.get("R_LINE");
                 double r_line;
-                uint32_t r_line_int;
+                int64_t r_line_int;
                 if (tmp && holds_alternative<double>(*tmp)) {
                     r_line = tmp ? get<double>(*tmp) : 0;
                     r_line_int = r_line;
                 } else {
-                    r_line_int = tmp ? get<uint32_t>(*tmp) : 0;
+                    r_line_int = tmp ? get<int64_t>(*tmp) : 0;
                     r_line = r_line_int;
                 }
                 write_u24(&buf, r_line_int);
                 write_u16(&buf, (r_line - r_line_int) * pow(2, 16));
                 tmp = hdr.get("R_POINT");
                 double r_point;
-                uint32_t r_point_int;
+                int64_t r_point_int;
                 if (tmp && holds_alternative<double>(*tmp)) {
                     r_point = tmp ? get<double>(*tmp) : 0;
                     r_point_int = r_point;
                 } else {
-                    r_point_int = tmp ? get<uint32_t>(*tmp) : 0;
+                    r_point_int = tmp ? get<int64_t>(*tmp) : 0;
                     r_point = r_point_int;
                 }
                 write_u24(&buf, r_point_int);
                 write_u16(&buf, (r_point - r_point_int) * pow(2, 16));
                 tmp = hdr.get("SENSOR_TYPE");
-                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                *buf++ = tmp ? get<int64_t>(*tmp) : 0;
             }
             if (common.general_header2.segd_rev_major > 2) {
                 tmp = hdr.get("TRACE_NUMBER");
-                if (tmp && get<uint32_t>(*tmp) > 9999)
-                    write_u24(&buf, get<uint32_t>(*tmp));
+                if (tmp && get<int64_t>(*tmp) > 9999)
+                    write_u24(&buf, get<int64_t>(*tmp));
                 tmp = hdr.get("SAMP_NUM");
-                write_u32(&buf, tmp ? get<uint32_t>(*tmp) : 0);
+                write_u32(&buf, tmp ? get<int64_t>(*tmp) : 0);
                 tmp = hdr.get("SENSOR_MOVING");
-                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                *buf++ = tmp ? get<int64_t>(*tmp) : 0;
                 ++buf;
                 tmp = hdr.get("PHYSICAL_UNIT");
-                *buf++ = tmp ? get<uint8_t>(*tmp) : 0;
+                *buf++ = tmp ? get<int64_t>(*tmp) : 0;
             }
         }
         common.file.write(common.trc_hdr_buf,
@@ -1069,13 +1069,13 @@ void OSEGD::Impl::write_trace_samples(Trace const& trc)
     if (tmp == std::nullopt)
         scan_type = 1;
     else
-        scan_type = get<uint16_t>(*tmp);
+        scan_type = get<int64_t>(*tmp);
     uint16_t ch_set;
     tmp = trc.header().get("CH_SET_NUM");
     if (tmp == std::nullopt)
         ch_set = 1;
     else
-        ch_set = get<uint16_t>(*tmp);
+        ch_set = get<int64_t>(*tmp);
     double descale = common.channel_sets[scan_type - 1][ch_set - 1]
     .descale_multiplier;
     descale = pow(2, descale);

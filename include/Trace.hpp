@@ -38,8 +38,7 @@ public:
     ///
     class Header {
     public:
-        typedef std::variant<int8_t, int16_t, int32_t, int64_t, uint8_t,
-			   	uint16_t, uint32_t, uint64_t, float, double> Value;
+        using Value = std::variant<int64_t, double>;
         ///
         /// \brief Enumiration to set type of additional trace header values.
         /// \enum

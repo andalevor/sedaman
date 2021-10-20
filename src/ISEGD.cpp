@@ -1261,7 +1261,7 @@ unordered_map<string, Trace::Header::Value> ISEGD::Impl::read_trace_header()
 void ISEGD::Impl::read_trace_header_ext(unordered_map<string,
                                         Trace::Header::Value>& hdr)
 {
-    int trc_hdr_ext = get<uint8_t>(hdr["TR_HDR_EXT"]);
+    int trc_hdr_ext = get<int64_t>(hdr["TR_HDR_EXT"]);
     for (int i = 0; i < trc_hdr_ext; ++i) {
         fill_buf_from_file(common.trc_ext_hdr_buf,
             CommonSEGD::TRACE_HEADER_EXT_SIZE);
@@ -1298,7 +1298,7 @@ void ISEGD::Impl::read_trace_header_ext(unordered_map<string,
                     hdr[p.second.first] = read_i64(&pos);
                     break;
                 case Trace::Header::ValueType::uint64_t:
-                    hdr[p.second.first] = read_u64(&pos);
+                    hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
                     break;
                 case Trace::Header::ValueType::ibm:
                     hdr[p.second.first] = dbl_from_ibm_float(&pos);
@@ -1337,7 +1337,7 @@ void ISEGD::Impl::read_trace_header_ext(unordered_map<string,
             }
             if (common.general_header2.segd_rev_major > 2) {
                 uint32_t ext_tr_num = read_u24(&buf);
-                if (get<uint32_t>(hdr["TRACE_NUMBER"]) == 16665)
+                if (get<int64_t>(hdr["TRACE_NUMBER"]) == 16665)
                     hdr["TRACE_NUMBER"] = ext_tr_num;
                 hdr["SAMP_NUM"] = read_u32(&buf);
                 hdr["SENSOR_MOVING"] = read_u8(&buf);
@@ -1353,10 +1353,10 @@ vector<double> ISEGD::Impl::read_trace_samples(unordered_map<string,
 {
     uint32_t samp_num;
     CommonSEGD::ChannelSetHeader curr_ch_set =
-	   	common.channel_sets[get<uint16_t>(hdr["SCAN_TYPE_NUM"]) - 1]
-		[get<uint16_t>(hdr["CH_SET_NUM"]) - 1];
+	   	common.channel_sets[get<int64_t>(hdr["SCAN_TYPE_NUM"]) - 1]
+		[get<int64_t>(hdr["CH_SET_NUM"]) - 1];
     if (hdr.find("SAMP_NUM") != hdr.end())
-        samp_num = get<uint32_t>(hdr["SAMP_NUM"]);
+        samp_num = get<int64_t>(hdr["SAMP_NUM"]);
     else if (curr_ch_set.number_of_samples())
         samp_num = *curr_ch_set.number_of_samples();
     else

@@ -22,13 +22,9 @@ int main(int argc, char *argv[])
 				std::cerr << "No such header\n";
                 return 1;
 			}
-			if (!std::holds_alternative<int32_t>(v)) {
-				std::cerr << "Wrong header format in variant\n";
-				return 1;
-			}
-            if (std::get<int32_t>(v) != val++)
+            if (std::get<int64_t>(v) != val++)
             {
-                std::cerr << std::get<int32_t>(v) << " not equal to "
+                std::cerr << std::get<int64_t>(v) << " not equal to "
 				   	<< val - 1 << '\n';
                 return 1;
             }

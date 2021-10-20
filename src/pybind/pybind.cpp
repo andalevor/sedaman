@@ -1,4 +1,5 @@
 #include "ISEGY.hpp"
+#include "ISEGYSorted1D.hpp"
 #include "OSEGY.hpp"
 #include "OSEGYRev0.hpp"
 #include "OSEGYRev1.hpp"
@@ -152,7 +153,17 @@ PYBIND11_MODULE(pysedaman, m) {
 				 pair<string, Trace::Header::ValueType>>>,
 				 vector<pair<string, map<uint32_t,
 				 pair<string, Trace::Header::ValueType>>>>>(),
-				 py::arg("file_name"), py::arg("tr_hdr_over") =
+				 py::arg("file_name"),
+				 py::arg("tr_hdr_over") = vector<map<uint32_t,
+				 pair<string, Trace::Header::ValueType>>>(),
+				 py::arg("add_hdr_map") = vector<pair<string,
+				 map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+	ISEGY_py.def(py::init<string, CommonSEGY::BinaryHeader,
+				 vector<map<uint32_t,
+				 pair<string, Trace::Header::ValueType>>>,
+				 vector<pair<string, map<uint32_t,
+				 pair<string, Trace::Header::ValueType>>>>>(),
+				 py::arg("file_name"), py::arg("binary_header"), py::arg("tr_hdr_over") =
 				 vector<map<uint32_t,
 				 pair<string, Trace::Header::ValueType>>>(),
 				 py::arg("add_hdr_map") = vector<pair<string,
@@ -172,12 +183,53 @@ PYBIND11_MODULE(pysedaman, m) {
 				 "reads header, skips samples");
 	ISEGY_py.def("read_trace", &ISEGY::read_trace,
 				 "reads one trace from file");
-	ISEGY_py.def("__next__", [] (ISEGY &s)
-				 { return s.has_trace() ? s.read_trace() :
-					 throw py::stop_iteration(); });
-	ISEGY_py.def("__iter__", [] (ISEGY &s) { return &s; });
+	ISEGY_py.def("__next__", [] (ISEGY& s) {
+		return s.has_trace() ? s.read_trace() : throw py::stop_iteration();
+	});
+	ISEGY_py.def("__iter__", [] (ISEGY& s) { return &s; });
 
-	py::class_<OSEGY> OSEGY_py(m, "OSEGY");
+    py::class_<ISEGYSorted1D, ISEGY> ISEGYSorted1D_py(m, "ISEGYSorted1D");
+    ISEGYSorted1D_py.def(
+        py::init<string, string,
+                 vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>,
+                 vector<pair<
+                     string,
+                     map<uint32_t, pair<string, Trace::Header::ValueType>>>>>(),
+        py::arg("file_name"),
+		py::arg("hdr_name"),
+        py::arg("tr_hdr_over") =
+            vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>(),
+        py::arg("add_hdr_map") = vector<pair<
+            string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+    ISEGYSorted1D_py.def(
+        py::init<string, string, CommonSEGY::BinaryHeader,
+                 vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>,
+                 vector<pair<
+                     string,
+                     map<uint32_t, pair<string, Trace::Header::ValueType>>>>>(),
+        py::arg("file_name"),
+		py::arg("hdr_name"),
+		py::arg("binary_header"),
+        py::arg("tr_hdr_over") =
+            vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>(),
+        py::arg("add_hdr_map") = vector<pair<
+            string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+    ISEGYSorted1D_py.def(
+        "get_keys", &ISEGYSorted1D::get_keys,
+        "Get list of keys which could be used to get headers or traces");
+    ISEGYSorted1D_py.def(
+        "get_headers", &ISEGYSorted1D::get_headers,
+        "Get list of trace headers with given trace header value",
+						 py::arg("value"), py::arg("max_num") = 1000000);
+    ISEGYSorted1D_py.def("get_traces", &ISEGYSorted1D::get_traces,
+                         "Get list of traces with given trace header value",
+						 py::arg("value"), py::arg("max_num") = 100000);
+	ISEGYSorted1D_py.def("__next__", [] (ISEGYSorted1D& s) {
+		return s.has_trace() ? s.read_trace() : throw py::stop_iteration();
+	});
+	ISEGYSorted1D_py.def("__iter__", [] (ISEGYSorted1D& s) { return &s; });
+
+    py::class_<OSEGY> OSEGY_py(m, "OSEGY");
 	OSEGY_py.def("write_trace", &OSEGY::write_trace,
 				 "Writes trace to the end of file.",
 				 py::arg("trace"));

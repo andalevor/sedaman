@@ -63,11 +63,7 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
             if (sgy.common().file.tellg() == first_trace_pos) {
                 //throw exception if trace header does not has a samples number
                 Trace::Header::Value v = *tr.header().get("SAMP_NUM");
-                uint32_t samp_num;
-                if (holds_alternative<int16_t>(v))
-                    samp_num = get<int16_t>(v);
-                else
-                    samp_num = get<uint32_t>(v);
+                int64_t samp_num = get<int64_t>(v);
                 if (samp_num > INT16_MAX)
                     throw Exception(__FILE__, __LINE__,
 									"the number of samples is too much for "
@@ -76,8 +72,8 @@ OSEGYRev0::Impl::Impl(OSEGYRev0& s, string txt_hdr)
                     sgy.common().binary_header.samp_per_tr = samp_num;
                 v = *tr.header().get("SAMP_INT");
                 double samp_int;
-                if (holds_alternative<int16_t>(v))
-                    samp_int = get<int16_t>(v);
+                if (holds_alternative<int64_t>(v))
+                    samp_int = get<int64_t>(v);
                 else
                     samp_int = get<double>(v);
                 if (samp_int > INT16_MAX || !static_cast<int16_t>(samp_int))

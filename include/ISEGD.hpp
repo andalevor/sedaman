@@ -257,7 +257,7 @@ public:
     /// \return Trace 
     ///
     Trace read_trace();
-    virtual ~ISEGD();
+    ~ISEGD();
 
 private:
     class Impl;

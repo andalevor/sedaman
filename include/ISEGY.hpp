@@ -100,20 +100,23 @@ public:
     /// \return true 
     /// \return false 
     ///
-    bool has_trace();
+    virtual bool has_trace();
     ///
     /// \brief reads header, skips samples
     /// 
     /// \return Trace::Header 
     ///
-    Trace::Header read_header();
+    virtual Trace::Header read_header();
     ///
     /// \brief reads one trace from file
     /// 
     /// \return Trace 
     ///
-    Trace read_trace();
+    virtual Trace read_trace();
     virtual ~ISEGY();
+
+protected:
+    CommonSEGY& common();
 
 private:
     class Impl;

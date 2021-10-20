@@ -15,7 +15,6 @@
 using std::fstream;
 using std::function;
 using std::get;
-using std::holds_alternative;
 using std::ios_base;
 using std::make_unique;
 using std::map;
@@ -37,7 +36,7 @@ public:
 		 vector<pair<string, map<uint32_t,
  		 pair<string, Trace::Header::ValueType>>>> add_hdr_map)
 		: common { move(name), fstream::in | fstream::binary, {},
-		   	move(add_hdr_map) }	, tr_hdr_io_map { tr_hdr_over }
+		   	move(add_hdr_map) }	, tr_hdr_io_map { move(tr_hdr_over) }
     {
         initialization(false);
     }
@@ -48,7 +47,7 @@ public:
         vector<pair<string, map<uint32_t, pair<string,
 	   	Trace::Header::ValueType>>>> add_hdr_map)
         : common { move(name), fstream::in | fstream::binary,
-		   	move(bh), move(add_hdr_map) }, tr_hdr_io_map { tr_hdr_over }
+		   	move(bh), move(add_hdr_map) }, tr_hdr_io_map { move(tr_hdr_over) }
     {
         initialization(true);
     }
@@ -84,7 +83,7 @@ private:
     function<double(char const** buf)> dbl_from_ibm_float;
     function<double(char const** buf)> dbl_from_IEEE_float;
     function<double(char const** buf)> dbl_from_IEEE_double;
-    void initialization(bool overrid_bin_hdr);
+    void initialization(bool override_bin_hdr);
     void fill_bin_header(char const* buf);
     void assign_raw_readers();
     void assign_sample_reader();
@@ -551,10 +550,10 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
         if (common.binary_header.max_num_add_tr_headers) {
             fill_buf_from_file(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
             char const* buf = common.hdr_buf;
-            hdr["TRC_SEQ_LINE"] = read_u64(&buf);
-            hdr["TRC_SEQ_SGY"] = read_u64(&buf);
-            hdr["FFID"] = read_u64(&buf);
-            hdr["ENS_NO"] = read_u64(&buf);
+            hdr["TRC_SEQ_LINE"] = static_cast<int64_t>(read_u64(&buf));
+            hdr["TRC_SEQ_SGY"] = static_cast<int64_t>(read_u64(&buf));
+            hdr["FFID"] = static_cast<int64_t>(read_u64(&buf));
+            hdr["ENS_NO"] = static_cast<int64_t>(read_u64(&buf));
             hdr["R_ELEV"] = dbl_from_IEEE_double(&buf);
             hdr["R_DEPTH"] = dbl_from_IEEE_double(&buf);
             hdr["S_DEPTH"] = dbl_from_IEEE_double(&buf);
@@ -619,7 +618,7 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
                             hdr[p.second.first] = read_i64(&pos);
                             break;
                         case Trace::Header::ValueType::uint64_t:
-                            hdr[p.second.first] = read_u64(&pos);
+                            hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
                             break;
                         case Trace::Header::ValueType::ibm:
                             hdr[p.second.first] = dbl_from_ibm_float(&pos);
@@ -669,7 +668,7 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
                 hdr[p.second.first] = read_i64(&pos);
                 break;
             case Trace::Header::ValueType::uint64_t:
-                hdr[p.second.first] = read_u64(&pos);
+                hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
                 break;
             case Trace::Header::ValueType::ibm:
                 hdr[p.second.first] = dbl_from_ibm_float(&pos);
@@ -721,7 +720,7 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
                     hdr[p.second.first] = read_i64(&pos);
                     break;
                 case Trace::Header::ValueType::uint64_t:
-                    hdr[p.second.first] = read_u64(&pos);
+                    hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
                     break;
                 case Trace::Header::ValueType::ibm:
                     hdr[p.second.first] = dbl_from_ibm_float(&pos);
@@ -771,7 +770,7 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
                                 hdr[p.second.first] = read_i64(&pos);
                                 break;
                             case Trace::Header::ValueType::uint64_t:
-                                hdr[p.second.first] = read_u64(&pos);
+                                hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
                                 break;
                             case Trace::Header::ValueType::ibm:
                                 hdr[p.second.first] = dbl_from_ibm_float(&pos);
@@ -788,8 +787,8 @@ unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
                         }
                     }
                 } else {
-                    uint16_t add_trc_hdr_num =
-					   	get<uint16_t>(hdr["ADD_TRC_HDR_NUM"]);
+                    int64_t add_trc_hdr_num =
+					   	get<int64_t>(hdr["ADD_TRC_HDR_NUM"]);
                     add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
 					   	common.binary_header.max_num_add_tr_headers;
                     file_skip_bytes(add_trc_hdr_num *
@@ -809,12 +808,8 @@ Trace::Header ISEGY::read_header()
         pimpl->file_skip_bytes(pimpl->common.samp_per_tr *
 							   pimpl->common.bytes_per_sample);
     } else {
-        uint32_t samp_num;
         Trace::Header::Value v = hdr["SAMP_NUM"];
-        if (holds_alternative<uint32_t>(v))
-            samp_num = get<uint32_t>(v);
-        else
-            samp_num = get<int16_t>(v);
+        uint64_t samp_num = get<int64_t>(v);
         pimpl->file_skip_bytes(samp_num * pimpl->common.bytes_per_sample);
     }
     return Trace::Header(hdr);
@@ -833,12 +828,8 @@ vector<double> ISEGY::Impl::read_trc_smpls_fix()
 vector<double> ISEGY::Impl::read_trc_smpls_var(unordered_map<string,
 											   Trace::Header::Value>& hdr)
 {
-    uint32_t samp_num;
     Trace::Header::Value v = hdr["SAMP_NUM"];
-    if (holds_alternative<uint32_t>(v))
-        samp_num = get<uint32_t>(v);
-    else
-        samp_num = get<int16_t>(v);
+    size_t samp_num = get<int64_t>(v);
     if (common.samp_buf.size() != samp_num * common.bytes_per_sample)
         common.samp_buf.resize(samp_num * common.bytes_per_sample);
     return read_trc_smpls_fix();
@@ -1034,6 +1025,11 @@ CommonSEGY::BinaryHeader ISEGY::read_binary_header(std::string file_name)
 {
     ISEGY s(file_name);
     return s.binary_header();
+}
+
+CommonSEGY& ISEGY::common()
+{
+    return pimpl->common;
 }
 
 ISEGY::~ISEGY() = default;
