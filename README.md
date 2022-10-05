@@ -11,9 +11,12 @@ SEGD Rev 3 | :heavy_check_mark: | :x:
 SEGD Rev 2 | :heavy_check_mark: | :heavy_check_mark:
 SEGD Rev 1 | :heavy_check_mark: | :x:
 
+# Prerequsites
+Python headers in inlude path for Python library.
+
 # Build C++ library
 ```
-git clone https://github.com/andalevor/sedaman
+git clone --recurse-submodules https://github.com/andalevor/sedaman
 mkdir sedaman/build
 cd sedaman/build
 cmake .. -DCMAKE_BUILD_TYPE=Release
@@ -21,7 +24,7 @@ make sedaman
 ```
 # Build Python library
 ```
-git clone https://github.com/andalevor/sedaman
+git clone --recurse-submodules https://github.com/andalevor/sedaman
 mkdir sedaman/build
 cd sedaman/build
 cmake .. -DCMAKE_BUILD_TYPE=Release
