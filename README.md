@@ -32,6 +32,7 @@ make pysedaman
 ```
 # Python example
 ```Python
+import pysedaman
 isegy = pysedaman.ISEGY("stack.sgy")
 length = 0.0
 h1 = isegy.read_header()
