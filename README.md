@@ -30,5 +30,18 @@ cd sedaman/build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make pysedaman
 ```
+# Python example
+```Python
+isegy = pysedaman.ISEGY("stack.sgy")
+length = 0.0
+h1 = isegy.read_header()
+for trace in isegy:
+    h2 = trace.header()
+    length += math.sqrt((h2.get("CDP_X")-h1.get("CDP_X"))**2+(h2.get("CDP_Y")-h1.get("CDP_Y"))**2)
+    h1 = h2
+
+print(length)
+```
+
 
 andalevor@gmail.com
