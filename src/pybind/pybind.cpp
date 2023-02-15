@@ -171,7 +171,13 @@ PYBIND11_MODULE(pysedaman, m) {
 	ISEGY_py.def("read_binary_header", &ISEGY::read_binary_header,
 				 "creates ISegy instance internally and "
 				 "returns binary header.");
-	ISEGY_py.def("text_headers", &ISEGY::text_headers,
+	ISEGY_py.def("text_headers", [] (ISEGY& s) {
+		vector<string> res;
+		for(auto h : s.text_headers()) {
+			CommonSEGY::ebcdic_to_ascii(h);
+			res.push_back(std::move(h));
+		}
+		return res;},
 				 "segy text headers getter");
 	ISEGY_py.def("trailer_stanzas", &ISEGY::trailer_stanzas,
 				 "segy trailer stanzas getter");
