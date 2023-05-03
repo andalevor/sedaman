@@ -70,8 +70,8 @@ OSEGDRev2_1::Impl::Impl(OSEGDRev2_1& s)
 
 void OSEGDRev2_1::write_trace(Trace& t)
 {
-    if (pimpl->chans_written == chans_in_record())
-        throw Exception(__FILE__, __LINE__,
+	if (pimpl->chans_written == chans_in_record())
+		throw Exception(__FILE__, __LINE__,
 						"you tring write more traces than specified "
 						"in channel set headers");
     write_trace_header(t.header());

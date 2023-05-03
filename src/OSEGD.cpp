@@ -897,7 +897,7 @@ void OSEGD::Impl::write_trace_header(Trace::Header const& hdr)
         *buf++ = static_cast<uint8_t>(0xff);
     else
         to_bcd(&buf, get<int64_t>(*ch_set), false, 2);
-    tmp = hdr.get("TRACE_NUMBER");
+    tmp = hdr.get("CHAN");
     if (tmp && get<int64_t>(*tmp) > 9999)
         write_u16(&buf, 0xffff);
     else
@@ -1285,11 +1285,14 @@ OSEGD::OSEGD(string file_name, CommonSEGD::GeneralHeader gh,
         move(gh2), move(gh3), move(add_ghs), move(ch_sets), move(extd_hdrs),
         move(extl_hdrs), move(trc_hdr_ext))) }
 {
-    if (common().channel_sets.size() !=
-    static_cast<size_t>(gh.scan_types_per_record))
-        throw Exception(__FILE__, __LINE__,
+	if (common().channel_sets.size() !=
+		static_cast<size_t>(gh.scan_types_per_record))
+		throw Exception(__FILE__, __LINE__,
 						"Size of vector with vectors of channel set header "
 						"not equal to number of scan types in general header");
+	for (auto scan_type : common().channel_sets)
+		for (auto hdr : scan_type)
+			pimpl->chans_in_record += hdr.number_of_channels;
 }
 CommonSEGD& OSEGD::common() { return pimpl->common; }
 OSEGD::~OSEGD() = default;

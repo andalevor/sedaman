@@ -151,6 +151,8 @@ Trace ISEGD::read_trace()
 
 ISEGD::Impl::Impl(CommonSEGD com)
     : common { move(com) }
+	, chans_in_record {0}
+	, chans_read {0}
 {
     common.file.seekg(0, ios_base::end);
     end_of_data = common.file.tellg();
@@ -1241,7 +1243,7 @@ unordered_map<string, Trace::Header::Value> ISEGD::Impl::read_trace_header()
     hdr["SCAN_TYPE_NUM"] = from_bcd<uint16_t>(&buf, false, 2);
     hdr["CH_SET_NUM"] = from_bcd<uint16_t>(&buf, false, 2);
     uint32_t trc_num = from_bcd<uint32_t>(&buf, false, 4);
-    hdr["TRACE_NUMBER"] = trc_num;
+    hdr["CHAN"] = trc_num;
     hdr["FIRST_TIMING_WORD"] = read_u24(&buf) / pow(2, 8);
     uint8_t tr_hdr_ext = read_u8(&buf);
     hdr["TR_HDR_EXT"] = tr_hdr_ext;

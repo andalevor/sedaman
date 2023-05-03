@@ -15,6 +15,7 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
+#include <cstdint>
 ///
 /// \brief General namespace for sedaman library.
 /// 
