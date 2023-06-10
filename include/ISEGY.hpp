@@ -41,11 +41,9 @@ public:
     /// \throws std::ifstream::failure In case of file operations falure
     /// \throws sedaman::Exception
     ///
-    ISEGY(std::string file_name, std::vector<std::map<uint32_t,
-		  std::pair<std::string, Trace::Header::ValueType>>> tr_hdr_over =
-		  {}, std::vector<std::pair<std::string, std::map<uint32_t,
-		  std::pair<std::string, Trace::Header::ValueType>>>> add_hdr_map =
-		  {});
+    ISEGY(std::string file_name, std::vector<std::pair<std::string, std::map<uint32_t,
+		  std::pair<std::string, Trace::Header::ValueType>>>> tr_hdr_map =
+		  CommonSEGY::default_trace_header);
     ///
     /// \brief Construct a new ISEGY object
     /// 
@@ -60,11 +58,9 @@ public:
     /// \throws sedaman::Exception
     ///
     ISEGY(std::string file_name, CommonSEGY::BinaryHeader binary_header,
-        std::vector<std::map<uint32_t, std::pair<std::string,
-	   	Trace::Header::ValueType>>> tr_hdr_over = {},
         std::vector<std::pair<std::string, std::map<uint32_t,
-	   	std::pair<std::string, Trace::Header::ValueType>>>> add_hdr_map =
-	   	{});
+	   	std::pair<std::string, Trace::Header::ValueType>>>> hdr_map =
+	   	CommonSEGY::default_trace_header);
     ///
     /// \brief creates ISEGY instance internally and returns binary header.
     /// Could be used to get binary header from file to override some values.

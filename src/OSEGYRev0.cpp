@@ -2,15 +2,19 @@
 #include "Exception.hpp"
 #include <cstring>
 #include <functional>
+#include <vector>
 
 using std::function;
 using std::get;
 using std::holds_alternative;
 using std::make_unique;
+using std::map;
 using std::memcmp;
 using std::move;
+using std::pair;
 using std::streampos;
 using std::string;
+using std::vector;
 
 namespace sedaman {
 class OSEGYRev0::Impl {
@@ -97,8 +101,10 @@ void OSEGYRev0::write_trace(Trace& tr)
     pimpl->write_trace(tr);
 }
 
-OSEGYRev0::OSEGYRev0(string name, string th, CommonSEGY::BinaryHeader bh)
-    : OSEGY { move(name), move(bh), {} }
+OSEGYRev0::OSEGYRev0(string name, string th, CommonSEGY::BinaryHeader bh,
+					 vector<pair<string, map<uint32_t,
+			 		 pair<string, Trace::Header::ValueType>>>> tr_hdrs_map)
+    : OSEGY { move(name), move(bh), move(tr_hdrs_map) }
     , pimpl { make_unique<Impl>(*this, move(th)) }
 {
 }

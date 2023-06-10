@@ -5,6 +5,7 @@
 #include "util.hpp"
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <ios>
@@ -24,30 +25,25 @@ using std::streamoff;
 using std::streampos;
 using std::streamsize;
 using std::string;
-using std::to_string;
 using std::unordered_map;
 using std::vector;
 
 namespace sedaman {
 class ISEGY::Impl {
 public:
-    Impl(string name, vector<map<uint32_t,
-		 pair<string, Trace::Header::ValueType>>> tr_hdr_over,
-		 vector<pair<string, map<uint32_t,
- 		 pair<string, Trace::Header::ValueType>>>> add_hdr_map)
+    Impl(string name, vector<pair<string, map<uint32_t,
+ 		 pair<string, Trace::Header::ValueType>>>> hdr_map)
 		: common { move(name), fstream::in | fstream::binary, {},
-		   	move(add_hdr_map) }	, tr_hdr_io_map { move(tr_hdr_over) }
+		   	move(hdr_map) }
     {
         initialization(false);
     }
 
     Impl(string name, CommonSEGY::BinaryHeader bh,
-        vector<map<uint32_t, pair<string,
-	   	Trace::Header::ValueType>>> tr_hdr_over,
         vector<pair<string, map<uint32_t, pair<string,
-	   	Trace::Header::ValueType>>>> add_hdr_map)
+	   	Trace::Header::ValueType>>>> hdr_map)
         : common { move(name), fstream::in | fstream::binary,
-		   	move(bh), move(add_hdr_map) }, tr_hdr_io_map { move(tr_hdr_over) }
+		   	move(bh), move(hdr_map) }
     {
         initialization(true);
     }
@@ -56,8 +52,6 @@ public:
     streampos first_trace_pos;
     streampos curr_pos;
     streampos end_of_data;
-    vector<map<uint32_t, pair<string,
-	   	Trace::Header::ValueType>>> tr_hdr_io_map;
     unordered_map<string, Trace::Header::Value> read_trc_header();
     function<vector<double>(unordered_map<string, Trace::Header::Value>&)>
 	   	read_trc_smpls;
@@ -84,15 +78,13 @@ private:
     function<double(char const** buf)> dbl_from_IEEE_float;
     function<double(char const** buf)> dbl_from_IEEE_double;
     void initialization(bool override_bin_hdr);
-    void fill_bin_header(char const* buf);
+    void fill_bin_header(char const* buf, bool override_bin_hdr);
     void assign_raw_readers();
     void assign_sample_reader();
     void read_ext_text_headers();
     void assign_bytes_per_sample();
     void read_trailer_stanzas();
     void fill_buf_from_file(char* buf, streamsize n);
-    void check_tr_hdr_over();
-    void check_add_tr_hdr_map();
 };
 
 void ISEGY::Impl::initialization(bool override_bin_hdr)
@@ -102,13 +94,12 @@ void ISEGY::Impl::initialization(bool override_bin_hdr)
     common.text_headers.emplace_back(text_buf, CommonSEGY::TEXT_HEADER_SIZE);
     char bin_buf[CommonSEGY::BIN_HEADER_SIZE];
     common.file.read(bin_buf, CommonSEGY::BIN_HEADER_SIZE);
-    check_tr_hdr_over();
-    if (!override_bin_hdr)
-        fill_bin_header(bin_buf);
-    check_add_tr_hdr_map();
+	fill_bin_header(bin_buf, override_bin_hdr);
     assign_sample_reader();
     assign_bytes_per_sample();
     read_ext_text_headers();
+	char const *pos = common.hdr_buf;
+	read_i32(&pos);
     if (common.binary_header.byte_off_of_first_tr) {
         first_trace_pos =
 		   	static_cast<long>(common.binary_header.byte_off_of_first_tr);
@@ -124,17 +115,17 @@ void ISEGY::Impl::initialization(bool override_bin_hdr)
     curr_pos = first_trace_pos;
     common.samp_buf.resize(static_cast<decltype(common.samp_buf.size())>(
         common.samp_per_tr * common.bytes_per_sample));
-    if (common.binary_header.fixed_tr_length ||
-	   	common.binary_header.SEGY_rev_major_ver == 0)
-        read_trc_smpls =
-		   	[this](unordered_map<string,
+	if (common.binary_header.fixed_tr_length ||
+		common.binary_header.SEGY_rev_major_ver == 0)
+		read_trc_smpls =
+			[this](unordered_map<string,
 				   Trace::Header::Value>& hdr)
-		   	{ (void)hdr; return read_trc_smpls_fix(); };
-    else
-        read_trc_smpls =
-		   	[this](unordered_map<string,
+			{ (void)hdr; return read_trc_smpls_fix(); };
+	else
+		read_trc_smpls =
+			[this](unordered_map<string,
 				   Trace::Header::Value>& hdr)
-		   	{ return read_trc_smpls_var(hdr); };
+			{ return read_trc_smpls_var(hdr); };
 }
 
 void ISEGY::Impl::fill_buf_from_file(char* buf, streamsize n)
@@ -149,10 +140,12 @@ void ISEGY::Impl::file_skip_bytes(streamoff off)
     curr_pos = common.file.tellg();
 }
 
-void ISEGY::Impl::fill_bin_header(char const* buf)
+void ISEGY::Impl::fill_bin_header(char const* buf, bool override_bin_hdr)
 {
     memcpy(&common.binary_header.endianness, buf + 96, sizeof(int32_t));
     assign_raw_readers();
+    if (override_bin_hdr)
+		return;
     common.binary_header.job_id = read_i32(&buf);
     common.binary_header.line_num = read_i32(&buf);
     common.binary_header.reel_num = read_i32(&buf);
@@ -453,350 +446,60 @@ void ISEGY::Impl::assign_bytes_per_sample()
 
 unordered_map<string, Trace::Header::Value> ISEGY::Impl::read_trc_header()
 {
-    fill_buf_from_file(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
-    char const* buf = common.hdr_buf;
     unordered_map<string, Trace::Header::Value> hdr;
-    if (tr_hdr_io_map.empty()) {
-        hdr["TRC_SEQ_LINE"] = read_i32(&buf);
-        hdr["TRC_SEQ_SGY"] = read_i32(&buf);
-        hdr["FFID"] = read_i32(&buf);
-        hdr["CHAN"] = read_i32(&buf);
-        hdr["ESP"] = read_i32(&buf);
-        hdr["ENS_NO"] = read_i32(&buf);
-        hdr["SEQ_NO"] = read_i32(&buf);
-        hdr["TRACE_ID"] = read_i16(&buf);
-        hdr["VERT_SUM"] = read_i16(&buf);
-        hdr["HOR_SUM"] = read_i16(&buf);
-        hdr["DATA_USE"] = read_i16(&buf);
-        hdr["OFFSET"] = read_i32(&buf);
-        hdr["R_ELEV"] = read_i32(&buf);
-        hdr["S_ELEV"] = read_i32(&buf);
-        hdr["S_DEPTH"] = read_i32(&buf);
-        hdr["R_DATUM"] = read_i32(&buf);
-        hdr["S_DATUM"] = read_i32(&buf);
-        hdr["S_WATER"] = read_i32(&buf);
-        hdr["R_WATER"] = read_i32(&buf);
-        hdr["ELEV_SCALAR"] = read_i16(&buf);
-        hdr["COORD_SCALAR"] = read_i16(&buf);
-        hdr["SOU_X"] = read_i32(&buf);
-        hdr["SOU_Y"] = read_i32(&buf);
-        hdr["REC_X"] = read_i32(&buf);
-        hdr["REC_Y"] = read_i32(&buf);
-        hdr["COORD_UNITS"] = read_i16(&buf);
-        hdr["WEATH_VEL"] = read_i16(&buf);
-        hdr["SUBWEATH_VEL"] = read_i16(&buf);
-        hdr["S_UPHOLE"] = read_i16(&buf);
-        hdr["R_UPHOLE"] = read_i16(&buf);
-        hdr["S_STAT"] = read_i16(&buf);
-        hdr["R_STAT"] = read_i16(&buf);
-        hdr["TOT_STAT"] = read_i16(&buf);
-        hdr["LAG_A"] = read_i16(&buf);
-        hdr["LAG_B"] = read_i16(&buf);
-        hdr["DELAY_TIME"] = read_i16(&buf);
-        hdr["MUTE_START"] = read_i16(&buf);
-        hdr["MUTE_END"] = read_i16(&buf);
-        hdr["SAMP_NUM"] = read_i16(&buf);
-        hdr["SAMP_INT"] = read_i16(&buf);
-        hdr["GAIN_TYPE"] = read_i16(&buf);
-        hdr["GAIN_CONST"] = read_i16(&buf);
-        hdr["INIT_GAIN"] = read_i16(&buf);
-        hdr["CORRELATED"] = read_i16(&buf);
-        hdr["SW_START"] = read_i16(&buf);
-        hdr["SW_END"] = read_i16(&buf);
-        hdr["SW_LENGTH"] = read_i16(&buf);
-        hdr["SW_TYPE"] = read_i16(&buf);
-        hdr["SW_TAPER_START"] = read_i16(&buf);
-        hdr["SW_TAPER_END"] = read_i16(&buf);
-        hdr["TAPER_TYPE"] = read_i16(&buf);
-        hdr["ALIAS_FILT_FREQ"] = read_i16(&buf);
-        hdr["ALIAS_FILT_SLOPE"] = read_i16(&buf);
-        hdr["NOTCH_FILT_FREQ"] = read_i16(&buf);
-        hdr["NOTCH_FILT_SLOPE"] = read_i16(&buf);
-        hdr["LOW_CUT_FREQ"] = read_i16(&buf);
-        hdr["HIGH_CUT_FREQ"] = read_i16(&buf);
-        hdr["LOW_CUT_SLOPE"] = read_i16(&buf);
-        hdr["HIGH_CUT_SLOPE"] = read_i16(&buf);
-        hdr["YEAR"] = read_i16(&buf);
-        hdr["DAY"] = read_i16(&buf);
-        hdr["HOUR"] = read_i16(&buf);
-        hdr["MINUTE"] = read_i16(&buf);
-        hdr["SECOND"] = read_i16(&buf);
-        hdr["TIME_BASIS_CODE"] = read_i16(&buf);
-        hdr["TRACE_WEIGHT"] = read_i16(&buf);
-        hdr["GROUP_NUM_ROLL"] = read_i16(&buf);
-        hdr["GROUP_NUM_FIRST"] = read_i16(&buf);
-        hdr["GROUP_NUM_LAST"] = read_i16(&buf);
-        hdr["GAP_SIZE"] = read_i16(&buf);
-        hdr["OVER_TRAVEL"] = read_i16(&buf);
-        hdr["CDP_X"] = read_i32(&buf);
-        hdr["CDP_Y"] = read_i32(&buf);
-        hdr["INLINE"] = read_i32(&buf);
-        hdr["XLINE"] = read_i32(&buf);
-        hdr["SP_NUM"] = read_i32(&buf);
-        hdr["SP_NUM_SCALAR"] = read_i16(&buf);
-        hdr["TR_VAL_UNIT"] = read_i16(&buf);
-        int32_t mant = read_i32(&buf);
-        hdr["TRANS_CONST"] = mant * pow(10, read_i16(&buf));
-        hdr["TRANS_UNITS"] = read_i16(&buf);
-        hdr["DEVICE_ID"] = read_i16(&buf);
-        hdr["TIME_SCALAR"] = read_i16(&buf);
-        hdr["SOURCE_TYPE"] = read_i16(&buf);
-        hdr["SOU_V_DIR"] = read_i16(&buf);
-        hdr["SOU_X_DIR"] = read_i16(&buf);
-        hdr["SOU_I_DIR"] = read_i16(&buf);
-        mant = read_i32(&buf);
-        hdr["SOURCE_MEASUREMENT"] = mant * pow(10, read_i16(&buf));
-        hdr["SOU_MEAS_UNIT"] = read_i16(&buf);
-        if (common.binary_header.max_num_add_tr_headers) {
-            fill_buf_from_file(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
-            char const* buf = common.hdr_buf;
-            hdr["TRC_SEQ_LINE"] = static_cast<int64_t>(read_u64(&buf));
-            hdr["TRC_SEQ_SGY"] = static_cast<int64_t>(read_u64(&buf));
-            hdr["FFID"] = static_cast<int64_t>(read_u64(&buf));
-            hdr["ENS_NO"] = static_cast<int64_t>(read_u64(&buf));
-            hdr["R_ELEV"] = dbl_from_IEEE_double(&buf);
-            hdr["R_DEPTH"] = dbl_from_IEEE_double(&buf);
-            hdr["S_DEPTH"] = dbl_from_IEEE_double(&buf);
-            hdr["R_DATUM"] = dbl_from_IEEE_double(&buf);
-            hdr["S_DATUM"] = dbl_from_IEEE_double(&buf);
-            hdr["S_WATER"] = dbl_from_IEEE_double(&buf);
-            hdr["R_WATER"] = dbl_from_IEEE_double(&buf);
-            hdr["SOU_X"] = dbl_from_IEEE_double(&buf);
-            hdr["SOU_Y"] = dbl_from_IEEE_double(&buf);
-            hdr["REC_X"] = dbl_from_IEEE_double(&buf);
-            hdr["REC_Y"] = dbl_from_IEEE_double(&buf);
-            hdr["OFFSET"] = dbl_from_IEEE_double(&buf);
-            hdr["SAMP_NUM"] = read_u32(&buf);
-            hdr["NANOSECOND"] = read_i32(&buf);
-            double samp_int = dbl_from_IEEE_double(&buf);
-            if (samp_int)
-                hdr["SAMP_INT"] = samp_int;
-            hdr["CABLE_NUM"] = read_i32(&buf);
-            uint16_t add_trc_hdr_num = read_u16(&buf);
-            if (!add_trc_hdr_num)
-                hdr["ADD_TRC_HDR_NUM"] = common.binary_header
-					.max_num_add_tr_headers;
-            else
-                hdr["ADD_TRC_HDR_NUM"] = add_trc_hdr_num;
-            hdr["LAST_TRC_FLAG"] = read_i16(&buf);
-            hdr["CDP_X"] = dbl_from_IEEE_double(&buf);
-            hdr["CDP_Y"] = dbl_from_IEEE_double(&buf);
-            add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
-					   	common.binary_header.max_num_add_tr_headers;
-            for (int32_t i = 0; i < add_trc_hdr_num - 1; ++i) {
-                if (!common.add_tr_hdr_map.empty()) {
-                    fill_buf_from_file(common.hdr_buf,
-                        CommonSEGY::TR_HEADER_SIZE);
-                    for (auto& p : common.add_tr_hdr_map[i].second) {
-                        char const* pos = common.hdr_buf + p.first;
-                        switch (p.second.second) {
-                        case Trace::Header::ValueType::int8_t:
-                            hdr[p.second.first] = read_i8(&pos);
-                            break;
-                        case Trace::Header::ValueType::uint8_t:
-                            hdr[p.second.first] = read_u8(&pos);
-                            break;
-                        case Trace::Header::ValueType::int16_t:
-                            hdr[p.second.first] = read_i16(&pos);
-                            break;
-                        case Trace::Header::ValueType::uint16_t:
-                            hdr[p.second.first] = read_u16(&pos);
-                            break;
-                        case Trace::Header::ValueType::int24_t:
-                            hdr[p.second.first] = read_i24(&pos);
-                            break;
-                        case Trace::Header::ValueType::uint24_t:
-                            hdr[p.second.first] = read_u24(&pos);
-                            break;
-                        case Trace::Header::ValueType::int32_t:
-                            hdr[p.second.first] = read_i32(&pos);
-                            break;
-                        case Trace::Header::ValueType::uint32_t:
-                            hdr[p.second.first] = read_u32(&pos);
-                            break;
-                        case Trace::Header::ValueType::int64_t:
-                            hdr[p.second.first] = read_i64(&pos);
-                            break;
-                        case Trace::Header::ValueType::uint64_t:
-                            hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
-                            break;
-                        case Trace::Header::ValueType::ibm:
-                            hdr[p.second.first] = dbl_from_ibm_float(&pos);
-                            break;
-                        case Trace::Header::ValueType::ieee_single:
-                            hdr[p.second.first] = dbl_from_IEEE_float(&pos);
-                            break;
-                        case Trace::Header::ValueType::ieee_double:
-                            hdr[p.second.first] = dbl_from_IEEE_double(&pos);
-                            break;
-                        }
-                    }
-                } else {
-                    file_skip_bytes(CommonSEGY::TR_HEADER_SIZE);
-                }
-            }
-        }
-    } else {
-        for (auto& p : tr_hdr_io_map[0]) {
-            char const* pos = buf + p.first;
-            switch (p.second.second) {
-            case Trace::Header::ValueType::int8_t:
-                hdr[p.second.first] = read_i8(&pos);
-                break;
-            case Trace::Header::ValueType::uint8_t:
-                hdr[p.second.first] = read_u8(&pos);
-                break;
-            case Trace::Header::ValueType::int16_t:
-                hdr[p.second.first] = read_i16(&pos);
-                break;
-            case Trace::Header::ValueType::uint16_t:
-                hdr[p.second.first] = read_u16(&pos);
-                break;
-            case Trace::Header::ValueType::int24_t:
-                hdr[p.second.first] = read_i24(&pos);
-                break;
-            case Trace::Header::ValueType::uint24_t:
-                hdr[p.second.first] = read_u24(&pos);
-                break;
-            case Trace::Header::ValueType::int32_t:
-                hdr[p.second.first] = read_i32(&pos);
-                break;
-            case Trace::Header::ValueType::uint32_t:
-                hdr[p.second.first] = read_u32(&pos);
-                break;
-            case Trace::Header::ValueType::int64_t:
-                hdr[p.second.first] = read_i64(&pos);
-                break;
-            case Trace::Header::ValueType::uint64_t:
-                hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
-                break;
-            case Trace::Header::ValueType::ibm:
-                hdr[p.second.first] = dbl_from_ibm_float(&pos);
-                break;
-            case Trace::Header::ValueType::ieee_single:
-                hdr[p.second.first] = dbl_from_IEEE_float(&pos);
-                break;
-            case Trace::Header::ValueType::ieee_double:
-                hdr[p.second.first] = dbl_from_IEEE_double(&pos);
-                break;
-            }
-        }
-        if (common.binary_header.max_num_add_tr_headers) {
-            if (tr_hdr_io_map.size() < 2)
-                throw Exception(__FILE__, __LINE__,
-								"size of trace header map vector is 1 but "
-								"number of additional trace header greater "
-								"than 0");
-            fill_buf_from_file(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
-            char const* buf = common.hdr_buf;
-            for (auto& p : tr_hdr_io_map[1]) {
-                char const* pos = buf + p.first;
-                switch (p.second.second) {
-                case Trace::Header::ValueType::int8_t:
-                    hdr[p.second.first] = read_i8(&pos);
-                    break;
-                case Trace::Header::ValueType::uint8_t:
-                    hdr[p.second.first] = read_u8(&pos);
-                    break;
-                case Trace::Header::ValueType::int16_t:
-                    hdr[p.second.first] = read_i16(&pos);
-                    break;
-                case Trace::Header::ValueType::uint16_t:
-                    hdr[p.second.first] = read_u16(&pos);
-                    break;
-                case Trace::Header::ValueType::int24_t:
-                    hdr[p.second.first] = read_i24(&pos);
-                    break;
-                case Trace::Header::ValueType::uint24_t:
-                    hdr[p.second.first] = read_u24(&pos);
-                    break;
-                case Trace::Header::ValueType::int32_t:
-                    hdr[p.second.first] = read_i32(&pos);
-                    break;
-                case Trace::Header::ValueType::uint32_t:
-                    hdr[p.second.first] = read_u32(&pos);
-                    break;
-                case Trace::Header::ValueType::int64_t:
-                    hdr[p.second.first] = read_i64(&pos);
-                    break;
-                case Trace::Header::ValueType::uint64_t:
-                    hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
-                    break;
-                case Trace::Header::ValueType::ibm:
-                    hdr[p.second.first] = dbl_from_ibm_float(&pos);
-                    break;
-                case Trace::Header::ValueType::ieee_single:
-                    hdr[p.second.first] = dbl_from_IEEE_float(&pos);
-                    break;
-                case Trace::Header::ValueType::ieee_double:
-                    hdr[p.second.first] = dbl_from_IEEE_double(&pos);
-                    break;
-                }
-            }
-            if (common.binary_header.max_num_add_tr_headers > 1) {
-                if (!common.add_tr_hdr_map.empty()) {
-                    for (auto& i : common.add_tr_hdr_map) {
-                        fill_buf_from_file(common.hdr_buf,
-										   CommonSEGY::TR_HEADER_SIZE);
-                        char const* buf = common.hdr_buf;
-                        for (auto& p : i.second) {
-                            char const* pos = buf + p.first;
-                            switch (p.second.second) {
-                            case Trace::Header::ValueType::int8_t:
-                                hdr[p.second.first] = read_i8(&pos);
-                                break;
-                            case Trace::Header::ValueType::uint8_t:
-                                hdr[p.second.first] = read_u8(&pos);
-                                break;
-                            case Trace::Header::ValueType::int16_t:
-                                hdr[p.second.first] = read_i16(&pos);
-                                break;
-                            case Trace::Header::ValueType::uint16_t:
-                                hdr[p.second.first] = read_u16(&pos);
-                                break;
-                            case Trace::Header::ValueType::int24_t:
-                                hdr[p.second.first] = read_i24(&pos);
-                                break;
-                            case Trace::Header::ValueType::uint24_t:
-                                hdr[p.second.first] = read_u24(&pos);
-                                break;
-                            case Trace::Header::ValueType::int32_t:
-                                hdr[p.second.first] = read_i32(&pos);
-                                break;
-                            case Trace::Header::ValueType::uint32_t:
-                                hdr[p.second.first] = read_u32(&pos);
-                                break;
-                            case Trace::Header::ValueType::int64_t:
-                                hdr[p.second.first] = read_i64(&pos);
-                                break;
-                            case Trace::Header::ValueType::uint64_t:
-                                hdr[p.second.first] = static_cast<int64_t>(read_u64(&buf));
-                                break;
-                            case Trace::Header::ValueType::ibm:
-                                hdr[p.second.first] = dbl_from_ibm_float(&pos);
-                                break;
-                            case Trace::Header::ValueType::ieee_single:
-                                hdr[p.second.first] =
-								   	dbl_from_IEEE_float(&pos);
-                                break;
-                            case Trace::Header::ValueType::ieee_double:
-                                hdr[p.second.first] =
-								   	dbl_from_IEEE_double(&pos);
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    int64_t add_trc_hdr_num =
-					   	get<int64_t>(hdr["ADD_TRC_HDR_NUM"]);
-                    add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
-					   	common.binary_header.max_num_add_tr_headers;
-                    file_skip_bytes(add_trc_hdr_num *
-								   	CommonSEGY::TR_HEADER_SIZE);
-                }
-            }
-        }
-    }
+	for (decltype(common.binary_header.max_num_add_tr_headers) i = 0;
+		 i < common.binary_header.max_num_add_tr_headers + 1; ++i) {
+		if (static_cast<decltype(common.tr_hdr_map.size())>(i) <
+		   	common.tr_hdr_map.size()) {
+			fill_buf_from_file(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
+			for (auto& p : common.tr_hdr_map[i].second) {
+				char const* pos = common.hdr_buf + p.first;
+				switch (p.second.second) {
+					case Trace::Header::ValueType::int8_t:
+						hdr[p.second.first] = read_i8(&pos);
+						break;
+					case Trace::Header::ValueType::uint8_t:
+						hdr[p.second.first] = read_u8(&pos);
+						break;
+					case Trace::Header::ValueType::int16_t:
+						hdr[p.second.first] = read_i16(&pos);
+						break;
+					case Trace::Header::ValueType::uint16_t:
+						hdr[p.second.first] = read_u16(&pos);
+						break;
+					case Trace::Header::ValueType::int24_t:
+						hdr[p.second.first] = read_i24(&pos);
+						break;
+					case Trace::Header::ValueType::uint24_t:
+						hdr[p.second.first] = read_u24(&pos);
+						break;
+					case Trace::Header::ValueType::int32_t:
+						hdr[p.second.first] = read_i32(&pos);
+						break;
+					case Trace::Header::ValueType::uint32_t:
+						hdr[p.second.first] = read_u32(&pos);
+						break;
+					case Trace::Header::ValueType::int64_t:
+						hdr[p.second.first] = read_i64(&pos);
+						break;
+					case Trace::Header::ValueType::uint64_t:
+						hdr[p.second.first] = static_cast<int64_t>(read_u64(&pos));
+						break;
+					case Trace::Header::ValueType::ibm:
+						hdr[p.second.first] = dbl_from_ibm_float(&pos);
+						break;
+					case Trace::Header::ValueType::ieee_single:
+						hdr[p.second.first] = dbl_from_IEEE_float(&pos);
+						break;
+					case Trace::Header::ValueType::ieee_double:
+						hdr[p.second.first] = dbl_from_IEEE_double(&pos);
+						break;
+				}
+			}
+		} else {
+			file_skip_bytes(CommonSEGY::TR_HEADER_SIZE);
+		}
+	}
     return hdr;
 }
 
@@ -850,143 +553,6 @@ bool ISEGY::has_trace()
         return true;
 }
 
-void ISEGY::Impl::check_tr_hdr_over()
-{
-    for (auto& j : tr_hdr_io_map) {
-        int first = 1, size = 0;
-        uint32_t prev = 0;
-        for (auto& i : j) {
-            if (first) {
-                prev = i.first;
-                first = 0;
-            } else {
-                switch (i.second.second) {
-                case Trace::Header::ValueType::int8_t:
-                    size = 1;
-                    break;
-                case Trace::Header::ValueType::uint8_t:
-                    size = 1;
-                    break;
-                case Trace::Header::ValueType::int16_t:
-                    size = 2;
-                    break;
-                case Trace::Header::ValueType::uint16_t:
-                    size = 2;
-                    break;
-                case Trace::Header::ValueType::int32_t:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::uint32_t:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::int64_t:
-                    size = 8;
-                    break;
-                case Trace::Header::ValueType::uint64_t:
-                    size = 8;
-                    break;
-                case Trace::Header::ValueType::ibm:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::ieee_single:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::ieee_double:
-                    size = 8;
-                    break;
-                default:
-                    throw Exception(__FILE__, __LINE__,
-									"impossible, unexpected type in "
-									"TrHdrValueType");
-                }
-                if (i.first - prev != static_cast<uint32_t>(size))
-                    throw Exception(__FILE__, __LINE__,
-									string("wrong type/offset in trace header "
-										   "override map: ") +
-								   	to_string(i.first));
-                if (i.first > 224 && i.first + size > 232)
-                    throw Exception(__FILE__, __LINE__,
-                        string("last 8 bytes should be used for header name"));
-                prev = i.first;
-            }
-        }
-    }
-}
-
-void ISEGY::Impl::check_add_tr_hdr_map()
-{
-    int first = 1, size = 0;
-    uint32_t prev = 0;
-    if (common.binary_header.max_num_add_tr_headers &&
-	   	common.add_tr_hdr_map.size() != 
-           static_cast<decltype(common.add_tr_hdr_map.size())>
-           						(common.binary_header.max_num_add_tr_headers))
-        throw Exception(__FILE__, __LINE__,
-            "number of additional trace headers not equal to max number of "
-		   	"headers in binary header");
-    for (auto& p : common.add_tr_hdr_map) {
-        if (p.first.size() != 8)
-            throw Exception(__FILE__, __LINE__,
-						   	"additional trace header name must have "
-						   	"8 bytes length");
-        for (auto& i : p.second) {
-            if (first) {
-                prev = i.first;
-                first = 0;
-            } else {
-                switch (i.second.second) {
-                case Trace::Header::ValueType::int8_t:
-                    size = 1;
-                    break;
-                case Trace::Header::ValueType::uint8_t:
-                    size = 1;
-                    break;
-                case Trace::Header::ValueType::int16_t:
-                    size = 2;
-                    break;
-                case Trace::Header::ValueType::uint16_t:
-                    size = 2;
-                    break;
-                case Trace::Header::ValueType::int32_t:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::uint32_t:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::int64_t:
-                    size = 8;
-                    break;
-                case Trace::Header::ValueType::uint64_t:
-                    size = 8;
-                    break;
-                case Trace::Header::ValueType::ibm:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::ieee_single:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::ieee_double:
-                    size = 8;
-                    break;
-                default:
-                    throw Exception(__FILE__, __LINE__,
-									"impossible, unexpected type in "
-									"TrHdrValueType");
-                }
-                if (i.first - prev != static_cast<uint32_t>(size))
-                    throw Exception(__FILE__, __LINE__,
-									string("wrong type/offset in additional "
-										   "trace headers map: ") +
-								   	to_string(i.first));
-                if (i.first > 224 && i.first + size > 232)
-                    throw Exception(__FILE__, __LINE__,
-                        string("last 8 bytes should be used for header name"));
-                prev = i.first;
-            }
-        }
-    }
-}
-
 vector<string> const& ISEGY::text_headers()
 {
     return pimpl->common.text_headers;
@@ -1002,22 +568,16 @@ CommonSEGY::BinaryHeader const& ISEGY::binary_header()
     return pimpl->common.binary_header;
 }
 
-ISEGY::ISEGY(string name, vector<map<uint32_t, pair<string,
-			 Trace::Header::ValueType>>> tr_hdr_over,
-    vector<pair<string, map<uint32_t, pair<string,
-   	Trace::Header::ValueType>>>> add_hdr_map)
-    : pimpl { make_unique<Impl>(move(name), move(tr_hdr_over),
-							   	move(add_hdr_map)) }
+ISEGY::ISEGY(string name, vector<pair<string, map<uint32_t, pair<string,
+   	Trace::Header::ValueType>>>> hdr_map)
+    : pimpl { make_unique<Impl>(move(name), move(hdr_map)) }
 {
 }
 
 ISEGY::ISEGY(string name, CommonSEGY::BinaryHeader bh,
-    vector<map<uint32_t, pair<string,
-   	Trace::Header::ValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string,
-   	Trace::Header::ValueType>>>> add_hdr_map)
-	: pimpl { make_unique<Impl>(move(name), move(bh), move(tr_hdr_over),
-							   	move(add_hdr_map)) }
+   	Trace::Header::ValueType>>>> hdr_map)
+	: pimpl { make_unique<Impl>(move(name), move(bh), move(hdr_map)) }
 {
 }
 

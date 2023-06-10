@@ -288,307 +288,137 @@ void OSEGY::Impl::write_bin_header()
 
 void OSEGY::Impl::write_trace_header(Trace::Header const& hdr)
 {
-    char* buf = common.hdr_buf;
-    optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TRC_SEQ_SGY");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("FFID");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("CHAN");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ESP");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ENS_NO");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SEQ_NO");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TRACE_ID");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("VERT_SUM");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("HOR_SUM");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("DATA_USE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("OFFSET");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("R_ELEV");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("S_ELEV");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("S_DEPTH");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("R_DATUM");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("S_DATUM");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("S_WATER");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("R_WATER");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ELEV_SCALAR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("COORD_SCALAR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOU_X");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOU_Y");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("REC_X");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("REC_Y");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("COORD_UNITS");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("WEATH_VEL");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SUBWEATH_VEL");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("S_UPHOLE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("R_UPHOLE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("S_STAT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("R_STAT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TOT_STAT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("LAG_A");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("LAG_B");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("DELAY_TIME");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("MUTE_START");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("MUTE_END");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SAMP_NUM");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SAMP_INT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("GAIN_TYPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("GAIN_CONST");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("INIT_GAIN");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("CORRELATED");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SW_START");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SW_END");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SW_LENGTH");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SW_TYPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SW_TAPER_START");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SW_TAPER_END");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TAPER_TYPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ALIAS_FILT_FREQ");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ALIAS_FILT_SLOPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("NOTCH_FILT_FREQ");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("NOTCH_FILT_SLOPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("LOW_CUT_FREQ");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("HIGH_CUT_FREQ");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("LOW_CUT_SLOPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("HIGH_CUT_SLOPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("YEAR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("DAY");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("HOUR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("MINUTE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SECOND");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TIME_BASIS_CODE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TRACE_WEIGHT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("GROUP_NUM_ROLL");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("GROUP_NUM_FIRST");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("GROUP_NUM_LAST");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("GAP_SIZE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("OVER_TRAVEL");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("CDP_X");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("CDP_Y");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("INLINE");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("XLINE");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SP_NUM");
-    write_i32(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SP_NUM_SCALAR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TR_VAL_UNIT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TRANS_CONST");
-    double val = tmp ? get<double>(*tmp) : 1;
-    int16_t exp = log10(val);
-    write_i32(&buf, val / pow(10, exp));
-    write_i16(&buf, exp);
-    tmp = hdr.get("TRANS_UNITS");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("DEVICE_ID");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TIME_SCALAR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOURCE_TYPE");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOU_V_DIR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOU_X_DIR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOU_I_DIR");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SOURCE_MEASUREMENT");
-    val = tmp ? get<double>(*tmp) : 1;
-    exp = log10(val);
-    write_i32(&buf, val / pow(10, exp));
-    write_i16(&buf, exp);
-    tmp = hdr.get("SOU_MEAS_UNIT");
-    write_i16(&buf, tmp ? get<int64_t>(*tmp) : 0);
+    std::memset(common.hdr_buf, 0, CommonSEGY::TR_HEADER_SIZE);
+    optional<Trace::Header::Value> tmp;
+	for (auto& p : common.tr_hdr_map[0].second) {
+		char* pos = common.hdr_buf + p.first;
+		switch (p.second.second) {
+			case Trace::Header::ValueType::int8_t:
+				tmp = hdr.get(p.second.first);
+				write_i8(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::uint8_t:
+				tmp = hdr.get(p.second.first);
+				write_u8(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::int16_t:
+				tmp = hdr.get(p.second.first);
+				write_i16(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::uint16_t:
+				tmp = hdr.get(p.second.first);
+				write_u16(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::int24_t:
+				tmp = hdr.get(p.second.first);
+				write_i24(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::uint24_t:
+				tmp = hdr.get(p.second.first);
+				write_u24(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::int32_t:
+				tmp = hdr.get(p.second.first);
+				write_i32(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::uint32_t:
+				tmp = hdr.get(p.second.first);
+				write_u32(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::int64_t:
+				tmp = hdr.get(p.second.first);
+				write_i64(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::uint64_t:
+				tmp = hdr.get(p.second.first);
+				write_u64(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::ibm:
+				tmp = hdr.get(p.second.first);
+				write_ibm_float(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::ieee_single:
+				tmp = hdr.get(p.second.first);
+				write_IEEE_float(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+			case Trace::Header::ValueType::ieee_double:
+				tmp = hdr.get(p.second.first);
+				write_IEEE_double(&pos, tmp ? get<int64_t>(*tmp) : 0);
+				break;
+		}
+	}
     common.file.write(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
 }
 
 void OSEGY::Impl::write_additional_trace_headers(Trace::Header const& hdr)
 {
     char* buf = common.hdr_buf;
-    std::memset(buf, 0, CommonSEGY::TR_HEADER_SIZE);
-    optional<Trace::Header::Value> tmp = hdr.get("TRC_SEQ_LINE");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("TRC_SEQ_SGY");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("FFID");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ENS_NO");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("R_ELEV");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("R_DEPTH");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("S_DEPTH");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("R_DATUM");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("S_DATUM");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("R_WATER");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("S_WATER");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("SOU_X");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("SOU_Y");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("REC_X");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("REC_Y");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("OFFSET");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("SAMP_NUM");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("NANOSECOND");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("SAMP_INT");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("CABLE_NUM");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("ADD_TRC_HDR_NUM");
-    uint16_t add_trc_hdr_num = tmp ? get<int64_t>(*tmp) : 0;
-    add_trc_hdr_num = add_trc_hdr_num ? add_trc_hdr_num :
-	   	common.binary_header.max_num_add_tr_headers;
-    write_u64(&buf, add_trc_hdr_num);
-    tmp = hdr.get("LAST_TRC_FLAG");
-    write_u64(&buf, tmp ? get<int64_t>(*tmp) : 0);
-    tmp = hdr.get("CDP_X");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    tmp = hdr.get("CDP_Y");
-    write_IEEE_double(&buf, tmp ? get<double>(*tmp) : 0);
-    common.file.write(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
-    for (int i = 0; i < add_trc_hdr_num - 1; ++i) {
-        std::memset(common.hdr_buf, 0, CommonSEGY::TR_HEADER_SIZE);
-        if (common.add_tr_hdr_map.size()) {
-            // for each item in map
-            for (auto& item : common.add_tr_hdr_map[i].second) {
-                tmp = hdr.get(item.second.first);
-                if (tmp == std::nullopt)
-                    throw Exception(__FILE__, __LINE__,
-                    "no such header in trace");
-                char* pos = common.hdr_buf + item.first;
-                switch (item.second.second) {
-                case Trace::Header::ValueType::int8_t:
-                    write_i8(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::uint8_t:
-                    write_u8(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::int16_t:
-                    write_i16(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::uint16_t:
-                    write_u16(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::int24_t:
-                    write_i24(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::uint24_t:
-                    write_u24(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::int32_t:
-                    write_i32(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::uint32_t:
-                    write_u32(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::int64_t:
-                    write_i64(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::uint64_t:
-                    write_u64(&pos, get<int64_t>(*tmp));
-                    break;
-                case Trace::Header::ValueType::ibm:
-                    write_ibm_float(&pos, get<double>(*tmp));
-                    break;
-                case Trace::Header::ValueType::ieee_single:
-                    write_IEEE_float(&pos, get<double>(*tmp));
-                    break;
-                case Trace::Header::ValueType::ieee_double:
-                    write_IEEE_double(&pos, get<double>(*tmp));
-                    break;
-                }
-            }
-            // copy additional trace header name
-            std::memcpy(common.hdr_buf + 232,
-            common.add_tr_hdr_map[i].first.c_str(),
-            common.add_tr_hdr_map[i].first.size());
-        }
-        common.file.write(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
-    }
+	for (decltype(common.binary_header.max_num_add_tr_headers) i = 1;
+		 i < common.binary_header.max_num_add_tr_headers; ++i) {
+		std::memset(buf, 0, CommonSEGY::TR_HEADER_SIZE);
+		if (static_cast<decltype(common.tr_hdr_map.size())>(i) <
+		   	common.tr_hdr_map.size()) {
+			for (auto& p : common.tr_hdr_map[i].second) {
+				optional<Trace::Header::Value> tmp;
+				char* pos = common.hdr_buf + p.first;
+				switch (p.second.second) {
+					case Trace::Header::ValueType::int8_t:
+						tmp = hdr.get(p.second.first);
+						write_i8(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::uint8_t:
+						tmp = hdr.get(p.second.first);
+						write_u8(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::int16_t:
+						tmp = hdr.get(p.second.first);
+						write_i16(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::uint16_t:
+						tmp = hdr.get(p.second.first);
+						write_u16(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::int24_t:
+						tmp = hdr.get(p.second.first);
+						write_i24(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::uint24_t:
+						tmp = hdr.get(p.second.first);
+						write_u24(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::int32_t:
+						tmp = hdr.get(p.second.first);
+						write_i32(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::uint32_t:
+						tmp = hdr.get(p.second.first);
+						write_u32(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::int64_t:
+						tmp = hdr.get(p.second.first);
+						write_i64(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::uint64_t:
+						tmp = hdr.get(p.second.first);
+						write_u64(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::ibm:
+						tmp = hdr.get(p.second.first);
+						write_ibm_float(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::ieee_single:
+						tmp = hdr.get(p.second.first);
+						write_IEEE_float(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+					case Trace::Header::ValueType::ieee_double:
+						tmp = hdr.get(p.second.first);
+						write_IEEE_double(&pos, tmp ? get<int64_t>(*tmp) : 0);
+						break;
+				}
+			}
+		}
+		common.file.write(common.hdr_buf, CommonSEGY::TR_HEADER_SIZE);
+	}
 }
 
 void OSEGY::Impl::write_ext_text_headers()

@@ -13,102 +13,217 @@ using std::vector;
 
 namespace sedaman {
 
-static void check_add_tr_hdr_map(CommonSEGY* com);
+static void check_tr_hdr_map(CommonSEGY* com);
 
 CommonSEGY::CommonSEGY(string name, ios_base::openmode mode, BinaryHeader bh,
     vector<pair<string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>
-   	add_hdr_map)
+   	hdr_map)
     : binary_header { move(bh) }
     , file_name { move(name) }
     , hdr_buf {}
-    , add_tr_hdr_map { move(add_hdr_map) }
+    , tr_hdr_map { move(hdr_map) }
 {
     fstream fl;
     fl.exceptions(fstream::failbit | fstream::badbit);
     fl.open(file_name, mode);
     file = move(fl);
-    check_add_tr_hdr_map(this);
+    check_tr_hdr_map(this);
 }
 
-void check_add_tr_hdr_map(CommonSEGY* com)
+void check_tr_hdr_map(CommonSEGY* com)
 {
-    int first = 1, size = 0;
-    uint32_t prev = 0;
     if (com->binary_header.max_num_add_tr_headers &&
-	   	com->add_tr_hdr_map.size() != 
-           static_cast<decltype(com->add_tr_hdr_map.size())>
+	   	com->tr_hdr_map.size() - 1 != 
+           static_cast<decltype(com->tr_hdr_map.size())>
            						(com->binary_header.max_num_add_tr_headers))
         throw Exception(__FILE__, __LINE__,
             "number of additional trace headers not equal to max number of "
 		   	"headers in binary header");
-    for (auto& p : com->add_tr_hdr_map) {
+    for (auto& p : com->tr_hdr_map) {
+		int first = 1, size = 0, prev_size = 0;
+		uint32_t prev = 0;
         if (p.first.size() != 8)
             throw Exception(__FILE__, __LINE__,
 						   	"additional trace header name must have "
 						   	"8 bytes length");
         for (auto& i : p.second) {
-            if (first) {
-                prev = i.first;
-                first = 0;
-            } else {
-                switch (i.second.second) {
-                case Trace::Header::ValueType::int8_t:
-                    size = 1;
-                    break;
-                case Trace::Header::ValueType::uint8_t:
-                    size = 1;
-                    break;
-                case Trace::Header::ValueType::int16_t:
-                    size = 2;
-                    break;
-                case Trace::Header::ValueType::uint16_t:
-                    size = 2;
-                    break;
-                case Trace::Header::ValueType::int24_t:
-                    size = 3;
-                    break;
-                case Trace::Header::ValueType::uint24_t:
-                    size = 3;
-                    break;
-                case Trace::Header::ValueType::int32_t:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::uint32_t:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::int64_t:
-                    size = 8;
-                    break;
-                case Trace::Header::ValueType::uint64_t:
-                    size = 8;
-                    break;
-                case Trace::Header::ValueType::ibm:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::ieee_single:
-                    size = 4;
-                    break;
-                case Trace::Header::ValueType::ieee_double:
-                    size = 8;
-                    break;
-                default:
-                    throw Exception(__FILE__, __LINE__,
+			switch (i.second.second) {
+				case Trace::Header::ValueType::int8_t:
+				case Trace::Header::ValueType::uint8_t:
+					size = 1;
+					break;
+				case Trace::Header::ValueType::int16_t:
+				case Trace::Header::ValueType::uint16_t:
+					size = 2;
+					break;
+				case Trace::Header::ValueType::int24_t:
+				case Trace::Header::ValueType::uint24_t:
+					size = 3;
+					break;
+				case Trace::Header::ValueType::int32_t:
+				case Trace::Header::ValueType::uint32_t:
+					size = 4;
+					break;
+				case Trace::Header::ValueType::int64_t:
+				case Trace::Header::ValueType::uint64_t:
+					size = 8;
+					break;
+				case Trace::Header::ValueType::ibm:
+				case Trace::Header::ValueType::ieee_single:
+					size = 4;
+					break;
+				case Trace::Header::ValueType::ieee_double:
+					size = 8;
+					break;
+				default:
+					throw Exception(__FILE__, __LINE__,
 									"impossible, unexpected type in "
 									"TrHdrValueType");
-                }
-                if (i.first - prev < static_cast<uint32_t>(size))
+			}
+			if (first) {
+                prev = i.first;
+				prev_size = size;
+                first = 0;
+            } else {
+                if (i.first - prev < static_cast<uint32_t>(prev_size))
                     throw Exception(__FILE__, __LINE__,
 									string("overlapping type/offset in "
-                                    "additional trace headers map: ") +
+                                    "trace headers map: ") +
 								   	to_string(i.first));
-                if (i.first + size > 232)
+                if (i.first + size > 240)
                     throw Exception(__FILE__, __LINE__,
-                        string("last 8 bytes should be used for header name"));
+                        string("trace header has only 240 bytes"));
                 prev = i.first;
+				prev_size = size;
             }
         }
     }
 }
+
+vector<pair<string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>
+CommonSEGY::default_trace_header = {
+	{"SEG00000", {
+	{0, {"TRC_SEQ_LINE", Trace::Header::ValueType::int32_t}},
+	{4, {"TRC_SEQ_SGY", Trace::Header::ValueType::int32_t}},
+	{8, {"FFID", Trace::Header::ValueType::int32_t}},
+	{12, {"CHAN", Trace::Header::ValueType::int32_t}},
+	{16, {"ESP", Trace::Header::ValueType::int32_t}},
+	{20, {"ENS_NO", Trace::Header::ValueType::int32_t}},
+	{24, {"SEQ_NO", Trace::Header::ValueType::int32_t}},
+	{28, {"TRACE_ID", Trace::Header::ValueType::int16_t}},
+	{30, {"VERT_SUM", Trace::Header::ValueType::int16_t}},
+	{32, {"HOR_SUM", Trace::Header::ValueType::int16_t}},
+	{34, {"DATA_USE", Trace::Header::ValueType::int16_t}},
+	{36, {"OFFSET", Trace::Header::ValueType::int32_t}},
+	{40, {"R_ELEV", Trace::Header::ValueType::int32_t}},
+	{44, {"S_ELEV", Trace::Header::ValueType::int32_t}},
+	{48, {"S_DEPTH", Trace::Header::ValueType::int32_t}},
+	{52, {"R_DATUM", Trace::Header::ValueType::int32_t}},
+	{56, {"S_DATUM", Trace::Header::ValueType::int32_t}},
+	{60, {"S_WATER", Trace::Header::ValueType::int32_t}},
+	{64, {"R_WATER", Trace::Header::ValueType::int32_t}},
+	{68, {"ELEV_SCALAR", Trace::Header::ValueType::int16_t}},
+	{70, {"COORD_SCALAR", Trace::Header::ValueType::int16_t}},
+	{72, {"SOU_X", Trace::Header::ValueType::int32_t}},
+	{76, {"SOU_Y", Trace::Header::ValueType::int32_t}},
+	{80, {"REC_X", Trace::Header::ValueType::int32_t}},
+	{84, {"REC_Y", Trace::Header::ValueType::int32_t}},
+	{88, {"COORD_UNITS", Trace::Header::ValueType::int16_t}},
+	{90, {"WEATH_VEL", Trace::Header::ValueType::int16_t}},
+	{92, {"SUBWEATH_VEL", Trace::Header::ValueType::int16_t}},
+	{94, {"S_UPHOLE", Trace::Header::ValueType::int16_t}},
+	{96, {"R_UPHOLE", Trace::Header::ValueType::int16_t}},
+	{98, {"S_STAT", Trace::Header::ValueType::int16_t}},
+	{100, {"R_STAT", Trace::Header::ValueType::int16_t}},
+	{102, {"TOT_STAT", Trace::Header::ValueType::int16_t}},
+	{104, {"LAG_A", Trace::Header::ValueType::int16_t}},
+	{106, {"LAG_B", Trace::Header::ValueType::int16_t}},
+	{108, {"DELAY_TIME", Trace::Header::ValueType::int16_t}},
+	{110, {"MUTE_START", Trace::Header::ValueType::int16_t}},
+	{112, {"MUTE_END", Trace::Header::ValueType::int16_t}},
+	{114, {"SAMP_NUM", Trace::Header::ValueType::int16_t}},
+	{116, {"SAMP_INT", Trace::Header::ValueType::int16_t}},
+	{118, {"GAIN_TYPE", Trace::Header::ValueType::int16_t}},
+	{120, {"GAIN_CONST", Trace::Header::ValueType::int16_t}},
+	{122, {"INIT_GAIN", Trace::Header::ValueType::int16_t}},
+	{124, {"CORRELATED", Trace::Header::ValueType::int16_t}},
+	{126, {"SW_START", Trace::Header::ValueType::int16_t}},
+	{128, {"SW_END", Trace::Header::ValueType::int16_t}},
+	{130, {"SW_LENGTH", Trace::Header::ValueType::int16_t}},
+	{132, {"SW_TYPE", Trace::Header::ValueType::int16_t}},
+	{134, {"SW_TAPER_START", Trace::Header::ValueType::int16_t}},
+	{136, {"SW_TAPER_END", Trace::Header::ValueType::int16_t}},
+	{138, {"TAPER_TYPE", Trace::Header::ValueType::int16_t}},
+	{140, {"ALIAS_FILT_FREQ", Trace::Header::ValueType::int16_t}},
+	{142, {"ALIAS_FILT_SLOPE", Trace::Header::ValueType::int16_t}},
+	{144, {"NOTCH_FILT_FREQ", Trace::Header::ValueType::int16_t}},
+	{146, {"NOTCH_FILT_SLOPE", Trace::Header::ValueType::int16_t}},
+	{148, {"LOW_CUT_FREQ", Trace::Header::ValueType::int16_t}},
+	{150, {"HIGH_CUT_FREQ", Trace::Header::ValueType::int16_t}},
+	{152, {"LOW_CUT_SLOPE", Trace::Header::ValueType::int16_t}},
+	{154, {"HIGH_CUT_SLOPE", Trace::Header::ValueType::int16_t}},
+	{156, {"YEAR", Trace::Header::ValueType::int16_t}},
+	{158, {"DAY", Trace::Header::ValueType::int16_t}},
+	{160, {"HOUR", Trace::Header::ValueType::int16_t}},
+	{162, {"MINUTE", Trace::Header::ValueType::int16_t}},
+	{164, {"SECOND", Trace::Header::ValueType::int16_t}},
+	{166, {"TIME_BASIS_CODE", Trace::Header::ValueType::int16_t}},
+	{168, {"TRACE_WEIGHT", Trace::Header::ValueType::int16_t}},
+	{170, {"GROUP_NUM_ROLL", Trace::Header::ValueType::int16_t}},
+	{172, {"GROUP_NUM_FIRST", Trace::Header::ValueType::int16_t}},
+	{174, {"GROUP_NUM_LAST", Trace::Header::ValueType::int16_t}},
+	{176, {"GAP_SIZE", Trace::Header::ValueType::int16_t}},
+	{178, {"OVER_TRAVEL", Trace::Header::ValueType::int16_t}},
+	{180, {"CDP_X", Trace::Header::ValueType::int32_t}},
+	{184, {"CDP_Y", Trace::Header::ValueType::int32_t}},
+	{188, {"INLINE", Trace::Header::ValueType::int32_t}},
+	{192, {"XLINE", Trace::Header::ValueType::int32_t}},
+	{196, {"SP_NUM", Trace::Header::ValueType::int32_t}},
+	{200, {"SP_NUM_SCALAR", Trace::Header::ValueType::int16_t}},
+	{202, {"TR_VAL_UNIT", Trace::Header::ValueType::int16_t}},
+	{204, {"TRANS_CONST_MANT", Trace::Header::ValueType::int32_t}},
+	{208, {"TRANS_CONST_EXP", Trace::Header::ValueType::int16_t}},
+	{210, {"TRANS_UNITS", Trace::Header::ValueType::int16_t}},
+	{212, {"DEVICE_ID", Trace::Header::ValueType::int16_t}},
+	{214, {"TIME_SCALAR", Trace::Header::ValueType::int16_t}},
+	{216, {"SOURCE_TYPE", Trace::Header::ValueType::int16_t}},
+	{218, {"SOU_V_DIR", Trace::Header::ValueType::int16_t}},
+	{220, {"SOU_X_DIR", Trace::Header::ValueType::int16_t}},
+	{222, {"SOU_I_DIR", Trace::Header::ValueType::int16_t}},
+	{224, {"SOURCE_MEASUREMENT_MANT", Trace::Header::ValueType::int32_t}},
+	{228, {"SOURCE_MEASUREMENT_EXP", Trace::Header::ValueType::int16_t}},
+	{230, {"SOU_MEAS_UNIT", Trace::Header::ValueType::int16_t}},
+				 }
+	},
+	{"SEG00001", {
+	   	{0, {"TRC_SEQ_LINE", Trace::Header::ValueType::uint64_t}},
+	   	{8, {"TRC_SEQ_SGY", Trace::Header::ValueType::uint64_t}},
+	   	{16, {"FFID", Trace::Header::ValueType::uint64_t}},
+	   	{24, {"ENS_NO", Trace::Header::ValueType::uint64_t}},
+	   	{32, {"R_ELEV", Trace::Header::ValueType::ieee_double}},
+	   	{40, {"R_DEPTH", Trace::Header::ValueType::ieee_double}},
+	   	{48, {"S_ELEV", Trace::Header::ValueType::ieee_double}},
+	   	{56, {"S_DEPTH", Trace::Header::ValueType::ieee_double}},
+	   	{64, {"R_DATUM", Trace::Header::ValueType::ieee_double}},
+	   	{72, {"S_DATUM", Trace::Header::ValueType::ieee_double}},
+	   	{80, {"S_WATER", Trace::Header::ValueType::ieee_double}},
+	   	{88, {"R_WATER", Trace::Header::ValueType::ieee_double}},
+	   	{96, {"SOU_X", Trace::Header::ValueType::ieee_double}},
+	   	{104, {"SOU_Y", Trace::Header::ValueType::ieee_double}},
+	   	{112, {"REC_X", Trace::Header::ValueType::ieee_double}},
+	   	{120, {"REC_Y", Trace::Header::ValueType::ieee_double}},
+	   	{128, {"OFFSET", Trace::Header::ValueType::ieee_double}},
+	   	{136, {"SAMP_NUM", Trace::Header::ValueType::int32_t}},
+	   	{140, {"NANOSECOND", Trace::Header::ValueType::int32_t}},
+	   	{144, {"SAMP_INT", Trace::Header::ValueType::ieee_double}},
+	   	{152, {"CABLE_NUM", Trace::Header::ValueType::int32_t}},
+	   	{156, {"ADD_TRC_HDR_NUM", Trace::Header::ValueType::int16_t}},
+	   	{158, {"LAST_TRC_FLAG", Trace::Header::ValueType::int16_t}},
+	   	{160, {"CDP_X", Trace::Header::ValueType::ieee_double}},
+	   	{168, {"CDP_Y", Trace::Header::ValueType::ieee_double}},
+				 }
+	}
+};
 
 static uint8_t constexpr e2a[256] = {
 0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,

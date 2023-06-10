@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
             int second = test.get();
             if (first != second)
             {
-                std::cout << counter << '\n';
+                std::cout << counter << std::endl;
                 std::cerr << "reference file does not equal to created\n";
                 return 1;
             }

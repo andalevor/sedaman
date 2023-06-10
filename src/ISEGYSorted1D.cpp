@@ -116,19 +116,16 @@ vector<Trace> ISEGYSorted1D::get_traces(Trace::Header::Value v,
 
 ISEGYSorted1D::ISEGYSorted1D(
     string file_name, string hdr_name,
-    vector<map<uint32_t, pair<string, Trace::Header::ValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>
-        add_hdr_map)
-    : ISEGY(move(file_name), move(tr_hdr_over), move(add_hdr_map)),
+        hdr_map)
+    : ISEGY(move(file_name), move(hdr_map)),
       pimpl(make_unique<Impl>(*this, move(hdr_name))) {}
 
 ISEGYSorted1D::ISEGYSorted1D(
     string file_name, string hdr_name, CommonSEGY::BinaryHeader bin_hdr,
-    vector<map<uint32_t, pair<string, Trace::Header::ValueType>>> tr_hdr_over,
     vector<pair<string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>
-        add_hdr_map)
-    : ISEGY(move(file_name), move(bin_hdr), move(tr_hdr_over),
-            move(add_hdr_map)),
+        hdr_map)
+    : ISEGY(move(file_name), move(bin_hdr), move(hdr_map)),
       pimpl(make_unique<Impl>(*this, move(hdr_name))) {}
 
 ISEGYSorted1D::~ISEGYSorted1D() = default;

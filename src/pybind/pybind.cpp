@@ -1,3 +1,4 @@
+#include "CommonSEGY.hpp"
 #include "ISEGY.hpp"
 #include "ISEGYSorted1D.hpp"
 #include "OSEGY.hpp"
@@ -30,6 +31,18 @@ PYBIND11_MODULE(pysedaman, m) {
 	Trace_py.def("samples_as_numpy_array",
 				 [](Trace &t) { return py::array_t<double>(t.samples()); },
 				 "Returns trace samples as numpy array");
+	py::enum_<Trace::Header::ValueType>(Trace_py, "TrHdrValueType")
+		.value("int8_t", Trace::Header::ValueType::int8_t)
+		.value("uint8_t", Trace::Header::ValueType::uint8_t)
+		.value("int16_t", Trace::Header::ValueType::int16_t)
+		.value("uint16_t", Trace::Header::ValueType::uint16_t)
+		.value("int32_t", Trace::Header::ValueType::int32_t)
+		.value("uint32_t", Trace::Header::ValueType::uint32_t)
+		.value("int64_t", Trace::Header::ValueType::int64_t)
+		.value("uint64_t", Trace::Header::ValueType::uint64_t)
+		.value("ibm", Trace::Header::ValueType::ibm)
+		.value("ieee_single", Trace::Header::ValueType::ieee_single)
+		.value("ieee_double", Trace::Header::ValueType::ieee_double);
 
 	py::class_<Trace::Header> Header_py(Trace_py, "Header");
 	Header_py.def(py::init<unordered_map<string, Trace::Header::Value>>());
@@ -51,7 +64,8 @@ PYBIND11_MODULE(pysedaman, m) {
 									  &CommonSEGY::TR_HEADER_SIZE);
 	CommonSEGY_py.def_readonly_static("trace_header_description",
 									  &CommonSEGY::trace_header_description);
-	py::enum_<Trace::Header::ValueType>(CommonSEGY_py, "TrHdrValueType");
+	CommonSEGY_py.def_readonly_static("default_trace_header",
+									  &CommonSEGY::default_trace_header);
 
 	py::class_<CommonSEGY::BinaryHeader> BinaryHeader_py(CommonSEGY_py,
 														 "BinaryHeader");
@@ -149,25 +163,15 @@ PYBIND11_MODULE(pysedaman, m) {
 
 	py::class_<ISEGY> ISEGY_py(m, "ISEGY");
 	ISEGY_py.def(py::init<string,
-				 vector<map<uint32_t,
-				 pair<string, Trace::Header::ValueType>>>,
 				 vector<pair<string, map<uint32_t,
 				 pair<string, Trace::Header::ValueType>>>>>(),
 				 py::arg("file_name"),
-				 py::arg("tr_hdr_over") = vector<map<uint32_t,
-				 pair<string, Trace::Header::ValueType>>>(),
-				 py::arg("add_hdr_map") = vector<pair<string,
-				 map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+				 py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
 	ISEGY_py.def(py::init<string, CommonSEGY::BinaryHeader,
-				 vector<map<uint32_t,
-				 pair<string, Trace::Header::ValueType>>>,
 				 vector<pair<string, map<uint32_t,
 				 pair<string, Trace::Header::ValueType>>>>>(),
-				 py::arg("file_name"), py::arg("binary_header"), py::arg("tr_hdr_over") =
-				 vector<map<uint32_t,
-				 pair<string, Trace::Header::ValueType>>>(),
-				 py::arg("add_hdr_map") = vector<pair<string,
-				 map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+				 py::arg("file_name"), py::arg("binary_header"),
+				 py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
 	ISEGY_py.def("read_binary_header", &ISEGY::read_binary_header,
 				 "creates ISegy instance internally and "
 				 "returns binary header.");
@@ -197,29 +201,21 @@ PYBIND11_MODULE(pysedaman, m) {
     py::class_<ISEGYSorted1D, ISEGY> ISEGYSorted1D_py(m, "ISEGYSorted1D");
     ISEGYSorted1D_py.def(
         py::init<string, string,
-                 vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>,
                  vector<pair<
                      string,
                      map<uint32_t, pair<string, Trace::Header::ValueType>>>>>(),
         py::arg("file_name"),
 		py::arg("hdr_name"),
-        py::arg("tr_hdr_over") =
-            vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>(),
-        py::arg("add_hdr_map") = vector<pair<
-            string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+        py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
     ISEGYSorted1D_py.def(
         py::init<string, string, CommonSEGY::BinaryHeader,
-                 vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>,
                  vector<pair<
                      string,
                      map<uint32_t, pair<string, Trace::Header::ValueType>>>>>(),
         py::arg("file_name"),
 		py::arg("hdr_name"),
 		py::arg("binary_header"),
-        py::arg("tr_hdr_over") =
-            vector<map<uint32_t, pair<string, Trace::Header::ValueType>>>(),
-        py::arg("add_hdr_map") = vector<pair<
-            string, map<uint32_t, pair<string, Trace::Header::ValueType>>>>());
+        py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
     ISEGYSorted1D_py.def(
         "get_keys", &ISEGYSorted1D::get_keys,
         "Get list of keys which could be used to get headers or traces");
@@ -241,16 +237,21 @@ PYBIND11_MODULE(pysedaman, m) {
 				 py::arg("trace"));
 
 	py::class_<OSEGYRev0, OSEGY> OSEGYRev0_py(m, "OSEGYRev0");
-	OSEGYRev0_py.def(py::init<string, string, CommonSEGY::BinaryHeader>(),
+	OSEGYRev0_py.def(py::init<string, string, CommonSEGY::BinaryHeader, 
+					 vector<pair<string, map<uint32_t,
+					 pair<string, Trace::Header::ValueType>>>>>(),
 					 py::arg("file_name"), py::arg("text_header") = string(),
-					 py::arg("bin_header") = CommonSEGY::BinaryHeader());
+					 py::arg("bin_header") = CommonSEGY::BinaryHeader(),
+					 py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
 
 	py::class_<OSEGYRev1, OSEGY> OSEGYRev1_py(m, "OSEGYRev1");
 	OSEGYRev1_py.def(py::init<string, vector<string>,
-					 CommonSEGY::BinaryHeader>(),
+					 CommonSEGY::BinaryHeader, vector<pair<string, map<uint32_t,
+					 pair<string, Trace::Header::ValueType>>>>>(),
 					 py::arg("file_name"),
 					 py::arg("text_headers") = vector<string>(),
-					 py::arg("bin_header") = CommonSEGY::BinaryHeader());
+					 py::arg("bin_header") = CommonSEGY::BinaryHeader(),
+					 py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
 
 	py::class_<OSEGYRev2, OSEGY> OSEGYRev2_py(m, "OSEGYRev2");
 	OSEGYRev2_py.def(py::init<string, vector<string>, CommonSEGY::BinaryHeader,
@@ -260,9 +261,7 @@ PYBIND11_MODULE(pysedaman, m) {
 					 py::arg("text_headers") = vector<string>(),
 					 py::arg("bin_header") = CommonSEGY::BinaryHeader(),
 					 py::arg("trailer_stanzas") = vector<string>(),
-					 py::arg("add_hdr_map") = vector<pair<string,
-					 map<uint32_t, pair<string,
-					 Trace::Header::ValueType>>>>());
+					 py::arg("tr_hdr_map") = CommonSEGY::default_trace_header);
 
 	py::class_<CommonSEGD> CommonSEGD_py(m, "CommonSEGD");
 	CommonSEGD_py.def_readonly_static("GEN_HDR_SIZE",
@@ -318,6 +317,8 @@ PYBIND11_MODULE(pysedaman, m) {
 		("scans_per_block", &CommonSEGD::GeneralHeader::scans_per_block);
 	GeneralHeader_py.def_readwrite
 		("record_type", &CommonSEGD::GeneralHeader::record_type);
+	GeneralHeader_py.def_readwrite
+		("record_length", &CommonSEGD::GeneralHeader::record_length);
 	GeneralHeader_py.def_readwrite
 		("scan_types_per_record",
 		 &CommonSEGD::GeneralHeader::scan_types_per_record);
@@ -1261,6 +1262,8 @@ PYBIND11_MODULE(pysedaman, m) {
 				 "Returns true if there if something to read.");
 	ISEGD_py.def("has_trace", &ISEGD::has_trace,
 				 "Returns true if there are traces to read in current record");
+	ISEGD_py.def("read_trace", &ISEGD::read_trace,
+				 "Returns trace");
 	ISEGD_py.def("__next__", [] (ISEGD &s)
 				 { return s.has_record() ? s.read_trace() :
 					 throw py::stop_iteration(); });

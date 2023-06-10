@@ -11,6 +11,7 @@
 #ifndef SEDAMAN_OSEGYREV0_HPP
 #define SEDAMAN_OSEGYREV0_HPP
 
+#include "CommonSEGY.hpp"
 #include "OSEGY.hpp"
 ///
 /// \brief General namespace for sedaman library.
@@ -41,7 +42,10 @@ public:
     /// \throws sedaman::Exception
     /// 
     OSEGYRev0(std::string file_name, std::string text_header = {},
-        CommonSEGY::BinaryHeader bin_header = {});
+        CommonSEGY::BinaryHeader bin_header = {},
+	   	std::vector<std::pair<std::string, std::map<uint32_t,
+	   	std::pair<std::string, Trace::Header::ValueType>>>> tr_hdrs_map =
+		CommonSEGY::default_trace_header);
     ///
     /// \brief Writes trace to the end of file.
     /// 

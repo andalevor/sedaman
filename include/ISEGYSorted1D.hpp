@@ -12,6 +12,7 @@
 #ifndef SEDAMAN_ISEGYSORTED1D_HPP
 #define SEDAMAN_ISEGYSORTED1D_HPP
 
+#include "CommonSEGY.hpp"
 #include "ISEGY.hpp"
 ///
 /// \brief General namespace for sedaman library.
@@ -40,15 +41,11 @@ public:
     /// \throws sedaman::Exception
     ///
     ISEGYSorted1D(
-        std::string file_name, std::string hdr_name,
-        std::vector<std::map<uint32_t,
-                             std::pair<std::string, Trace::Header::ValueType>>>
-            tr_hdr_over = {},
-        std::vector<
-            std::pair<std::string,
-                      std::map<uint32_t, std::pair<std::string,
-                                                   Trace::Header::ValueType>>>>
-            add_hdr_map = {});
+		std::string file_name, std::string hdr_name,
+		std::vector<std::pair<std::string,
+		std::map<uint32_t, std::pair<std::string,
+		Trace::Header::ValueType>>>>
+            hdr_map = CommonSEGY::default_trace_header);
     ///
     /// \brief Construct a new ISEGYSorted object
     ///
@@ -66,14 +63,10 @@ public:
     ISEGYSorted1D(
         std::string file_name, std::string hdr_name,
         CommonSEGY::BinaryHeader binary_header,
-        std::vector<std::map<uint32_t,
-                             std::pair<std::string, Trace::Header::ValueType>>>
-            tr_hdr_over = {},
-        std::vector<
-            std::pair<std::string,
-                      std::map<uint32_t, std::pair<std::string,
-                                                   Trace::Header::ValueType>>>>
-            add_hdr_map = {});
+        std::vector<std::pair<std::string,
+		std::map<uint32_t, std::pair<std::string,
+		Trace::Header::ValueType>>>>
+            hdr_map = CommonSEGY::default_trace_header);
     ///
     /// \brief checks for next trace in file
     ///
