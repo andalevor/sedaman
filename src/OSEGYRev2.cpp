@@ -52,7 +52,7 @@ OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs,
         sgy.common().trailer_stanzas = move(trlr_stnzs);
     }
 	sgy.common().text_headers = move(txt_hdrs);
-    sgy.common().file.write(txt_hdrs[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
+    sgy.common().file.write(sgy.common().text_headers[0].c_str(), CommonSEGY::TEXT_HEADER_SIZE);
     if (sgy.common().binary_header.format_code == 0)
         sgy.common().binary_header.format_code = 5;
     sgy.assign_raw_writers();
