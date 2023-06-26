@@ -12,6 +12,9 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/numpy.h"
+#include <cstdint>
+#include <map>
+#include <utility>
 
 namespace sedaman {
 namespace py = pybind11;
@@ -282,6 +285,12 @@ PYBIND11_MODULE(pysedaman, m) {
 									  &CommonSEGD::TRACE_HEADER_SIZE);
 	CommonSEGD_py.def_readonly_static("TRACE_HEADER_EXT_SIZE",
 									  &CommonSEGD::TRACE_HEADER_EXT_SIZE);
+	CommonSEGD_py.def_readonly_static("sercel_428xl",
+									  &CommonSEGD::sercel_428xl);
+	CommonSEGD_py.def_readonly_static("sercel_428",
+									  &CommonSEGD::sercel_428);
+	CommonSEGD_py.def_readonly_static("sercel_408",
+									  &CommonSEGD::sercel_408);
 
 	py::class_<CommonSEGD::GeneralHeader>
 	   	GeneralHeader_py(CommonSEGD_py, "GeneralHeader");
@@ -1176,7 +1185,11 @@ PYBIND11_MODULE(pysedaman, m) {
 							&CommonSEGD::ChannelSetHeader::name_as_string);
 
 	py::class_<ISEGD> ISEGD_py(m, "ISEGD");
-	ISEGD_py.def(py::init<string>());
+	ISEGD_py.def(py::init<string, vector<map<uint32_t, pair<string,
+				 Trace::Header::ValueType>>>>(),
+				 py::arg("file_name"),
+				 py::arg("ext_tr_hdr_map") = vector<map<uint32_t, pair<string,
+				 Trace::Header::ValueType>>>());
 	ISEGD_py.def("general_header", &ISEGD::general_header,
 				 "Returns general header");
 	ISEGD_py.def("general_header2", &ISEGD::general_header2,
