@@ -72,72 +72,40 @@ OSEGYRev1::Impl::Impl(OSEGYRev1& s, vector<string> txt_hdrs)
             };
         }
     } else {
-        if (sgy.common().binary_header.fixed_tr_length) {
-            write_trace = [this](Trace& tr) {
-                if (sgy.common().file.tellg() == first_trace_pos) {
-                    // throw exception if trace header does not has a samples
-					// number
-                    Trace::Header::Value v = *tr.header().get("SAMP_NUM");
-                    int64_t samp_num = get<int64_t>(v);
-                    if (samp_num > INT16_MAX)
-                        throw Exception(__FILE__, __LINE__,
-										"the number of samples is too much "
-										"for revision 0");
-                    else
-                        sgy.common().binary_header.samp_per_tr = samp_num;
-                    v = *tr.header().get("SAMP_INT");
-                    double samp_int;
-                    if (holds_alternative<int64_t>(v))
-                        samp_int = get<int64_t>(v);
-                    else
-                        samp_int = get<double>(v);
-                    if (samp_int > INT16_MAX ||
-					   	!static_cast<int16_t>(samp_int))
-                        throw Exception(__FILE__, __LINE__,
-										"the sample interval can not be "
-										"written to rev0");
-                    else
-                        sgy.common().binary_header.samp_int = samp_int;
-                    sgy.common().samp_buf.resize
-						(samp_num * sgy.common().bytes_per_sample);
-                }
-                sgy.write_trace_header(tr.header());
-                sgy.write_trace_samples_fix(tr);
-            };
-        } else {
-            write_trace = [this](Trace& tr) {
-                if (sgy.common().file.tellg() == first_trace_pos) {
-                    // throw exception if trace header does not has
-					// a samples number
-                    Trace::Header::Value v = *tr.header().get("SAMP_NUM");
-                    int64_t samp_num = get<int64_t>(v);
-                    if (samp_num > INT16_MAX)
-                        throw Exception(__FILE__, __LINE__,
-										"the number of samples is too much "
-										"for revision 0");
-                    else
-                        sgy.common().binary_header.samp_per_tr = samp_num;
-                    v = *tr.header().get("SAMP_INT");
-                    double samp_int;
-                    if (holds_alternative<int64_t>(v))
-                        samp_int = get<int64_t>(v);
-                    else
-                        samp_int = get<double>(v);
-                    if (samp_int > INT16_MAX ||
-					   	!static_cast<int16_t>(samp_int))
-                        throw Exception(__FILE__, __LINE__,
-										"the sample interval can not be "
-										"written to rev0");
-                    else
-                        sgy.common().binary_header.samp_int = samp_int;
-                    sgy.common().samp_buf.resize
-						(samp_num * sgy.common().bytes_per_sample);
-					sgy.write_bin_header();
-                }
-                sgy.write_trace_header(tr.header());
-                sgy.write_trace_samples_var(tr);
-            };
-        }
+		//if we have empty bin header we can not assume that traces has
+		//fixed length
+		write_trace = [this](Trace& tr) {
+			if (sgy.common().file.tellg() == first_trace_pos) {
+				// throw exception if trace header does not has
+				// a samples number
+				Trace::Header::Value v = *tr.header().get("SAMP_NUM");
+				int64_t samp_num = get<int64_t>(v);
+				if (samp_num > INT16_MAX)
+					throw Exception(__FILE__, __LINE__,
+									"the number of samples is too much "
+									"for revision 1");
+				else
+					sgy.common().binary_header.samp_per_tr = samp_num;
+				v = *tr.header().get("SAMP_INT");
+				double samp_int;
+				if (holds_alternative<int64_t>(v))
+					samp_int = get<int64_t>(v);
+				else
+					samp_int = get<double>(v);
+				if (samp_int > INT16_MAX ||
+					!static_cast<int16_t>(samp_int))
+					throw Exception(__FILE__, __LINE__,
+									"the sample interval can not be "
+									"written to rev1");
+				else
+					sgy.common().binary_header.samp_int = samp_int;
+				sgy.common().samp_buf.resize
+					(samp_num * sgy.common().bytes_per_sample);
+				sgy.write_bin_header();
+			}
+			sgy.write_trace_header(tr.header());
+			sgy.write_trace_samples_var(tr);
+        };
     }
 }
 

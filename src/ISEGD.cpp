@@ -191,20 +191,11 @@ void ISEGD::Impl::read_headers_before_traces()
     uint32_t extended_blocks = common.general_header.extended_hdr_blocks == 165
 	   	? common.general_header2.extended_hdr_blocks :
 	   	common.general_header.extended_hdr_blocks;
-    uint32_t external_blocks = common.general_header.external_hdr_blocks == 165
-	   	? common.general_header2.external_hdr_blocks :
-	   	common.general_header.external_hdr_blocks;
     common.extended_headers.resize(extended_blocks);
-    for (int i = 0; i < CommonSEGD::EXTENDED_HEADER_SIZE; ++i) {
+    for (uint32_t i = 0; i < extended_blocks; ++i) {
         common.extended_headers[i].resize(CommonSEGD::EXTENDED_HEADER_SIZE);
         fill_buf_from_file(common.extended_headers[i].data(),
             CommonSEGD::EXTENDED_HEADER_SIZE);
-    }
-    common.external_headers.resize(external_blocks);
-    for (int i = 0; i < CommonSEGD::EXTERNAL_HEADER_SIZE; ++i) {
-        common.external_headers[i].resize(CommonSEGD::EXTERNAL_HEADER_SIZE);
-        fill_buf_from_file(common.external_headers[i].data(),
-            CommonSEGD::EXTERNAL_HEADER_SIZE);
     }
 }
 

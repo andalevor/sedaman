@@ -179,10 +179,9 @@ PYBIND11_MODULE(pysedaman, m) {
 				 "creates ISegy instance internally and "
 				 "returns binary header.");
 	ISEGY_py.def("text_headers", [] (ISEGY& s) {
-		vector<string> res;
+		vector<py::bytes> res;
 		for(auto h : s.text_headers()) {
-			CommonSEGY::ebcdic_to_ascii(h);
-			res.push_back(std::move(h));
+			res.push_back(std::move(py::bytes(std::move(h))));
 		}
 		return res;},
 				 "segy text headers getter");
