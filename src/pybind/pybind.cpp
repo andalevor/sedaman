@@ -1268,6 +1268,12 @@ PYBIND11_MODULE(pysedaman, m) {
 	ISEGD_py.def("general_header_measurement_blk",
 				 &ISEGD::general_header_measurement_blk,
 				 "Returns general header measurement block.");
+	ISEGD_py.def("extended_headers",
+				 &ISEGD::extended_headers,
+				 "Returns extended headers.");
+	ISEGD_py.def("external_headers",
+				 &ISEGD::external_headers,
+				 "Returns external headers.");
 	ISEGD_py.def("channel_set_headers", &ISEGD::channel_set_headers,
 				 "Returns list of lists of channel set headers.");
 	ISEGD_py.def("has_record", &ISEGD::has_record,

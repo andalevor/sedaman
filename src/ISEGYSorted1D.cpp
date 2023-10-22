@@ -1,6 +1,6 @@
 #include "ISEGYSorted1D.hpp"
 #include "Exception.hpp"
-#include <iostream>
+
 using std::make_unique;
 using std::map;
 using std::move;
