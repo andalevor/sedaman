@@ -35,7 +35,8 @@ public:
     vector<double> d_samples;
 };
 
-Trace::Header const& Trace::header() const { return pimpl->d_header; }
+Trace::Header& Trace::header() { return pimpl->d_header; }
+Trace::Header const& Trace::header_const() const { return pimpl->d_header; }
 vector<double> const& Trace::samples() const { return pimpl->d_samples; }
 
 optional<Trace::Header::Value> Trace::Header::get(string key) const

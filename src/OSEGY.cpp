@@ -441,7 +441,7 @@ void OSEGY::Impl::write_trailer_stanzas()
 
 void OSEGY::Impl::write_trace_samples_var(Trace const& t)
 {
-    Trace::Header::Value v = *t.header().get("SAMP_NUM");
+    Trace::Header::Value v = *t.header_const().get("SAMP_NUM");
     int64_t samp_num = get<int64_t>(v);
     uint64_t bytes_num = samp_num * common.bytes_per_sample;
     if (bytes_num != common.samp_buf.size())

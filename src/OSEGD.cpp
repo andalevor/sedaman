@@ -1065,13 +1065,13 @@ void OSEGD::Impl::write_trace_samples(Trace const& trc)
     char* buf = common.trc_samp_buf.data();
     vector<double> const& samples = trc.samples();
     uint16_t scan_type;
-    std::optional<Trace::Header::Value> tmp = trc.header().get("SCAN_TYPE_NUM");
+    std::optional<Trace::Header::Value> tmp = trc.header_const().get("SCAN_TYPE_NUM");
     if (tmp == std::nullopt)
         scan_type = 1;
     else
         scan_type = get<int64_t>(*tmp);
     uint16_t ch_set;
-    tmp = trc.header().get("CH_SET_NUM");
+    tmp = trc.header_const().get("CH_SET_NUM");
     if (tmp == std::nullopt)
         ch_set = 1;
     else

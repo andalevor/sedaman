@@ -155,9 +155,15 @@ public:
     ///
     /// \brief Trace header getter
     /// 
+    /// \return Header& 
+    ///
+    Header& header();
+    ///
+    /// \brief Trace header getter
+    /// 
     /// \return Header const& 
     ///
-    Header const& header() const;
+    Header const& header_const() const;
     ///
     /// \brief Trace samples getter
     /// 
