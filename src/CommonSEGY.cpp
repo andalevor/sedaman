@@ -32,7 +32,8 @@ CommonSEGY::CommonSEGY(string name, ios_base::openmode mode, BinaryHeader bh,
 
 void check_tr_hdr_map(CommonSEGY* com)
 {
-    if (com->binary_header.max_num_add_tr_headers &&
+    if (com->binary_header.SEGY_rev_major_ver > 1 &&
+	   	com->binary_header.max_num_add_tr_headers &&
 	   	com->tr_hdr_map.size() - 1 != 
            static_cast<decltype(com->tr_hdr_map.size())>
            						(com->binary_header.max_num_add_tr_headers))
