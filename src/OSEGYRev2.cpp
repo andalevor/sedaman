@@ -1,5 +1,6 @@
 #include "OSEGYRev2.hpp"
 #include "Exception.hpp"
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <ios>
@@ -66,8 +67,9 @@ OSEGYRev2::Impl::Impl(OSEGYRev2& s, vector<string> txt_hdrs,
     if (memcmp(&sgy.common().binary_header, &zero,
 			   sizeof(CommonSEGY::BinaryHeader))) {
         if (sgy.common().binary_header.fixed_tr_length) {
-            sgy.common().samp_buf.resize(sgy.common().binary_header.samp_per_tr
-										 * sgy.common().bytes_per_sample);
+            sgy.common().samp_buf.resize(static_cast<uint16_t>(
+					sgy.common().binary_header.samp_per_tr) *
+			   	sgy.common().bytes_per_sample);
             if (sgy.common().binary_header.max_num_add_tr_headers)
                 write_trace = [this](Trace& tr) {
                     sgy.write_trace_header(tr.header());

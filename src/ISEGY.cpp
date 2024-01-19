@@ -11,7 +11,6 @@
 #include <ios>
 #include <string>
 #include <unordered_map>
-#include <variant>
 
 using std::fstream;
 using std::function;
@@ -109,7 +108,9 @@ void ISEGY::Impl::initialization(bool override_bin_hdr)
     }
     common.samp_per_tr = common.binary_header.ext_samp_per_tr ?
 	   	common.binary_header.ext_samp_per_tr :
-	   	common.binary_header.samp_per_tr;
+		/* static cast for the case you will get SEGY prior rev2 with samples
+		 * more then int16_t can hold without wrap. i got one */
+	   	static_cast<uint16_t>(common.binary_header.samp_per_tr);
     read_trailer_stanzas();
     common.file.seekg(first_trace_pos);
     curr_pos = first_trace_pos;
@@ -185,11 +186,13 @@ void ISEGY::Impl::fill_bin_header(char const* buf, bool override_bin_hdr)
     common.binary_header.SEGY_rev_minor_ver = read_u8(&buf);
     common.binary_header.fixed_tr_length = read_i16(&buf);
     common.binary_header.ext_text_headers_num = read_i16(&buf);
-    common.binary_header.max_num_add_tr_headers = read_i32(&buf);
-    common.binary_header.time_basis_code = read_i16(&buf);
-    common.binary_header.num_of_tr_in_file = read_i64(&buf);
-    common.binary_header.byte_off_of_first_tr = read_u64(&buf);
-    common.binary_header.num_of_trailer_stanza = read_i32(&buf);
+	if (common.binary_header.SEGY_rev_major_ver > 1) {
+		common.binary_header.max_num_add_tr_headers = read_i32(&buf);
+		common.binary_header.time_basis_code = read_i16(&buf);
+		common.binary_header.num_of_tr_in_file = read_i64(&buf);
+		common.binary_header.byte_off_of_first_tr = read_u64(&buf);
+		common.binary_header.num_of_trailer_stanza = read_i32(&buf);
+	}
 }
 
 void ISEGY::Impl::assign_raw_readers()
